@@ -395,7 +395,8 @@ async function loadTwitchSchedule() {
                             boxArtUrl: seg.category ? seg.category.box_art_url : ''
                         },
                         title: seg.title || "",
-                        useMiniature: false
+                        useMiniature: false,
+                        showGameTitle: false
                     });
                 }
             });
@@ -562,7 +563,13 @@ function renderPreviewGrid() {
 
             info.appendChild(titleDiv);
             info.appendChild(timeDiv);
-            info.appendChild(gameDiv);
+
+            if (evt.showGameTitle !== false) {
+                const gameDiv = document.createElement('div');
+                gameDiv.className = 'preview-event-game';
+                gameDiv.textContent = evt.category.name;
+                info.appendChild(gameDiv);
+            }
 
             card.appendChild(img);
             card.appendChild(info);
@@ -626,6 +633,10 @@ function renderEditor() {
                     <input type="checkbox" class="inp-mini" ${evt.useMiniature ? 'checked' : ''}>
                     <span>Miniature</span>
                 </div>
+                <div class="miniature-option">
+                    <input type="checkbox" class="inp-show-game" ${evt.showGameTitle ? 'checked' : ''}>
+                    <span>Titre</span>
+                </div>
             </div>
             <input type="text" class="segment-title-input" placeholder="Titre du stream" value="${evt.title}">
         `;
@@ -638,6 +649,7 @@ function renderEditor() {
         const inpGame = div.querySelector('.segment-game-input');
         const inpTitle = div.querySelector('.segment-title-input');
         const inpMini = div.querySelector('.inp-mini');
+        const inpShowGame = div.querySelector('.inp-show-game');
         const resultsBox = div.querySelector('.game-search-results');
         const deleteBtn = div.querySelector('.segment-delete-btn');
 
@@ -706,16 +718,25 @@ function renderEditor() {
 
         inpTitle.addEventListener('input', (e) => {
             evt.title = e.target.value;
+            saveState();
             renderPreviewGrid();
         });
 
         inpMini.addEventListener('change', (e) => {
             evt.useMiniature = e.target.checked;
+            saveState();
+            renderPreviewGrid();
+        });
+
+        inpShowGame.addEventListener('change', (e) => {
+            evt.showGameTitle = e.target.checked;
+            saveState();
             renderPreviewGrid();
         });
 
         deleteBtn.addEventListener('click', () => {
             currentState.events[dateKey].splice(idx, 1);
+            saveState();
             renderEditor();
             renderPreviewGrid();
         });

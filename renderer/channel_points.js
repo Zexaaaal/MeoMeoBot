@@ -30,22 +30,43 @@ function init() {
     const saveBtn = document.getElementById('saveRewardEditorBtn');
     if (saveBtn) saveBtn.addEventListener('click', saveReward);
 
-    document.getElementById('rewardSoundPickBtn').addEventListener('click', async () => {
+    const stripPrefix = (path) => path ? path.replace(/^file:\/\//, '') : '';
+
+    const soundInput = document.getElementById('rewardSoundInput');
+    const imageInput = document.getElementById('rewardImageInput');
+
+    soundInput.style.cursor = 'pointer';
+    soundInput.addEventListener('click', async () => {
         try {
             const path = await API.openFileDialog([{ name: 'Audio', extensions: ['mp3', 'wav', 'ogg'] }]);
             if (path) {
-                document.getElementById('rewardSoundInput').value = `file://${path.replace(/\\/g, '/')}`;
+                const val = `file://${path.replace(/\\/g, '/')}`;
+                soundInput.value = stripPrefix(val);
+                soundInput.dataset.path = val;
             }
         } catch (e) { console.error(e); }
     });
 
-    document.getElementById('rewardImagePickBtn').addEventListener('click', async () => {
+    document.getElementById('rewardSoundClearBtn').addEventListener('click', () => {
+        soundInput.value = '';
+        soundInput.dataset.path = '';
+    });
+
+    imageInput.style.cursor = 'pointer';
+    imageInput.addEventListener('click', async () => {
         try {
             const path = await API.openFileDialog([{ name: 'Images', extensions: ['jpg', 'png', 'gif'] }]);
             if (path) {
-                document.getElementById('rewardImageInput').value = `file://${path.replace(/\\/g, '/')}`;
+                const val = `file://${path.replace(/\\/g, '/')}`;
+                imageInput.value = stripPrefix(val);
+                imageInput.dataset.path = val;
             }
         } catch (e) { console.error(e); }
+    });
+
+    document.getElementById('rewardImageClearBtn').addEventListener('click', () => {
+        imageInput.value = '';
+        imageInput.dataset.path = '';
     });
 
 
@@ -227,8 +248,18 @@ function openEditor(reward = null) {
     document.getElementById('rewardEnabledInput').checked = (!reward || reward.is_enabled);
     document.getElementById('rewardUserInputInput').checked = (reward && reward.is_user_input_required);
 
-    document.getElementById('rewardSoundInput').value = (reward && savedRewardSounds[reward.id]) ? savedRewardSounds[reward.id] : '';
-    document.getElementById('rewardImageInput').value = (reward && savedRewardImages[reward.id]) ? savedRewardImages[reward.id] : '';
+    const stripPrefix = (path) => path ? path.replace(/^file:\/\//, '') : '';
+    const soundVal = (reward && savedRewardSounds[reward.id]) ? savedRewardSounds[reward.id] : '';
+    const imageVal = (reward && savedRewardImages[reward.id]) ? savedRewardImages[reward.id] : '';
+
+    const soundInput = document.getElementById('rewardSoundInput');
+    const imageInput = document.getElementById('rewardImageInput');
+
+    soundInput.value = stripPrefix(soundVal);
+    soundInput.dataset.path = soundVal;
+
+    imageInput.value = stripPrefix(imageVal);
+    imageInput.dataset.path = imageVal;
 
     rewardEditorContainer.classList.remove('hidden');
     rewardsList.classList.add('hidden');
@@ -255,10 +286,10 @@ async function saveReward() {
     const promptText = document.getElementById('rewardPromptInput').value.trim();
 
     const soundInput = document.getElementById('rewardSoundInput');
-    const soundPath = soundInput ? soundInput.value : '';
+    const soundPath = soundInput ? (soundInput.dataset.path || '') : '';
 
     const imageInput = document.getElementById('rewardImageInput');
-    const imagePath = imageInput ? imageInput.value : '';
+    const imagePath = imageInput ? (imageInput.dataset.path || '') : '';
 
     if (!title || cost < 1) {
         showStatus('points-status-msg', 'Nom et coût (>0) requis', 'error');

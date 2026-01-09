@@ -169,27 +169,6 @@
     border-color: var(--accent);
 }
 
-.file-picker-container {
-    display: flex;
-    gap: 8px;
-}
-
-.file-picker-container button {
-    padding: 0 15px;
-    height: 40px;
-    min-width: 40px;
-    border-radius: 6px;
-    border: 1px solid var(--border);
-    background: var(--bg-tertiary);
-    color: var(--text-primary);
-    cursor: pointer;
-    font-weight: 500;
-}
-
-.file-picker-container button:hover {
-    background: var(--bg-secondary);
-    border-color: var(--text-secondary);
-}
 
 .alerts-config-area::-webkit-scrollbar {
     width: 6px;

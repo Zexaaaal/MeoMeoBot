@@ -16,11 +16,11 @@ const els = {
     titleInput: document.getElementById('planning-title-input'),
     startSundayCheck: document.getElementById('planning-start-sunday'),
     bgInput: document.getElementById('planning-bg-input'),
-    bgPickBtn: document.getElementById('planning-bg-pick-btn'),
+    bgClearBtn: document.getElementById('planning-bg-clear-btn'),
     saveTwitchBtn: document.getElementById('planning-save-twitch-btn'),
     exportBtn: document.getElementById('planning-export-btn'),
+    loadPrevBtn: document.getElementById('planning-load-prev-btn'),
     dayTabs: document.querySelectorAll('.day-tab'),
-    editorDayTitle: document.getElementById('editor-day-title'),
     addSegmentBtn: document.getElementById('add-segment-btn'),
     segmentsList: document.getElementById('segments-list'),
     previewCard: document.getElementById('planning-preview-card'),
@@ -71,6 +71,12 @@ if (els.previewContainer) {
 }
 
 function setupEventListeners() {
+    api.on('bot-status', (status) => {
+        if (status.connected) {
+            loadTwitchSchedule();
+        }
+    });
+
     els.prevWeekBtn.addEventListener('click', () => changeWeek(-7));
     els.nextWeekBtn.addEventListener('click', () => changeWeek(7));
 
@@ -86,14 +92,24 @@ function setupEventListeners() {
         renderAll();
     });
 
-    els.bgPickBtn.addEventListener('click', async () => {
+    const stripPrefix = (path) => path ? path.replace(/^file:\/\//, '') : '';
+
+    els.bgInput.style.cursor = 'pointer';
+    els.bgInput.addEventListener('click', async () => {
         const path = await api.invoke('open-file-dialog', [{ name: 'Images', extensions: ['png', 'jpg', 'jpeg', 'webp'] }]);
         if (path) {
             currentState.bgImage = path;
-            els.bgInput.value = path;
+            els.bgInput.value = stripPrefix(path);
             saveState();
             renderHeader();
         }
+    });
+
+    els.bgClearBtn.addEventListener('click', () => {
+        currentState.bgImage = null;
+        els.bgInput.value = '';
+        saveState();
+        renderHeader();
     });
 
     els.dayTabs.forEach(tab => {
@@ -142,11 +158,22 @@ function setupEventListeners() {
         document.body.appendChild(clone);
 
         try {
-            await new Promise(r => setTimeout(r, 100));
+            // Wait for all images in the clone to be loaded
+            const images = Array.from(clone.querySelectorAll('img'));
+            await Promise.all(images.map(img => {
+                if (img.complete) return Promise.resolve();
+                return new Promise(resolve => {
+                    img.onload = resolve;
+                    img.onerror = resolve; // Continue even if one fails
+                });
+            }));
+
+            // Small extra delay for fonts/styles
+            await new Promise(r => setTimeout(r, 200));
 
             const canvas = await html2canvas(clone, {
                 backgroundColor: null,
-                scale: 1,
+                scale: 2, // Double scale for better quality
                 width: 1800,
                 height: 940,
                 useCORS: true,
@@ -171,27 +198,32 @@ function setupEventListeners() {
 
     els.saveTwitchBtn.addEventListener('click', syncToTwitch);
 
-    const loadPrevBtn = document.getElementById('planning-load-prev-btn');
-    const loadPrevConfirm = document.getElementById('planning-load-prev-confirm');
-    const loadPrevYes = document.getElementById('planning-load-prev-yes');
-    const loadPrevNo = document.getElementById('planning-load-prev-no');
+    if (els.loadPrevBtn) {
+        els.loadPrevBtn.addEventListener('click', () => {
+            if (els.loadPrevBtn.dataset.confirming !== 'true') {
+                els.loadPrevBtn.dataset.confirming = 'true';
+                els.loadPrevBtn.textContent = 'Sûr ?';
+                els.loadPrevBtn.classList.add('btn-danger');
+                els.loadPrevBtn.classList.remove('btn-secondary');
 
-    if (loadPrevBtn && loadPrevConfirm) {
-        loadPrevBtn.addEventListener('click', () => {
-            loadPrevBtn.style.display = 'none';
-            loadPrevConfirm.style.display = 'flex';
-        });
+                setTimeout(() => {
+                    if (els.loadPrevBtn.dataset.confirming === 'true') {
+                        els.loadPrevBtn.dataset.confirming = 'false';
+                        els.loadPrevBtn.textContent = 'Copier précédent';
+                        els.loadPrevBtn.classList.remove('btn-danger');
+                        els.loadPrevBtn.classList.add('btn-secondary');
+                    }
+                }, 3000);
+                return;
+            }
 
-        loadPrevNo.addEventListener('click', () => {
-            loadPrevConfirm.style.display = 'none';
-            loadPrevBtn.style.display = 'inline-block';
-        });
+            els.loadPrevBtn.dataset.confirming = 'false';
+            els.loadPrevBtn.textContent = 'Copier précédent';
+            els.loadPrevBtn.classList.remove('btn-danger');
+            els.loadPrevBtn.classList.add('btn-secondary');
 
-        loadPrevYes.addEventListener('click', () => {
             importPreviousState();
             renderAll();
-            loadPrevConfirm.style.display = 'none';
-            loadPrevBtn.style.display = 'inline-block';
         });
     }
 }
@@ -213,7 +245,8 @@ function loadState(loadEvents = false) {
             if (parsed.startSunday !== undefined) currentState.startSunday = parsed.startSunday;
             if (parsed.bgImage) {
                 currentState.bgImage = parsed.bgImage;
-                els.bgInput.value = parsed.bgImage;
+                const stripPrefix = (path) => path ? path.replace(/^file:\/\//, '') : '';
+                els.bgInput.value = stripPrefix(parsed.bgImage);
             }
             if (parsed.title !== undefined) {
                 currentState.title = parsed.title;
@@ -246,7 +279,8 @@ function importPreviousState() {
         }
         if (parsed.bgImage) {
             currentState.bgImage = parsed.bgImage;
-            els.bgInput.value = parsed.bgImage;
+            const stripPrefix = (path) => path ? path.replace(/^file:\/\//, '') : '';
+            els.bgInput.value = stripPrefix(parsed.bgImage);
         }
         if (parsed.title !== undefined) {
             currentState.title = parsed.title;
@@ -369,7 +403,7 @@ async function loadTwitchSchedule() {
     } catch (e) {
         console.error("Failed to load schedule", e);
     } finally {
-        els.saveTwitchBtn.innerHTML = '<span class="icon">📡</span> Sync Twitch';
+        els.saveTwitchBtn.textContent = 'Sync Twitch';
         renderAll();
     }
 }
@@ -380,6 +414,15 @@ function renderAll() {
     renderTimeLabels();
     renderEditor();
     renderPreviewGrid();
+}
+
+function scaleTwitchUrl(url, w = 600, h = 800) {
+    if (!url) return 'assets/icon.png';
+    if (url.includes('ttv-boxart')) {
+        return url.replace('{width}', w).replace('{height}', h)
+            .replace(/\d+x\d+(?=\.(jpg|png))/, `${w}x${h}`);
+    }
+    return url;
 }
 
 function renderHeader() {
@@ -492,47 +535,34 @@ function renderPreviewGrid() {
             card.style.top = `${topPercent}%`;
             card.style.height = `${heightPercent}%`;
 
+
+
             const img = document.createElement('img');
             img.className = 'preview-event-image';
-            let url = evt.category.boxArtUrl;
-            if (url) {
-                url = url.replace('{width}', '900').replace('{height}', '1200');
-            } else {
-                url = 'assets/icon.png';
-            }
-            img.src = url;
-
+            img.src = scaleTwitchUrl(evt.category.boxArtUrl, 1080, 1440);
             img.onerror = () => { img.style.display = 'none'; };
-
             const info = document.createElement('div');
             info.className = 'preview-event-info';
 
-            const headerRow = document.createElement('div');
-            headerRow.className = 'preview-event-header-row';
+            const titleDiv = document.createElement('div');
+            titleDiv.className = 'preview-event-title';
+            titleDiv.textContent = evt.title;
 
             const timeDiv = document.createElement('div');
             timeDiv.className = 'preview-event-time';
-
             if (evt._isContinuation) {
                 timeDiv.textContent = `... - ${evt.endTime}`;
             } else {
                 timeDiv.textContent = evt.startTime + (evt.endTime ? ` - ${evt.endTime}` : '');
             }
 
-            const titleDiv = document.createElement('div');
-            titleDiv.className = 'preview-event-title';
-            titleDiv.textContent = evt.title;
+            const gameDiv = document.createElement('div');
+            gameDiv.className = 'preview-event-game';
+            gameDiv.textContent = evt.category.name;
 
-            headerRow.appendChild(timeDiv);
-            headerRow.appendChild(titleDiv);
-            info.appendChild(headerRow);
-
-            if (!evt.useMiniature) {
-                const gameDiv = document.createElement('div');
-                gameDiv.className = 'preview-event-game';
-                gameDiv.textContent = evt.category.name;
-                info.appendChild(gameDiv);
-            }
+            info.appendChild(titleDiv);
+            info.appendChild(timeDiv);
+            info.appendChild(gameDiv);
 
             card.appendChild(img);
             card.appendChild(info);
@@ -551,7 +581,6 @@ function renderEditor() {
     if (!activeTab) return;
     const dayIndex = parseInt(activeTab.dataset.day);
 
-    els.editorDayTitle.textContent = DAYS_FR[dayIndex];
     els.segmentsList.innerHTML = '';
 
     const dateKey = getDateKeyForDayIndex(dayIndex);
@@ -588,15 +617,17 @@ function renderEditor() {
                     </div>
                 </div>
             </div>
-            <div class="segment-game-search">
-                <input type="text" class="segment-game-input" placeholder="Jeu/Catégorie..." value="${evt.category.name}">
-                <div class="game-search-results"></div>
+            <div class="segment-row">
+                <div class="segment-game-search">
+                    <input type="text" class="segment-game-input" placeholder="Jeu/Catégorie..." value="${evt.category.name}">
+                    <div class="game-search-results"></div>
+                </div>
+                <div class="miniature-option">
+                    <input type="checkbox" class="inp-mini" ${evt.useMiniature ? 'checked' : ''}>
+                    <span>Miniature</span>
+                </div>
             </div>
             <input type="text" class="segment-title-input" placeholder="Titre du stream" value="${evt.title}">
-            <div class="miniature-option">
-                <input type="checkbox" class="inp-mini" ${evt.useMiniature ? 'checked' : ''}>
-                <span>Afficher miniature</span>
-            </div>
         `;
 
         const timePickerBtn = div.querySelector('.time-range-btn');
@@ -708,7 +739,7 @@ function renderEditor() {
                     results.forEach(game => {
                         const r = document.createElement('div');
                         r.className = 'game-result-item';
-                        const boxUrl = game.box_art_url.replace('{width}', '40').replace('{height}', '50');
+                        const boxUrl = scaleTwitchUrl(game.box_art_url, 300, 400);
                         r.innerHTML = `<img src="${boxUrl}" class="game-result-img"><span class="game-result-name">${game.name}</span>`;
 
                         r.addEventListener('click', async () => {
@@ -753,15 +784,15 @@ async function syncToTwitch() {
 
     if (btn.dataset.confirming !== 'true') {
         btn.dataset.confirming = 'true';
-        btn.textContent = 'Confirmer ?';
-        btn.classList.add('btn-warning');
+        btn.textContent = 'Sûr ?';
+        btn.classList.add('btn-danger');
         btn.classList.remove('btn-primary');
 
         setTimeout(() => {
             if (btn.dataset.confirming === 'true') {
                 btn.dataset.confirming = 'false';
-                btn.innerHTML = '<span class="icon">📡</span> Sync';
-                btn.classList.remove('btn-warning');
+                btn.textContent = 'Sync Twitch';
+                btn.classList.remove('btn-danger');
                 btn.classList.add('btn-primary');
             }
         }, 3000);
@@ -769,12 +800,12 @@ async function syncToTwitch() {
     }
 
     btn.dataset.confirming = 'false';
-    btn.classesList?.remove('btn-warning');
-    btn.classList.remove('btn-warning');
+    btn.classList.remove('btn-danger');
+    btn.classList.remove('btn-secondary');
     btn.classList.add('btn-primary');
 
     btn.disabled = true;
-    btn.textContent = "Updating...";
+    btn.textContent = 'Sync...';
 
     try {
         const schedule = await api.invoke('twitch-get-schedule');

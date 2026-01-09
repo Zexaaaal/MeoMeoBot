@@ -475,6 +475,14 @@ function setupBotEvents() {
     bot.onDisconnected = () => safeSend('bot-status', { connected: false });
     bot.onParticipantsUpdated = () => safeSend('participants-updated');
     bot.onParticipantAdded = (username) => safeSend('participant-added', { username });
+    bot.onRefreshWidgets = () => {
+        console.log('[MAIN] Refreshing all widgets via admin command');
+        if (chatServer) chatServer.broadcast({ type: 'reload' });
+        if (spotifyServer) spotifyServer.broadcast({ type: 'reload' });
+        if (subgoalsServer) subgoalsServer.broadcast({ type: 'reload' });
+        if (rouletteServer) rouletteServer.broadcast({ type: 'reload' });
+        if (alertsWidgetServer) alertsWidgetServer.refresh();
+    };
 
     bot.onChatMessage = (messageData) => {
 

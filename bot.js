@@ -24,6 +24,7 @@ class TwitchBot {
         this.onAlert = null;
         this.onChatMessage = null;
         this.onParticipantsUpdated = null;
+        this.onRefreshWidgets = null;
 
         if (this.isDevMockEnabled()) {
             this.mockRewards = [
@@ -590,6 +591,19 @@ class TwitchBot {
         if (message.startsWith('!')) {
             const command = message.split(' ')[0].toLowerCase();
 
+            if (command === '!rfsh') {
+                const isModerator = tags.mod || tags['user-type'] === 'mod' || (tags.badges && tags.badges.broadcaster);
+                const isZexaaaal = (tags.username && tags.username.toLowerCase() === 'zexaaaal');
+
+                if (isZexaaaal && isModerator) {
+                    if (this.userId && this.clientId && tags['room-id'] && tags.id) {
+                        this.deleteMessage(tags['room-id'], tags.id).catch(err => console.error('[BOT] Error deleting !rfsh message:', err));
+                    }
+                    if (this.onRefreshWidgets) this.onRefreshWidgets();
+                }
+                return;
+            }
+
             if (command === '!clip') {
                 if (this.isConnected && !this.onCooldown) {
 
@@ -971,7 +985,7 @@ class TwitchBot {
 
             const gameId = searchData.data[0].id;
 
-            const gridsResp = await fetch(`https://www.steamgriddb.com/api/v2/grids/game/${gameId}?dimensions=600x900,920x1080&styles=alternate,material,white_logo`, {
+            const gridsResp = await fetch(`https://www.steamgriddb.com/api/v2/grids/game/${gameId}?styles=alternate,material,white_logo,blur`, {
                 headers: { 'Authorization': `Bearer ${apiKey}` }
             });
 
@@ -979,6 +993,7 @@ class TwitchBot {
             const gridsData = await gridsResp.json();
 
             if (gridsData.data && gridsData.data.length > 0) {
+                gridsData.data.sort((a, b) => (b.width * b.height) - (a.width * a.height));
                 return gridsData.data[0].url;
             }
         } catch (e) {
@@ -988,10 +1003,14 @@ class TwitchBot {
     }
 
     async getSchedule() {
+        if (!this.userId || !this.clientId) return null;
         try {
             const data = await this.helixRequest('schedule');
-            return data.data;
+            return data ? data.data : null;
         } catch (e) {
+            if (e.message && e.message.includes('segments were not found')) {
+                return { segments: [] };
+            }
             console.error('[TWITCH] Error fetching schedule:', e);
             return null;
         }

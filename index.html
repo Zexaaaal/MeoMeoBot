@@ -596,39 +596,23 @@
 
                 <div class="form-group">
                     <div class="file-picker-container compact">
-                        <input type="text" id="planning-bg-input" readonly placeholder="Image de fond...">
-                        <button class="btn btn-secondary btn-icon" id="planning-bg-pick-btn">📂</button>
+                        <input type="text" id="planning-bg-input" class="interactive-input" readonly
+                            placeholder="Image de fond...">
+                        <button class="btn btn-secondary clear-btn" id="planning-bg-clear-btn" title="Vider">✖</button>
                     </div>
                 </div>
 
                 <div class="sidebar-actions">
-                    <button class="btn btn-primary btn-sm" id="planning-save-twitch-btn" title="Sync"></button>
-
-
-                    <div id="load-prev-group" style="flex: 1; display: flex;">
-                        <button class="btn btn-warning btn-sm" id="planning-load-prev-btn" style="width: 100%;"
-                            title="Copier précédent"></button>
-                        <div id="planning-load-prev-confirm" style="display: none; width: 100%; gap: 5px;">
-                            <button class="btn btn-success btn-sm" id="planning-load-prev-yes"
-                                style="flex: 1;">✔</button>
-                            <button class="btn btn-danger btn-sm" id="planning-load-prev-no" style="flex: 1;">✖</button>
-                        </div>
-                    </div>
-
-                    <button class="btn btn-success btn-sm" id="planning-export-btn" title="Exporter planning">
-                        <span class="icon">📷</span> Exporter planning
-                    </button>
+                    <button class="btn btn-primary btn-sm" id="planning-save-twitch-btn" title="Sync Twitch">Sync
+                        Twitch</button>
+                    <button class="btn btn-secondary btn-sm" id="planning-load-prev-btn" title="Copier précédent">Copier
+                        précédent</button>
+                    <button class="btn btn-success btn-sm" id="planning-export-btn" title="Exporter planning">Exporter
+                        planning</button>
                 </div>
 
 
-                <div class="divider"></div>
-
-
-                <div class="sidebar-section list-section">
-                    <div class="day-editor-header">
-                        <h3>Éditeur</h3>
-                    </div>
-
+                <div class="sidebar-section list-section unified-editor">
                     <div class="day-selector">
                         <div class="day-tab active" data-day="0">Lun</div>
                         <div class="day-tab" data-day="1">Mar</div>
@@ -641,8 +625,7 @@
 
                     <div class="day-editor-content">
                         <div class="day-header-row">
-                            <h4 id="editor-day-title">Lundi</h4>
-                            <button class="btn btn-xs btn-primary" id="add-segment-btn">+ Stream</button>
+                            <button class="btn btn-primary btn-block" id="add-segment-btn">+ Stream</button>
                         </div>
                         <div id="segments-list" class="segments-list">
                         </div>

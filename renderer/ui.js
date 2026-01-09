@@ -223,15 +223,20 @@ export function createFilePickerGroup(label, value, type, onChange, id = null) {
 
     const input = document.createElement('input');
     input.type = 'text';
-    input.value = value || '';
+    const stripPrefix = (path) => path ? path.replace(/^file:\/\//, '') : '';
+    input.value = stripPrefix(value);
+    input.dataset.path = value || '';
     input.readOnly = true;
-    input.placeholder = 'Aucun fichier';
+    input.className = 'interactive-input';
+    input.placeholder = type === 'image' ? 'Cliquer pour choisir une image' : 'Cliquer pour choisir un son';
     if (id) input.id = id;
 
-    const btn = document.createElement('button');
-    btn.className = 'btn btn-secondary';
-    btn.textContent = '...';
-    btn.onclick = async () => {
+    const clearBtn = document.createElement('button');
+    clearBtn.className = 'btn btn-secondary clear-btn';
+    clearBtn.innerHTML = '✖';
+    clearBtn.title = 'Vider';
+
+    const openDialog = async () => {
         const filters = type === 'image'
             ? [{ name: 'Images', extensions: ['jpg', 'png', 'gif'] }]
             : [{ name: 'Audio', extensions: ['mp3', 'wav', 'ogg'] }];
@@ -240,7 +245,8 @@ export function createFilePickerGroup(label, value, type, onChange, id = null) {
             const path = await API.openFileDialog(filters);
             if (path) {
                 const fileUri = `file://${path.replace(/\\/g, '/')}`;
-                input.value = fileUri;
+                input.value = stripPrefix(fileUri);
+                input.dataset.path = fileUri;
                 onChange(fileUri);
             }
         } catch (e) {
@@ -248,8 +254,15 @@ export function createFilePickerGroup(label, value, type, onChange, id = null) {
         }
     };
 
+    input.onclick = openDialog;
+    clearBtn.onclick = () => {
+        input.value = '';
+        input.dataset.path = '';
+        onChange('');
+    };
+
     container.appendChild(input);
-    container.appendChild(btn);
+    container.appendChild(clearBtn);
     div.appendChild(container);
     return div;
 }

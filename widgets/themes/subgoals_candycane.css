@@ -1,0 +1,51 @@
+.progress-bar {
+    background: repeating-linear-gradient(45deg,
+            #ff0000,
+            #ff0000 10px,
+            #ffffff 10px,
+            #ffffff 20px) !important;
+    background-size: 28px 28px !important;
+    animation: candy-move 1s linear infinite !important;
+    box-shadow: 0 0 10px rgba(255, 0, 0, 0.5) !important;
+    border-radius: 18px;
+}
+
+.progress-container {
+    border: 2px solid rgba(255, 255, 255, 0.5) !important;
+    background: rgba(0, 0, 0, 0.6) !important;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5) !important;
+}
+
+.step-marker {
+    background: #0f8a46 !important;
+    width: 3px !important;
+    box-shadow: 0 0 5px rgba(255, 255, 255, 0.8);
+}
+
+.step-label {
+    background: #d40000 !important;
+    border: 1px solid #fff !important;
+    font-weight: bold;
+    text-transform: uppercase;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+}
+
+.step-label::after {
+    border-top-color: #d40000 !important;
+}
+
+.progress-text {
+    text-shadow: 2px 2px 0px #d40000, -1px -1px 0 #000 !important;
+    font-family: 'Arial Black', sans-serif;
+    letter-spacing: 1px;
+}
+
+@keyframes candy-move {
+    0% {
+        background-position: 0 0;
+    }
+
+    100% {
+        background-position: 28px 0;
+    }
+}

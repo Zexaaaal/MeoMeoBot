@@ -1,0 +1,27 @@
+.command-item {
+    display: grid;
+    grid-template-columns: 200px 1fr 120px;
+    align-items: center;
+    gap: 15px;
+    padding: 10px 15px;
+}
+
+.command-view-container,
+.inline-edit-container {
+    display: contents;
+}
+
+.command-name {
+    font-weight: 600;
+}
+
+.inline-edit-input.cmd-response {
+    color: var(--text-secondary);
+    width: 100%;
+}
+
+.controls {
+    display: flex;
+    justify-content: flex-end;
+    gap: 5px;
+}

@@ -404,17 +404,19 @@
                                     <div class="form-group">
                                         <label>Image</label>
                                         <div class="file-picker-container">
-                                            <input type="text" id="alert-image-input" readonly
-                                                placeholder="Aucun fichier">
-                                            <button class="btn btn-secondary" id="alert-image-btn">...</button>
+                                            <input type="text" id="alert-image-input" class="interactive-input" readonly
+                                                placeholder="Cliquer pour choisir une image">
+                                            <button class="btn btn-secondary clear-btn" id="alert-image-clear-btn"
+                                                title="Vider">✖</button>
                                         </div>
                                     </div>
                                     <div class="form-group">
                                         <label>Son</label>
                                         <div class="file-picker-container">
-                                            <input type="text" id="alert-audio-input" readonly
-                                                placeholder="Aucun fichier">
-                                            <button class="btn btn-secondary" id="alert-audio-btn">...</button>
+                                            <input type="text" id="alert-audio-input" class="interactive-input" readonly
+                                                placeholder="Cliquer pour choisir un son">
+                                            <button class="btn btn-secondary clear-btn" id="alert-audio-clear-btn"
+                                                title="Vider">✖</button>
                                         </div>
                                     </div>
                                 </div>
@@ -528,8 +530,10 @@
                     <div class="form-group">
                         <label>Son de l'alerte</label>
                         <div class="file-picker-container">
-                            <input type="text" id="rewardSoundInput" readonly placeholder="Aucun fichier">
-                            <button class="btn btn-secondary" id="rewardSoundPickBtn">...</button>
+                            <input type="text" id="rewardSoundInput" class="interactive-input" readonly
+                                placeholder="Cliquer pour choisir un son">
+                            <button class="btn btn-secondary clear-btn" id="rewardSoundClearBtn"
+                                title="Vider">✖</button>
                         </div>
                     </div>
 
@@ -537,8 +541,10 @@
                         <label>Image de l'alerte (<em style="font-size:0.8em; color:var(--text-secondary);">Icone UI
                                 uniquement</em>)</label>
                         <div class="file-picker-container">
-                            <input type="text" id="rewardImageInput" readonly placeholder="Aucun fichier">
-                            <button class="btn btn-secondary" id="rewardImagePickBtn">...</button>
+                            <input type="text" id="rewardImageInput" class="interactive-input" readonly
+                                placeholder="Cliquer pour choisir une image">
+                            <button class="btn btn-secondary clear-btn" id="rewardImageClearBtn"
+                                title="Vider">✖</button>
                         </div>
                     </div>
                 </div>
@@ -596,16 +602,12 @@
                 </div>
 
                 <div class="sidebar-actions">
-                    <button class="btn btn-primary btn-sm" id="planning-save-twitch-btn" title="Sync">
-                        <span class="icon">📡</span> Sync
-                    </button>
+                    <button class="btn btn-primary btn-sm" id="planning-save-twitch-btn" title="Sync"></button>
 
 
                     <div id="load-prev-group" style="flex: 1; display: flex;">
                         <button class="btn btn-warning btn-sm" id="planning-load-prev-btn" style="width: 100%;"
-                            title="Copier précédent">
-                            <span class="icon">↺</span> Copier précédent
-                        </button>
+                            title="Copier précédent"></button>
                         <div id="planning-load-prev-confirm" style="display: none; width: 100%; gap: 5px;">
                             <button class="btn btn-success btn-sm" id="planning-load-prev-yes"
                                 style="flex: 1;">✔</button>

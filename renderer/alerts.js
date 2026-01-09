@@ -25,9 +25,9 @@ const els = {
     widgetUrl: null,
     msgInput: null,
     imgInput: null,
-    imgBtn: null,
+    imgClearBtn: null,
     audioInput: null,
-    audioBtn: null,
+    audioClearBtn: null,
     layoutSelect: null,
     volumeInput: null,
     volumeVal: null,
@@ -51,9 +51,9 @@ function init() {
     els.widgetUrl = document.getElementById('alert-widget-url');
     els.msgInput = document.getElementById('alert-message-input');
     els.imgInput = document.getElementById('alert-image-input');
-    els.imgBtn = document.getElementById('alert-image-btn');
+    els.imgClearBtn = document.getElementById('alert-image-clear-btn');
     els.audioInput = document.getElementById('alert-audio-input');
-    els.audioBtn = document.getElementById('alert-audio-btn');
+    els.audioClearBtn = document.getElementById('alert-audio-clear-btn');
     els.layoutSelect = document.getElementById('alert-layout-select');
     els.volumeInput = document.getElementById('alert-volume-input');
     els.volumeVal = document.getElementById('alert-volume-val');
@@ -120,22 +120,36 @@ function setupEventListeners() {
 
     els.msgInput.addEventListener('input', (e) => updateConfigValue(currentType, 'textTemplate', e.target.value));
 
-    els.imgBtn.addEventListener('click', async () => {
+    const stripPrefix = (path) => path ? path.replace(/^file:\/\//, '') : '';
+
+    els.imgInput.style.cursor = 'pointer';
+    els.imgInput.addEventListener('click', async () => {
         const path = await API.openFileDialog([{ name: 'Images', extensions: ['jpg', 'png', 'gif'] }]);
         if (path) {
             const val = `file://${path.replace(/\\/g, '/')}`;
-            els.imgInput.value = val;
+            els.imgInput.value = stripPrefix(val);
             updateConfigValue(currentType, 'image', val);
         }
     });
 
-    els.audioBtn.addEventListener('click', async () => {
+    els.imgClearBtn.addEventListener('click', () => {
+        els.imgInput.value = '';
+        updateConfigValue(currentType, 'image', '');
+    });
+
+    els.audioInput.style.cursor = 'pointer';
+    els.audioInput.addEventListener('click', async () => {
         const path = await API.openFileDialog([{ name: 'Audio', extensions: ['mp3', 'wav', 'ogg'] }]);
         if (path) {
             const val = `file://${path.replace(/\\/g, '/')}`;
-            els.audioInput.value = val;
+            els.audioInput.value = stripPrefix(val);
             updateConfigValue(currentType, 'audio', val);
         }
+    });
+
+    els.audioClearBtn.addEventListener('click', () => {
+        els.audioInput.value = '';
+        updateConfigValue(currentType, 'audio', '');
     });
 
     els.layoutSelect.addEventListener('change', (e) => updateConfigValue(currentType, 'layout', e.target.value));
@@ -212,9 +226,11 @@ function updateUI() {
         els.widgetUrl.textContent = `http://127.0.0.1:${widgetPort}/widget/alerts`;
 
 
+        const stripPrefix = (path) => path ? path.replace(/^file:\/\//, '') : '';
+
         els.msgInput.value = typeConfig.textTemplate || meta.defaultText;
-        els.imgInput.value = typeConfig.image || '';
-        els.audioInput.value = typeConfig.audio || '';
+        els.imgInput.value = stripPrefix(typeConfig.image || '');
+        els.audioInput.value = stripPrefix(typeConfig.audio || '');
         els.layoutSelect.value = typeConfig.layout || 'top';
 
         const vol = typeConfig.volume !== undefined ? typeConfig.volume : 0.5;
@@ -424,7 +440,7 @@ function playShadowAlert(shadow, alert) {
     if (alert.audio) {
         audio.src = transformLocalPath(alert.audio);
         audio.volume = alert.volume !== undefined ? alert.volume : 0.5;
-        audio.play().catch(e => console.error('[Preview] Audio play failed:', e));
+        // audio.play().catch(e => console.error('[Preview] Audio play failed:', e)); // Disable sound in app
     } else {
         audio.src = '';
     }

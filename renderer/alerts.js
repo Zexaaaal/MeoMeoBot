@@ -1,4 +1,4 @@
-import { NOTIFICATIONS, showStatus } from './ui.js';
+import { NOTIFICATIONS, showNotification } from './ui.js';
 import { API } from './api.js';
 
 let currentType = 'follow';
@@ -152,7 +152,6 @@ function setupEventListeners() {
         updateConfigValue(currentType, 'audio', '');
     });
 
-    els.layoutSelect.addEventListener('change', (e) => updateConfigValue(currentType, 'layout', e.target.value));
 
     els.volumeInput.addEventListener('input', (e) => {
         const val = parseFloat(e.target.value);
@@ -197,14 +196,14 @@ function setupEventListeners() {
             els.themeCss.value = DEFAULT_CSS;
             updateGlobalThemePreview(DEFAULT_CSS);
 
-            showStatus('alerts-status-msg', 'Thème réinitialisé avec succès', 'success');
+            showNotification('Thème réinitialisé avec succès', 'success');
 
             els.themeConfirmBtn.style.display = 'none';
             els.themeCancelBtn.style.display = 'none';
             els.themeResetBtn.style.display = 'inline-block';
         } catch (e) {
             console.error(e);
-            showStatus('alerts-status-msg', 'Erreur réinitialisation', 'error');
+            showNotification('Erreur réinitialisation', 'error');
         }
     };
 }
@@ -231,7 +230,6 @@ function updateUI() {
         els.msgInput.value = typeConfig.textTemplate || meta.defaultText;
         els.imgInput.value = stripPrefix(typeConfig.image || '');
         els.audioInput.value = stripPrefix(typeConfig.audio || '');
-        els.layoutSelect.value = typeConfig.layout || 'top';
 
         const vol = typeConfig.volume !== undefined ? typeConfig.volume : 0.5;
         els.volumeInput.value = vol;
@@ -435,7 +433,6 @@ function playShadowAlert(shadow, alert) {
 
     msgContainer.innerHTML = alert.message || '';
 
-    if (alert.layout === 'side') wrapper.classList.add('layout-side-by-side');
 
     if (alert.audio) {
         audio.src = transformLocalPath(alert.audio);
@@ -490,8 +487,6 @@ function updatePreview(type) {
             to { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
         }
 
-        .layout-side-by-side { flex-direction: row !important; }
-        .layout-side-by-side .alert-image { margin-right: 20px; margin-bottom: 0; }
         
         .alert-text { 
             font-size: 24px; 
@@ -531,11 +526,11 @@ function updateGlobalThemePreview(css) {
 async function saveConfig() {
     try {
         await API.widgets.saveConfig('alerts', currentConfig);
-        showStatus('alerts-status-msg', NOTIFICATIONS.SUCCESS.SAVED, 'success');
+        showNotification(NOTIFICATIONS.SUCCESS.SAVED, 'success');
         return true;
     } catch (e) {
         console.error(e);
-        showStatus('alerts-status-msg', NOTIFICATIONS.ERROR.SAVE, 'error');
+        showNotification(NOTIFICATIONS.ERROR.SAVE, 'error');
         return false;
     }
 }
@@ -564,7 +559,7 @@ async function triggerTest() {
         await API.alerts.triggerTest(dummyData);
     } catch (e) {
         console.error(e);
-        showStatus('alerts-status-msg', 'Erreur Test', 'error');
+        showNotification('Erreur Test', 'error');
     }
 }
 

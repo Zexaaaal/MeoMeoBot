@@ -41,19 +41,6 @@
     display: block;
 }
 
-.form-group {
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-    flex: 0;
-}
-
-.form-group label {
-    font-size: 12px;
-    color: var(--text-secondary);
-    font-weight: 500;
-}
-
 .form-group.row {
     flex-direction: row;
     align-items: center;
@@ -106,7 +93,6 @@
 
 .sidebar-actions .btn {
     flex: 1;
-    white-space: nowrap;
 }
 
 .btn-block {
@@ -642,7 +628,6 @@
 
 .preview-event-time {
     font-size: clamp(12px, 10cqh, 26px);
-    /* Adaptive time */
     font-weight: 500;
     color: var(--update-color-avail);
     white-space: nowrap;
@@ -650,7 +635,6 @@
 
 .preview-event-game {
     font-size: clamp(10px, 7cqh, 18px);
-    /* Adaptive game title */
     font-weight: 600;
     color: #ccc;
     text-transform: none;

@@ -1,18 +1,32 @@
 import { API } from './api.js';
+export function showNotification(message, type = 'success', duration = 3000) {
+    const container = document.getElementById('notification-container');
+    if (!container) return;
+
+    const notification = document.createElement('div');
+    notification.className = `notification ${type}`;
+    notification.textContent = message;
+
+    container.appendChild(notification);
+
+    setTimeout(() => {
+        notification.style.animation = 'fadeOut 0.3s ease-in forwards';
+        setTimeout(() => notification.remove(), 300);
+    }, duration);
+}
 
 export function showStatus(elementId, message, type = 'success', duration = 3000) {
     const el = document.getElementById(elementId);
-    if (!el) {
-        console.warn(`Status element not found: ${elementId}`);
+    if (!el || elementId === 'global-status-msg') {
+        showNotification(message, type, duration);
         return;
     }
+
     el.textContent = message;
     el.className = `status-msg ${type}`;
     el.style.opacity = '1';
 
-    if (el.dataset.timeoutId) {
-        clearTimeout(parseInt(el.dataset.timeoutId));
-    }
+    if (el.dataset.timeoutId) clearTimeout(parseInt(el.dataset.timeoutId));
 
     if (duration > 0) {
         const timeoutId = setTimeout(() => {

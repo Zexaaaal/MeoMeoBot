@@ -1,4 +1,5 @@
-const { ipcRenderer } = require('electron');
+const api = window.api;
+import { showNotification } from './ui.js';
 
 let currentConfig = {
     startCount: 0,
@@ -23,11 +24,11 @@ const previewFrame = document.getElementById('preview-frame');
 const widgetHelper = {
     onRefresh: (cb) => {
         const load = async () => {
-            const config = await ipcRenderer.invoke('get-widget-config', 'subgoals');
+            const config = await api.invoke('get-widget-config', 'subgoals');
             cb(config);
         };
         load();
-        ipcRenderer.on('refresh-widget-urls', load);
+        api.on('refresh-widget-urls', load);
     }
 };
 
@@ -91,11 +92,11 @@ function setupEventListeners() {
         currentConfig.goalCount = parseFloat(goalCountInput.value) || 100;
 
         try {
-            await ipcRenderer.invoke('save-widget-config', 'subgoals', currentConfig);
-            showStatus('Configuration sauvegardée !', 'ok');
+            await api.invoke('save-widget-config', 'subgoals', currentConfig);
+            showNotification('Configuration sauvegardée !');
             renderPreview();
         } catch (e) {
-            showStatus('Erreur sauvegarde: ' + e.message, 'err');
+            showNotification('Erreur sauvegarde: ' + e.message, 'error');
         }
     });
 
@@ -138,10 +139,10 @@ function setupEventListeners() {
             const result = await ipcRenderer.invoke('get-sub-count');
             if (result && result.count !== undefined) {
                 startCountInput.value = result.count;
-                showStatus(`Nombre actuel récupéré : ${result.count}`, 'ok');
+                showNotification(`Nombre actuel récupéré : ${result.count}`);
             }
         } catch (e) {
-            showStatus('Erreur API: ' + e.message, 'err');
+            showNotification('Erreur API: ' + e.message, 'error');
         }
     });
 }
@@ -250,12 +251,3 @@ function renderPreview() {
     }
 }
 
-function showStatus(msg, type) {
-    if (!statusBar) return;
-    statusBar.textContent = msg;
-    statusBar.className = 'css-editor-status ' + (type || '');
-    setTimeout(() => {
-        statusBar.textContent = '';
-        statusBar.className = 'css-editor-status';
-    }, 3000);
-}

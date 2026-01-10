@@ -1,4 +1,4 @@
-import { showStatus } from './ui.js';
+import { showNotification } from './ui.js';
 import { API } from './api.js';
 
 export function setupCast() {
@@ -13,7 +13,7 @@ export function setupCast() {
     });
 
     window.api.on('cast-status', (status) => {
-        showStatus('global-status-msg', status.message, status.success ? 'success' : 'error');
+        showNotification(status.message, status.success ? 'success' : 'error');
     });
 }
 
@@ -37,7 +37,7 @@ async function selectCastFolder() {
         }
     } catch (error) {
         console.error('Erreur sélection dossier:', error);
-        showStatus('global-status-msg', 'Erreur lors de la sélection du dossier', 'error');
+        showNotification('Erreur lors de la sélection du dossier', 'error');
     }
 }
 
@@ -127,13 +127,13 @@ function showDevicePicker(videoPath) {
 
 async function playOnDevice(device, videoPath) {
     try {
-        showStatus('global-status-msg', `Lancement sur ${device.name}...`, 'info');
+        showNotification(`Lancement sur ${device.name}...`, 'info');
         await API.cast.playOnDevice({
             deviceHost: device.host,
             devicePort: device.port,
             videoPath
         });
     } catch (error) {
-        showStatus('global-status-msg', 'Erreur lancement cast: ' + error, 'error');
+        showNotification('Erreur lancement cast: ' + error, 'error');
     }
 }

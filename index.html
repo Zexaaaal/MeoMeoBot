@@ -55,17 +55,7 @@
         </div>
     </div>
 
-    <div id="status-messages-container">
-        <span id="commands-status-msg" class="status-msg"></span>
-        <span id="giveaway-status-msg" class="status-msg"></span>
-        <span id="giveaway-control-status-msg" class="status-msg"></span>
-        <span id="banned-words-status-msg" class="status-msg"></span>
-        <span id="clear-banned-words-status" class="status-msg"></span>
-        <span id="auto-message-status" class="status-msg"></span>
-        <span id="clip-config-status" class="status-msg"></span>
-        <span id="alerts-status-msg" class="status-msg"></span>
-        <span id="points-status-msg" class="status-msg"></span>
-    </div>
+    <div id="notification-container"></div>
 
     <div class="tabs-container">
         <div class="main-tabs">
@@ -359,8 +349,8 @@
     </div>
 
     <div class="tab-content" id="alerts-tab">
-        <div class="card full-height-card" style="display: flex; flex-direction: column;">
-            <div class="alerts-layout" style="display: flex; height: 100%;">
+        <div class="card full-height-card">
+            <div class="alerts-layout">
                 <div class="alerts-sidebar">
                     <div class="alert-type-btn active" data-type="follow"><span>Follow</span> <input type="checkbox"
                             id="check-follow"></div>
@@ -382,90 +372,76 @@
                 </div>
 
 
-                <div class="alerts-config-area"
-                    style="flex: 1; overflow-y: hidden; padding: 0 10px; display: flex; flex-direction: column;">
-                    <div id="alert-config-form" style="height: 100%; display: flex; flex-direction: column;">
+                <div class="alerts-config-area" id="alert-config-form">
 
 
-                        <div id="alert-standard-config" class="alert-config-group"
-                            style="display:none; flex-direction:column; height:100%;">
-                            <div class="compact-container">
-                                <div class="widget-url-display">
-                                    <span style="color:var(--text-secondary); margin-right:5px;">Source OBS:</span>
-                                    <code class="chat-widget-url" id="alert-widget-url">...</code>
-                                </div>
+                    <div id="alert-standard-config" class="alert-config-group"
+                        style="display:none; flex-direction:column; height:100%;">
+                        <div class="compact-container">
+                            <div class="widget-url-display">
+                                <span style="color:var(--text-secondary); margin-right:5px;">Source OBS:</span>
+                                <code class="chat-widget-url" id="alert-widget-url">...</code>
+                            </div>
 
+                            <div class="form-group">
+                                <label>Message</label>
+                                <input type="text" id="alert-message-input">
+                            </div>
+
+                            <div class="form-row">
                                 <div class="form-group">
-                                    <label>Message</label>
-                                    <input type="text" id="alert-message-input">
-                                </div>
-
-                                <div class="form-row">
-                                    <div class="form-group">
-                                        <label>Image</label>
-                                        <div class="file-picker-container">
-                                            <input type="text" id="alert-image-input" class="interactive-input" readonly
-                                                placeholder="Cliquer pour choisir une image">
-                                            <button class="btn btn-secondary clear-btn" id="alert-image-clear-btn"
-                                                title="Vider">✖</button>
-                                        </div>
-                                    </div>
-                                    <div class="form-group">
-                                        <label>Son</label>
-                                        <div class="file-picker-container">
-                                            <input type="text" id="alert-audio-input" class="interactive-input" readonly
-                                                placeholder="Cliquer pour choisir un son">
-                                            <button class="btn btn-secondary clear-btn" id="alert-audio-clear-btn"
-                                                title="Vider">✖</button>
-                                        </div>
+                                    <label>Image</label>
+                                    <div class="file-picker-container">
+                                        <input type="text" id="alert-image-input" class="interactive-input" readonly
+                                            placeholder="Cliquer pour choisir une image">
+                                        <button class="btn btn-secondary clear-btn" id="alert-image-clear-btn"
+                                            title="Vider">✖</button>
                                     </div>
                                 </div>
-
-                                <div class="form-row">
-                                    <div class="form-group">
-                                        <label>Disposition</label>
-                                        <select id="alert-layout-select">
-                                            <option value="top">Image au-dessus</option>
-                                            <option value="side">Image à gauche</option>
-                                        </select>
-                                    </div>
-                                    <div class="form-group">
-                                        <div style="display:flex; justify-content:space-between;">
-                                            <label>Volume</label>
-                                            <span id="alert-volume-val">50%</span>
-                                        </div>
-                                        <input type="range" id="alert-volume-input" min="0" max="1" step="0.05"
-                                            style="width:100%">
-                                    </div>
-                                    <div class="form-group">
-                                        <label>Durée (ms)</label>
-                                        <input type="number" id="alert-duration-input">
+                                <div class="form-group">
+                                    <label>Son</label>
+                                    <div class="file-picker-container">
+                                        <input type="text" id="alert-audio-input" class="interactive-input" readonly
+                                            placeholder="Cliquer pour choisir un son">
+                                        <button class="btn btn-secondary clear-btn" id="alert-audio-clear-btn"
+                                            title="Vider">✖</button>
                                     </div>
                                 </div>
                             </div>
-                        </div>
 
-
-                        <div id="alert-theme-editor" class="alert-config-group"
-                            style="display:none; flex:1; flex-direction:column; height:100%;">
-                            <textarea id="alert-theme-css" class="css-editor-textarea"
-                                style="flex:1; width:100%; background:#222; color:#fff; resize:none; margin: 20px 0; padding:10px; border:1px solid #444;"></textarea>
-                            <div class="theme-controls" style="display:flex; gap:10px; margin-bottom:10px;">
-                                <button id="alert-theme-reset-btn" class="btn btn-danger" style="flex:1;">Réinitialiser
-                                    le thème (Défaut)</button>
-                                <button id="alert-theme-confirm-btn" class="btn btn-danger"
-                                    style="flex:1; display:none;">Confirmer ?</button>
-                                <button id="alert-theme-cancel-btn" class="btn btn-secondary"
-                                    style="flex:1; display:none;">Annuler</button>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <div style="display:flex; justify-content:space-between;">
+                                        <label>Volume</label>
+                                        <span id="alert-volume-val">50%</span>
+                                    </div>
+                                    <input type="range" id="alert-volume-input" min="0" max="1" step="0.05"
+                                        style="width:100%">
+                                </div>
+                                <div class="form-group">
+                                    <label>Durée (ms)</label>
+                                    <input type="number" id="alert-duration-input">
+                                </div>
                             </div>
                         </div>
-
                     </div>
+
+
+                    <div id="alert-theme-editor" class="alert-config-group">
+                        <textarea id="alert-theme-css" class="css-editor-textarea"></textarea>
+                        <div class="theme-controls" style="display:flex; gap:10px; margin-bottom:10px;">
+                            <button id="alert-theme-reset-btn" class="btn btn-danger" style="flex:1;">Réinitialiser
+                                le thème (Défaut)</button>
+                            <button id="alert-theme-confirm-btn" class="btn btn-danger"
+                                style="flex:1; display:none;">Confirmer ?</button>
+                            <button id="alert-theme-cancel-btn" class="btn btn-secondary"
+                                style="flex:1; display:none;">Annuler</button>
+                        </div>
+                    </div>
+
                 </div>
 
-
-                <div class="alerts-preview-col"
-                    style="width: 350px; border-left: 1px solid var(--border-color); padding-left: 10px; display: flex; flex-direction: column;">
+                <div class="alerts-preview-col">
                     <div id="alert-preview-box"
                         style="width: 100%; height: 320px; background: #333; border: 1px solid #555; position: relative; overflow: hidden; margin-bottom: 10px; display: flex; align-items: center; justify-content: center;">
 
@@ -493,13 +469,10 @@
 
             </div>
 
-            <div id="reward-editor-static" class="reward-editor-container hidden"
-                style="background: var(--bg-secondary); padding: 20px; border-radius: 8px; margin-bottom: 20px; border: 1px solid var(--border-color);">
-                <h3 id="reward-editor-title"
-                    style="margin-bottom: 15px; border-bottom: 1px solid #444; padding-bottom: 10px;">Nouvelle
-                    récompense</h3>
+            <div id="reward-editor-static" class="reward-editor-container hidden">
+                <h3 id="reward-editor-title">Nouvelle récompense</h3>
 
-                <div class="reward-form-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                <div class="reward-form-grid">
                     <div class="form-group">
                         <label>Nom</label>
                         <input type="text" id="rewardNameInput">
@@ -654,12 +627,77 @@
     </div>
 
     <div class="tab-content" id="config-tab">
-        <div id="config-form-container" class="config-wrapper"></div>
-        <div class="unified-button-row">
-            <button class="btn btn-primary" id="saveConfigBtn">Sauvegarder Tout</button>
-            <button class="btn btn-success" id="connectBtn">Connexion</button>
-            <button class="btn btn-danger" id="disconnectBtn">Déconnexion</button>
+        <div class="config-columns">
+            <div class="config-section">
+                <div class="config-group">
+                    <h4>Twitch</h4>
+
+                    <div class="form-group">
+                        <label>Chaîne</label>
+                        <input type="text" id="config-channel" placeholder="Ex: monsieurmeomeo">
+                    </div>
+                    <div class="form-group">
+                        <label>Compte Bot</label>
+                        <input type="text" id="config-username" placeholder="Ex: meomeobot">
+                    </div>
+                    <div class="form-group">
+                        <label>OAuth Token (Bot)</label>
+                        <input type="password" id="config-token" placeholder="oauth:xxxxxxxxxxxx">
+                    </div>
+
+                    <div class="config-divider"></div>
+
+                    <div class="form-group">
+                        <label>Client ID API</label>
+                        <input type="text" id="config-twitchClientId">
+                    </div>
+                    <div class="form-group">
+                        <label>App Token API</label>
+                        <input type="password" id="config-twitchAppToken">
+                    </div>
+                </div>
+            </div>
+
+            <div class="config-section">
+                <div class="config-group">
+                    <h4>Autres services</h4>
+
+                    <div class="form-group">
+                        <label>Spotify Client ID</label>
+                        <input type="text" id="config-spotifyClientId">
+                    </div>
+                    <div class="form-group">
+                        <label>Spotify Client Secret</label>
+                        <input type="password" id="config-spotifyClientSecret">
+                    </div>
+                    <button class="btn btn-secondary btn-full" id="spotifyAuthBtn" style="margin-bottom: 5px;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                            <path
+                                d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z" />
+                        </svg>
+                        Lier Spotify
+                    </button>
+
+                    <div class="config-divider"></div>
+
+                    <div class="form-group">
+                        <label>Token Streamlabs</label>
+                        <input type="password" id="config-streamlabsSocketToken">
+                    </div>
+                    <div class="form-group">
+                        <label>SteamGridDB Key</label>
+                        <input type="password" id="config-steamGridDbApiKey">
+                    </div>
+                </div>
+            </div>
         </div>
+
+        <div class="config-footer">
+            <button class="btn btn-primary" id="saveConfigBtn">Enregistrer tout</button>
+            <button class="btn btn-success" id="connectBtn">Connecter</button>
+            <button class="btn btn-danger" id="disconnectBtn">Déconnecter</button>
+        </div>
+    </div>
     </div>
     </div>
     </div>

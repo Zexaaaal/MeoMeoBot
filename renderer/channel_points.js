@@ -1,5 +1,5 @@
 import { API } from './api.js';
-import { showStatus, NOTIFICATIONS, ICONS, createDeleteControl, createFilePickerGroup, createInputGroup, createCheckboxGroup, createSliderGroup } from './ui.js';
+import { showNotification, NOTIFICATIONS, ICONS, createDeleteControl } from './ui.js';
 
 
 let rewardsList;
@@ -142,7 +142,7 @@ async function loadRewards() {
         const rewards = await API.points.getRewards();
         rewardsList.innerHTML = '<div class="loading-spinner">Données reçues...</div>';
         renderRewards(rewards);
-        showStatus('points-status-msg', 'Mise à jour réussie', 'success');
+        showNotification('Mise à jour réussie', 'success');
     } catch (e) {
         console.error(e);
         if (e.message && e.message.includes('partner or affiliate status')) {
@@ -153,10 +153,10 @@ async function loadRewards() {
                         La gestion des points de chaîne nécessite le statut <strong>Affilié</strong> ou <strong>Partenaire</strong> Twitch.
                     </p>
                 </div>`;
-            showStatus('points-status-msg', 'Statut requis : Affilié/Partenaire', 'error');
+            showNotification('Statut requis : Affilié/Partenaire', 'error');
         } else {
             rewardsList.innerHTML = '<div class="error-msg">Erreur lors du chargement des récompenses. Vérifiez la connexion du bot.</div>';
-            showStatus('points-status-msg', 'Erreur chargement', 'error');
+            showNotification('Erreur chargement', 'error');
         }
     }
 }
@@ -211,11 +211,11 @@ function renderRewards(rewards) {
                 await window.api.invoke('save-reward-sounds', newSounds);
                 savedRewardSounds = newSounds;
 
-                showStatus('points-status-msg', 'Récompense supprimée', 'success');
+                showNotification('Récompense supprimée', 'success');
                 loadRewards();
             } catch (e) {
                 console.error(e);
-                showStatus('points-status-msg', NOTIFICATIONS.ERROR.DELETE.replace('{error}', e.message), 'error');
+                showNotification(NOTIFICATIONS.ERROR.DELETE.replace('{error}', e.message), 'error');
             }
         });
 
@@ -292,7 +292,7 @@ async function saveReward() {
     const imagePath = imageInput ? (imageInput.dataset.path || '') : '';
 
     if (!title || cost < 1) {
-        showStatus('points-status-msg', 'Nom et coût (>0) requis', 'error');
+        showNotification('Nom et coût (>0) requis', 'error');
         return;
     }
 
@@ -321,12 +321,12 @@ async function saveReward() {
         if (isEditing) {
             try {
                 await API.points.updateReward(editingId, data);
-                showStatus('points-status-msg', 'Récompense modifiée', 'success');
+                showNotification('Récompense modifiée', 'success');
             } catch (e) {
                 const isForbidden = e.message && (e.message.includes('403') || e.message.includes('Forbidden'));
                 if (isForbidden) {
                     console.warn('[POINTS] Cannot edit Twitch reward (not owned). Saving local config only.');
-                    showStatus('points-status-msg', 'Réglages Twitch bloqués (externe), alerte sauvegardée', 'warning');
+                    showNotification('Réglages Twitch bloqués (externe), alerte sauvegardée', 'warning');
                 } else {
                     throw e;
                 }
@@ -334,7 +334,7 @@ async function saveReward() {
         } else {
             const newRew = await API.points.createReward(data);
             finalId = newRew.id;
-            showStatus('points-status-msg', 'Récompense créée', 'success');
+            showNotification('Récompense créée', 'success');
         }
 
         if (finalId) {
@@ -364,7 +364,7 @@ async function saveReward() {
         loadRewards();
     } catch (e) {
         console.error(e);
-        showStatus('points-status-msg', NOTIFICATIONS.ERROR.SAVE + ' ' + (e.message || ''), 'error');
+        showNotification(NOTIFICATIONS.ERROR.SAVE + ' ' + (e.message || ''), 'error');
     }
 }
 

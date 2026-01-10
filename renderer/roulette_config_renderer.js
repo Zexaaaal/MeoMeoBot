@@ -1,15 +1,16 @@
-const { ipcRenderer } = require('electron');
+const api = window.api;
+import { showNotification } from './ui.js';
 
 const widgetHelper = {
     onRefresh: (cb) => {
         const load = async () => {
-            const config = await ipcRenderer.invoke('get-widget-config', 'roulette');
+            const config = await api.invoke('get-widget-config', 'roulette');
             cb(config);
         };
         load();
-        ipcRenderer.on('refresh-widget-urls', load);
+        api.on('refresh-widget-urls', load);
     },
-    getUrl: () => ipcRenderer.invoke('get-widget-url', 'roulette')
+    getUrl: () => api.invoke('get-widget-url', 'roulette')
 };
 
 let choices = [];
@@ -86,17 +87,14 @@ async function saveConfig() {
     try {
         const cleanChoices = choices.map(c => c.trim()).filter(c => c.length > 0);
 
-        await ipcRenderer.invoke('save-widget-config', 'roulette', { choices: cleanChoices });
+        await api.invoke('save-widget-config', 'roulette', { choices: cleanChoices });
 
         const iframe = document.getElementById('preview-frame');
         if (iframe) iframe.src = iframe.src;
 
-        const saveBtn = document.getElementById('saveBtn');
-        const originalText = saveBtn.textContent;
-        saveBtn.textContent = 'Sauvegardé !';
-        setTimeout(() => saveBtn.textContent = originalText, 2000);
+        showNotification('Sauvegardé !');
 
     } catch (e) {
-        console.error('Error saving config:', e);
+        showNotification('Error saving config: ' + e.message, 'error');
     }
 }

@@ -1,4 +1,4 @@
-import { showStatus, createDeleteControl, ICONS, NOTIFICATIONS } from './ui.js';
+import { showNotification, createDeleteControl, ICONS, NOTIFICATIONS } from './ui.js';
 import { API } from './api.js';
 
 export async function loadCommands() {
@@ -93,10 +93,10 @@ export async function loadCommands() {
                         await API.commands.remove(cmd);
                     }
                     await API.commands.add(finalCmd, newResp);
-                    showStatus('commands-status-msg', NOTIFICATIONS.SUCCESS.COMMAND_MODIFIED, 'success');
+                    showNotification(NOTIFICATIONS.SUCCESS.COMMAND_MODIFIED, 'success');
                     loadCommands();
                 } catch (e) {
-                    showStatus('commands-status-msg', NOTIFICATIONS.ERROR.GENERIC.replace('{error}', e), 'error');
+                    showNotification(NOTIFICATIONS.ERROR.GENERIC.replace('{error}', e), 'error');
                 }
             };
 
@@ -125,7 +125,7 @@ export async function addCommand() {
     const resp = respInput.value.trim();
 
     if (!cmd || !resp) {
-        showStatus('commands-status-msg', NOTIFICATIONS.ERROR.MISSING_FIELDS, 'error');
+        showNotification(NOTIFICATIONS.ERROR.MISSING_FIELDS, 'error');
         return;
     }
 
@@ -136,9 +136,9 @@ export async function addCommand() {
         cmdInput.value = '';
         respInput.value = '';
         loadCommands();
-        showStatus('commands-status-msg', NOTIFICATIONS.COMMAND_ADDED.replace('{cmd}', finalCmd), 'success');
+        showNotification(NOTIFICATIONS.COMMAND_ADDED.replace('{cmd}', finalCmd), 'success');
     } catch (error) {
-        showStatus('commands-status-msg', NOTIFICATIONS.ERROR.ADD.replace('{error}', error), 'error');
+        showNotification(NOTIFICATIONS.ERROR.ADD.replace('{error}', error), 'error');
     }
 }
 
@@ -147,6 +147,6 @@ async function removeCommand(command) {
         await API.commands.remove(command);
         loadCommands();
     } catch (error) {
-        showStatus('commands-status-msg', NOTIFICATIONS.ERROR.DELETE.replace('{error}', error), 'error');
+        showNotification(NOTIFICATIONS.ERROR.DELETE.replace('{error}', error), 'error');
     }
 }

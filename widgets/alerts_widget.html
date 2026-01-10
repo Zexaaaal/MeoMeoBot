@@ -20,15 +20,6 @@
             opacity: 0;
             transition: opacity 0.5s;
         }
-
-        .layout-side-by-side {
-            flex-direction: row !important;
-        }
-
-        .layout-side-by-side .alert-image {
-            margin-right: 30px;
-            margin-bottom: 0;
-        }
     </style>
     <style>
         /* __CUSTOM_CSS__ */
@@ -136,9 +127,6 @@
                     imgContainer.appendChild(img);
                 }
 
-                if (alert.layout === 'side') {
-                    container.classList.add('layout-side-by-side');
-                }
 
                 container.classList.remove('animate-out');
                 void container.offsetWidth;

@@ -1,4 +1,4 @@
-import { showStatus, NOTIFICATIONS } from './ui.js';
+import { showNotification, NOTIFICATIONS } from './ui.js';
 import { API } from './api.js';
 
 export async function loadParticipants() {
@@ -50,7 +50,7 @@ export async function startGiveaway() {
         updateGiveawayStatus(true);
         loadParticipants();
     } catch (error) {
-        showStatus('giveaway-control-status-msg', NOTIFICATIONS.ERROR.START.replace('{error}', error), 'error');
+        showNotification(NOTIFICATIONS.ERROR.START.replace('{error}', error), 'error');
     }
 }
 
@@ -59,7 +59,7 @@ export async function stopGiveaway() {
         await API.giveaway.stop();
         updateGiveawayStatus(false);
     } catch (error) {
-        showStatus('giveaway-control-status-msg', NOTIFICATIONS.ERROR.STOP.replace('{error}', error), 'error');
+        showNotification(NOTIFICATIONS.ERROR.STOP.replace('{error}', error), 'error');
     }
 }
 
@@ -73,10 +73,10 @@ export async function drawWinner() {
             display.classList.add('animate-winner');
         } else {
             display.textContent = NOTIFICATIONS.GIVEAWAY_NO_PARTICIPANT;
-            showStatus('giveaway-control-status-msg', NOTIFICATIONS.GIVEAWAY_NO_PARTICIPANT, 'error');
+            showNotification(NOTIFICATIONS.GIVEAWAY_NO_PARTICIPANT, 'error');
         }
     } catch (error) {
-        showStatus('giveaway-control-status-msg', NOTIFICATIONS.ERROR.GENERIC.replace('{error}', error), 'error');
+        showNotification(NOTIFICATIONS.ERROR.GENERIC.replace('{error}', error), 'error');
     }
 }
 
@@ -85,9 +85,9 @@ export async function clearParticipants() {
         await API.giveaway.clearParticipants();
         loadParticipants();
         document.getElementById('winnerDisplay').textContent = '';
-        showStatus('giveaway-control-status-msg', NOTIFICATIONS.SUCCESS.CLEARED, 'success');
+        showNotification(NOTIFICATIONS.SUCCESS.CLEARED, 'success');
     } catch (error) {
-        showStatus('giveaway-control-status-msg', NOTIFICATIONS.ERROR.CLEAR.replace('{error}', error), 'error');
+        showNotification(NOTIFICATIONS.ERROR.CLEAR.replace('{error}', error), 'error');
     }
 }
 
@@ -104,9 +104,9 @@ export async function saveGiveawayConfig() {
             giveawayStopMessage: stopMsg,
             giveawayWinMessage: winMsg
         });
-        showStatus('giveaway-status-msg', NOTIFICATIONS.SUCCESS.SAVED, 'success');
+        showNotification(NOTIFICATIONS.SUCCESS.SAVED, 'success');
     } catch (error) {
-        showStatus('giveaway-status-msg', NOTIFICATIONS.ERROR.SAVE, 'error');
+        showNotification(NOTIFICATIONS.ERROR.SAVE, 'error');
         console.error(error);
     }
 }

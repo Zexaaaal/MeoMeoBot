@@ -120,12 +120,7 @@
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
 }
 
-.form-group {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    flex: 1;
-}
+/* Base .form-group handled by global.css */
 
 .checkbox-group {
     flex-direction: row-reverse;
@@ -140,9 +135,6 @@
 }
 
 .form-group label {
-    color: var(--text-secondary);
-    font-size: 12px;
-    font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.5px;
 }
@@ -151,22 +143,7 @@
 .form-group input[type="number"],
 .form-group textarea,
 .form-group select {
-    background: var(--bg-tertiary);
-    border: 1px solid var(--border);
-    color: var(--text-primary);
-    padding: 10px;
-    border-radius: 6px;
-    font-family: inherit;
-    font-size: 14px;
-    outline: none;
-    transition: border-color 0.2s;
     height: 40px;
-}
-
-.form-group input:focus,
-.form-group select:focus,
-.form-group textarea:focus {
-    border-color: var(--accent);
 }
 
 
@@ -177,4 +154,34 @@
 .alerts-config-area::-webkit-scrollbar-thumb {
     background: var(--border);
     border-radius: 3px;
+}
+
+.alert-config-group {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+#alert-theme-editor {
+    flex: 1;
+}
+
+#alert-theme-editor textarea.css-editor-textarea {
+    flex: 1;
+    width: 100%;
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    resize: none;
+    margin: 20px 0;
+    padding: 10px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+}
+
+.theme-controls {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
 }

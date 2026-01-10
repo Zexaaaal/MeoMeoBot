@@ -232,8 +232,9 @@ function openSubgoalsConfigWindow() {
         show: false,
         frame: false,
         webPreferences: {
-            nodeIntegration: true,
-            contextIsolation: false
+            nodeIntegration: false,
+            contextIsolation: true,
+            preload: path.join(__dirname, 'preload.js')
         }
     });
 
@@ -271,8 +272,9 @@ function openRouletteConfigWindow() {
         show: false,
         frame: false,
         webPreferences: {
-            nodeIntegration: true,
-            contextIsolation: false
+            nodeIntegration: false,
+            contextIsolation: true,
+            preload: path.join(__dirname, 'preload.js')
         }
     });
 
@@ -406,7 +408,7 @@ app.on('before-quit', () => {
 
 ipcMain.on('window-control', (event, action) => {
     const window = BrowserWindow.getFocusedWindow();
-    if (!window) return;
+    if (!window || !['minimize', 'maximize', 'close'].includes(action)) return;
     switch (action) {
         case 'minimize': window.minimize(); break;
         case 'maximize': window.isMaximized() ? window.unmaximize() : window.maximize(); break;
@@ -837,6 +839,7 @@ ipcMain.handle('get-badge-prefs', () => {
 });
 
 ipcMain.handle('save-badge-prefs', (event, prefs) => {
+    if (!prefs || typeof prefs !== 'object') throw new Error('Invalid arguments');
     bot.saveWidgetConfig('chat', { badgePrefs: prefs });
     if (chatServer) chatServer.broadcastConfig({ badgePrefs: prefs });
     return { success: true };
@@ -996,6 +999,7 @@ ipcMain.handle('disconnect-bot', async () => { bot.disconnect(); return { succes
 ipcMain.handle('get-config', () => bot.getConfig());
 
 ipcMain.handle('update-config', (event, newConfig) => {
+    if (!newConfig || typeof newConfig !== 'object') throw new Error('Invalid arguments');
     bot.updateConfig(newConfig);
     if (newConfig.clipCooldown !== undefined) {
         bot.setClipCooldown(newConfig.clipCooldown);
@@ -1006,8 +1010,16 @@ ipcMain.handle('update-config', (event, newConfig) => {
     return { success: true };
 });
 ipcMain.handle('get-commands', () => ({ commands: bot.getCommands() }));
-ipcMain.handle('add-command', (event, command, response) => { bot.addCommand(command, response); return { success: true }; });
-ipcMain.handle('remove-command', (event, command) => { bot.removeCommand(command); return { success: true }; });
+ipcMain.handle('add-command', (event, command, response) => {
+    if (typeof command !== 'string' || typeof response !== 'string') throw new Error('Invalid arguments');
+    bot.addCommand(command, response);
+    return { success: true };
+});
+ipcMain.handle('remove-command', (event, command) => {
+    if (typeof command !== 'string') throw new Error('Invalid arguments');
+    bot.removeCommand(command);
+    return { success: true };
+});
 ipcMain.handle('start-giveaway', () => { bot.startGiveaway(); return { success: true }; });
 ipcMain.handle('stop-giveaway', () => { bot.stopGiveaway(); return { success: true }; });
 ipcMain.handle('draw-winner', () => { const winner = bot.drawWinner(); return { success: true, winner }; });
@@ -1015,6 +1027,7 @@ ipcMain.handle('clear-participants', () => { bot.clearParticipants(); return { s
 ipcMain.handle('get-participants', () => bot.getParticipants());
 ipcMain.handle('is-giveaway-active', () => bot.isGiveawayActive());
 ipcMain.handle('save-config', (event, config) => {
+    if (!config || typeof config !== 'object') throw new Error('Invalid configuration object');
     bot.updateConfig(config);
     if (config.clipCooldown !== undefined) bot.setClipCooldown(config.clipCooldown);
     if (config.streamlabsSocketToken !== undefined && streamlabsClient) {
@@ -1032,11 +1045,22 @@ ipcMain.handle('start-spotify-auth', async () => {
 
 ipcMain.handle('get-participants-count', () => ({ count: bot.getParticipantsCount(), participants: bot.getParticipants() }));
 ipcMain.handle('get-banned-words', () => ({ bannedWords: bot.getBannedWords() }));
-ipcMain.handle('add-banned-word', (event, word) => { const bannedWords = bot.addBannedWord(word); return { success: true, bannedWords }; });
-ipcMain.handle('remove-banned-word', (event, word) => { const bannedWords = bot.removeBannedWord(word); return { success: true, bannedWords }; });
+ipcMain.handle('add-banned-word', (event, word) => {
+    if (typeof word !== 'string') throw new Error('Invalid arguments');
+    const bannedWords = bot.addBannedWord(word);
+    return { success: true, bannedWords };
+});
+ipcMain.handle('remove-banned-word', (event, word) => {
+    if (typeof word !== 'string') throw new Error('Invalid arguments');
+    const bannedWords = bot.removeBannedWord(word);
+    return { success: true, bannedWords };
+});
 ipcMain.handle('clear-banned-words', async () => { if (bot) { bot.clearBannedWords(); return { success: true }; } return { success: false }; });
 ipcMain.handle('get-bot-status', () => ({ connected: bot.isConnected, channel: bot.getConfig().channel }));
 ipcMain.handle('open-external-url', async (event, url) => {
+    if (!url || typeof url !== 'string' || !/^https?:\/\//.test(url)) {
+        throw new Error('Invalid URL protocol. Only http/https allowed.');
+    }
     await shell.openExternal(url);
     return { success: true };
 });

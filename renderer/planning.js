@@ -1,5 +1,5 @@
-
 const api = window.api;
+import { showNotification } from './ui.js';
 
 let currentState = {
     weekStart: new Date(),
@@ -158,22 +158,20 @@ function setupEventListeners() {
         document.body.appendChild(clone);
 
         try {
-            // Wait for all images in the clone to be loaded
             const images = Array.from(clone.querySelectorAll('img'));
             await Promise.all(images.map(img => {
                 if (img.complete) return Promise.resolve();
                 return new Promise(resolve => {
                     img.onload = resolve;
-                    img.onerror = resolve; // Continue even if one fails
+                    img.onerror = resolve;
                 });
             }));
 
-            // Small extra delay for fonts/styles
             await new Promise(r => setTimeout(r, 200));
 
             const canvas = await html2canvas(clone, {
                 backgroundColor: null,
-                scale: 2, // Double scale for better quality
+                scale: 2,
                 width: 1800,
                 height: 940,
                 useCORS: true,
@@ -186,11 +184,11 @@ function setupEventListeners() {
             if (res.success) {
 
             } else if (res.error) {
-                alert('Erreur: ' + res.error);
+                showNotification('Erreur: ' + res.error);
             }
         } catch (err) {
             console.error(err);
-            alert('Erreur export: ' + err.message);
+            showNotification('Erreur export: ' + err.message);
         } finally {
             document.body.removeChild(clone);
         }
@@ -316,7 +314,7 @@ function importPreviousState() {
 
     } catch (e) {
         console.error("Error importing previous state", e);
-        alert("Erreur lors de l'import : " + e.message);
+        showNotification("Erreur lors de l'import : " + e.message);
     }
 }
 
@@ -895,7 +893,7 @@ async function syncToTwitch() {
         loadTwitchSchedule();
     } catch (e) {
         console.error("Sync failed", e);
-        alert("Erreur lors de la synchro: " + e.message);
+        showNotification("Erreur lors de la synchro: " + e.message);
     } finally {
         els.saveTwitchBtn.disabled = false;
         els.saveTwitchBtn.innerHTML = 'Sync Twitch';

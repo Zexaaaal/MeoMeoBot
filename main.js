@@ -930,7 +930,7 @@ ipcMain.handle('select-folder', async () => {
 
 ipcMain.handle('get-videos', async (event, folderPath) => {
     if (!folderPath) return [];
-    const validExtensions = ['.webp', '.mov', '.avi', '.mp4'];
+    const validExtensions = ['.webp', '.mov', '.avi', '.mp4', '.mkv', '.m4v'];
     try {
         const files = await fs.promises.readdir(folderPath);
         const videos = files.filter(file => validExtensions.includes(path.extname(file).toLowerCase()));
@@ -953,7 +953,7 @@ ipcMain.handle('get-videos', async (event, folderPath) => {
                                 console.error("\x1b[33m%s\x1B[0m", `[AVERTISSEMENT MINIATURE] échec pour ${videoFile}: ${err.message}. Utilisation d'un placeholder.`);
                                 resolve();
                             })
-                            .screenshots({ timestamps: ['1%'], filename: thumbnailFileName, folder: cachePath, size: '320x180' });
+                            .screenshots({ timestamps: ['00:00:02'], filename: thumbnailFileName, folder: cachePath, size: '320x180' });
                     });
                 } catch (e) {
                     console.error("\x1b[33m%s\x1b[0m", `[AVERTISSEMENT MINIATURE MAJEUR] échec total de la tentative pour ${videoFile}.`);

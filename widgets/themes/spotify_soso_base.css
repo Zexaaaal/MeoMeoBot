@@ -1,0 +1,64 @@
+body {
+    background: transparent;
+}
+
+#spotify-wrapper {
+    display: flex;
+    width: auto;
+    height: auto;
+    position: absolute;
+    left: 30px;
+    backdrop-filter: blur(8px);
+    transform: translateY(185%);
+}
+
+.spotify-card {
+    display: flex;
+    grid-template-columns: 140px 1fr;
+    gap: 20px;
+    padding: 6px 12px 6px 6px;
+    border-radius: 16px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.08);
+    box-shadow: 0 0 10px 10px rgba(0,0,0,0.06);
+    font-family: Arial;
+    max-width: 520px;
+}
+
+.spotify-cover {
+    width: 92px;
+    height: 92px;
+    border-radius: 10px;
+    object-fit: cover;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    background: #111;
+}
+
+.spotify-infos {
+    display: flex;
+    flex-direction: column;
+    justify-content:center;
+    gap: 6px;
+}
+
+.spotify-title {
+    font-size: 20px;
+    font-weight: 700;
+    line-height: 1.2;
+    text-shadow: 1px 1px 1px #c7c7c7;
+}
+
+.spotify-artist {
+    font-size: 18px;
+    color: #ffffff;
+    text-shadow: 1px 1px 1px #c7c7c7;
+}
+
+
+.spotify-album {
+    display: none;
+}
+
+.pill {
+        display: none;
+}

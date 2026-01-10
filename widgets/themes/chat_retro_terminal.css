@@ -1,0 +1,40 @@
+@import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
+
+body {
+    font-family: 'VT323', monospace;
+    background-color: rgba(0, 0, 0, 0.9);
+}
+
+.msg-group {
+    background: black;
+    border: 1px solid #33ff00;
+    border-radius: 0;
+    padding: 8px;
+    margin-bottom: 8px;
+    box-shadow: none;
+}
+
+.msg-username {
+    color: #33ff00 !important;
+    text-transform: lowercase;
+}
+
+.msg-username::before {
+    content: '<';
+    color: #33ff00;
+}
+
+.msg-username::after {
+    content: '>';
+    color: #33ff00;
+}
+
+.msg-line {
+    color: #33ff00;
+    font-size: 1.2em;
+    text-shadow: 0 0 2px #33ff00;
+}
+
+.badge-img {
+    filter: grayscale(100%) sepia(100%) hue-rotate(50deg) saturate(500%);
+}

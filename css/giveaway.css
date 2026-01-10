@@ -1,0 +1,67 @@
+.giveaway-layout {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    gap: 20px;
+    height: 100%;
+}
+
+.giveaway-main {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    height: 100%;
+}
+
+.giveaway-main .winner-display {
+    padding-bottom: 15px;
+    margin-bottom: 15px;
+    flex-shrink: 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--accent);
+    text-align: center;
+    padding: 20px 0;
+}
+
+#saveGiveawayConfig {
+    margin-bottom: 0;
+}
+
+.config-card-layout {
+    display: flex;
+    flex-direction: column;
+    padding-bottom: 20px;
+}
+
+.form-group.flex-group {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.form-group.flex-group textarea {
+    flex: 1;
+    resize: none;
+    min-height: 60px;
+}
+
+.config-actions {
+    right: 10px;
+    top: 5px;
+}
+
+.giveaway-controls-wrapper {
+    display: flex;
+    gap: 10px;
+    padding: 10px 0;
+}
+
+.giveaway-main .list-item {
+    background: none;
+    border: none;
+    padding: 2px 0;
+    margin-bottom: 0;
+    color: var(--text-primary);
+    justify-content: flex-start;
+}

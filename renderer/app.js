@@ -1,0 +1,411 @@
+import { setupTabs } from './tabs.js';
+import { setupWindowControls, setupConfirmationOverlay, updateUpdaterStatus, setupInlineConfirmLogic, NOTIFICATIONS, showNotification } from './ui.js';
+import { API } from './api.js';
+import { loadParticipants, startGiveaway, stopGiveaway, drawWinner, clearParticipants, saveGiveawayConfig } from './giveaway.js';
+import { loadCommands, addCommand } from './commands.js';
+import { loadBannedWords, addBannedWord, clearBannedWords, saveAutoMessage, saveClipConfig } from './moderation.js';
+import { setupCast } from './cast.js';
+import { initPlanning } from './planning.js';
+
+
+window.editWidgetCss = (widgetName) => {
+    API.widgets.openCssEditor(widgetName);
+};
+
+document.addEventListener('DOMContentLoaded', initializeApp);
+
+async function initializeApp() {
+    setupTabs();
+    setupWindowControls();
+    setupConfirmationOverlay();
+    setupCast();
+    initPlanning();
+    setupEventListeners();
+
+    await loadAllData();
+    updateUpdaterStatus('checking');
+
+    loadWidgetUrls();
+    loadEmoteWallConfig();
+    loadBadgePrefs();
+    setupSubgoalsConfig();
+    setupRouletteConfig();
+}
+
+async function loadAllData() {
+    try {
+        const config = await API.getConfig();
+        updateConfigForm(config);
+
+        await loadCommands();
+        await loadBannedWords();
+        await loadParticipants();
+
+        const status = await API.getBotStatus();
+        updateBotStatus(status.connected ? 'connected' : 'disconnected');
+    } catch (error) {
+        console.error(error);
+        const el = document.getElementById('connectionStatus');
+        if (el) {
+            el.className = 'status disconnected';
+            el.querySelector('span:last-child').textContent = 'Erreur Chargement';
+            el.title = error.message || error;
+        }
+    }
+}
+
+function setupEventListeners() {
+    document.getElementById('connectBtn').addEventListener('click', connectBot);
+    document.getElementById('disconnectBtn').addEventListener('click', disconnectBot);
+    document.getElementById('saveConfigBtn').addEventListener('click', saveConfig);
+
+    document.getElementById('addCommandBtn').addEventListener('click', addCommand);
+    document.getElementById('newCommand').addEventListener('keydown', (e) => { if (e.key === 'Enter') document.getElementById('commandResponse').focus(); });
+    document.getElementById('commandResponse').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); addCommand(); } });
+
+    document.getElementById('saveGiveawayConfig').addEventListener('click', saveGiveawayConfig);
+    document.getElementById('startGiveawayBtn').addEventListener('click', startGiveaway);
+    document.getElementById('stopGiveawayBtn').addEventListener('click', stopGiveaway);
+    document.getElementById('drawWinnerBtn').addEventListener('click', drawWinner);
+    document.getElementById('clearParticipantsBtn').addEventListener('click', () => window.showConfirmation('Vider la liste des participants ?', clearParticipants));
+
+    const addBannedWordBtn = document.getElementById('addBannedWordBtn');
+    const newBannedWordInput = document.getElementById('newBannedWord');
+    if (addBannedWordBtn) addBannedWordBtn.addEventListener('click', addBannedWord);
+    if (newBannedWordInput) {
+        newBannedWordInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                addBannedWord();
+            }
+        });
+    }
+
+    setupInlineConfirmLogic(
+        document.getElementById('clearBannedWordsBtn'),
+        document.getElementById('confirmClearBannedWordsBtn'),
+        document.getElementById('cancelClearBannedWordsBtn'),
+        clearBannedWords
+    );
+
+    document.getElementById('saveAutoMessage').addEventListener('click', saveAutoMessage);
+    const spotifyAuthBtn = document.getElementById('spotifyAuthBtn');
+    if (spotifyAuthBtn) spotifyAuthBtn.addEventListener('click', startSpotifyAuth);
+    const resetChatConfigBtn = document.getElementById('resetChatConfigBtn');
+    if (resetChatConfigBtn) {
+        let resetTimeout;
+        resetChatConfigBtn.addEventListener('click', async () => {
+            if (!resetChatConfigBtn.classList.contains('confirming')) {
+                resetChatConfigBtn.classList.add('confirming');
+                const originalText = resetChatConfigBtn.textContent;
+                resetChatConfigBtn.dataset.originalText = originalText;
+                resetChatConfigBtn.textContent = 'Sûr ?';
+
+                resetTimeout = setTimeout(() => {
+                    resetChatConfigBtn.classList.remove('confirming');
+                    resetChatConfigBtn.textContent = originalText;
+                }, 3000);
+                return;
+            }
+
+            clearTimeout(resetTimeout);
+            resetChatConfigBtn.classList.remove('confirming');
+            resetChatConfigBtn.textContent = resetChatConfigBtn.dataset.originalText || 'Reset Config';
+
+            try {
+                await API.widgets.resetConfig('chat');
+                showNotification(NOTIFICATIONS.SUCCESS.CONFIG_RESET, 'success');
+            } catch (e) {
+                showNotification(NOTIFICATIONS.ERROR.GENERIC.replace('{error}', e), 'error');
+            }
+        });
+    }
+
+    const saveEmoteWallBtn = document.getElementById('saveEmoteWallConfig');
+    if (saveEmoteWallBtn) saveEmoteWallBtn.addEventListener('click', saveEmoteWallConfig);
+
+    const updateStatus = document.getElementById('updateStatus');
+    updateStatus.addEventListener('click', (e) => {
+        if (!e.target.closest('.update-popover') && (updateStatus.classList.contains('update-available') || updateStatus.classList.contains('downloaded'))) {
+            updateStatus.classList.toggle('active');
+        }
+    });
+    document.getElementById('update-confirm-icon').addEventListener('click', (e) => {
+        e.stopPropagation();
+        const updateStatus = document.getElementById('updateStatus');
+        if (updateStatus.classList.contains('update-available')) {
+            API.updates.startDownload();
+        } else if (updateStatus.classList.contains('downloaded')) {
+            API.updates.quitAndInstall();
+        }
+    });
+    document.getElementById('update-deny-icon').addEventListener('click', (e) => {
+        e.stopPropagation();
+        updateStatus.classList.remove('active');
+    });
+
+    window.api.on('bot-status', (status) => updateBotStatus(status.connected ? 'connected' : 'disconnected'));
+    window.api.on('update-status-check', (data) => updateUpdaterStatus(data.status));
+    window.api.on('update-available', () => updateUpdaterStatus('update-available'));
+    window.api.on('update-downloaded', () => updateUpdaterStatus('downloaded'));
+    window.api.on('notification', (msg, type) => showNotification(msg, type));
+    window.api.on('participants-updated', () => loadParticipants());
+    window.api.on('refresh-widget-urls', () => loadWidgetUrls());
+}
+
+async function connectBot() {
+    try {
+        const result = await API.connectBot();
+        if (result.success) showNotification(NOTIFICATIONS.SUCCESS.CONNECTED, 'success');
+        else showNotification(NOTIFICATIONS.ERROR.CONNECT.replace('{error}', result.error), 'error');
+    } catch (e) { showNotification(NOTIFICATIONS.ERROR.GENERIC.replace('{error}', e), 'error'); }
+}
+
+async function disconnectBot() {
+    try {
+        await API.disconnectBot();
+        showNotification(NOTIFICATIONS.SUCCESS.DISCONNECTED, 'info');
+    } catch (e) { showNotification(NOTIFICATIONS.ERROR.GENERIC.replace('{error}', e), 'error'); }
+}
+
+async function saveConfig() {
+    const config = {
+        channel: document.getElementById('config-channel').value,
+        username: document.getElementById('config-username').value,
+        token: document.getElementById('config-token').value,
+        twitchClientId: document.getElementById('config-twitchClientId').value,
+        twitchAppToken: document.getElementById('config-twitchAppToken').value,
+        spotifyClientId: document.getElementById('config-spotifyClientId').value,
+        spotifyClientSecret: document.getElementById('config-spotifyClientSecret').value,
+        streamlabsSocketToken: document.getElementById('config-streamlabsSocketToken').value,
+        steamGridDbApiKey: document.getElementById('config-steamGridDbApiKey').value,
+
+        giveawayCommand: document.getElementById('giveawayCommand').value,
+        giveawayStartMessage: document.getElementById('giveawayStartMessage').value,
+        giveawayStopMessage: document.getElementById('giveawayStopMessage').value,
+        giveawayWinMessage: document.getElementById('giveawayWinMessage').value,
+        autoMessage: document.getElementById('autoMessage').value,
+        autoMessageInterval: parseInt(document.getElementById('autoMessageInterval').value),
+        clipCooldown: parseInt(document.getElementById('clipCooldown').value)
+    };
+
+    try {
+        await API.saveConfig(config);
+        showNotification(NOTIFICATIONS.SUCCESS.SAVED, 'success');
+    } catch (e) { showNotification(NOTIFICATIONS.ERROR.SAVE + ': ' + e, 'error'); }
+}
+
+function updateConfigForm(config) {
+    if (!config) return;
+
+    document.getElementById('config-channel').value = config.channel || '';
+    document.getElementById('config-username').value = config.username || '';
+    document.getElementById('config-token').value = config.token || '';
+    document.getElementById('config-twitchClientId').value = config.twitchClientId || '';
+    document.getElementById('config-twitchAppToken').value = config.twitchAppToken || '';
+    document.getElementById('config-spotifyClientId').value = config.spotifyClientId || '';
+    document.getElementById('config-spotifyClientSecret').value = config.spotifyClientSecret || '';
+    document.getElementById('config-streamlabsSocketToken').value = config.streamlabsSocketToken || '';
+    document.getElementById('config-steamGridDbApiKey').value = config.steamGridDbApiKey || '';
+
+    document.getElementById('giveawayCommand').value = config.giveawayCommand || '!giveaway';
+    document.getElementById('giveawayStartMessage').value = config.giveawayStartMessage !== undefined ? config.giveawayStartMessage : 'Le giveaway commence ! Tape !giveaway pour participer.';
+    document.getElementById('giveawayStopMessage').value = config.giveawayStopMessage !== undefined ? config.giveawayStopMessage : 'Le giveaway est terminé !';
+    document.getElementById('giveawayWinMessage').value = config.giveawayWinMessage !== undefined ? config.giveawayWinMessage : 'Félicitations {winner} !';
+
+    document.getElementById('autoMessage').value = config.autoMessage || '';
+    document.getElementById('autoMessageInterval').value = config.autoMessageInterval || 10;
+    document.getElementById('clipCooldown').value = config.clipCooldown || 30;
+}
+
+function updateBotStatus(status) {
+    const el = document.getElementById('connectionStatus');
+    const dot = el.querySelector('.status-dot');
+    const text = el.querySelector('span:not(.status-dot)');
+
+    el.className = 'status';
+    if (status === 'connected') {
+        el.classList.add('connected');
+        text.textContent = 'Connecté';
+    } else {
+        el.classList.add('disconnected');
+        text.textContent = 'Déconnecté';
+    }
+}
+
+async function loadWidgetUrls() {
+    try {
+        const urls = await API.widgets.getUrls();
+        if (document.getElementById('widgetUrlDisplay')) document.getElementById('widgetUrlDisplay').textContent = urls.chat;
+        if (document.getElementById('spotifyWidgetUrlDisplay')) document.getElementById('spotifyWidgetUrlDisplay').textContent = urls.spotify;
+        if (document.getElementById('emoteWallWidgetUrlDisplay')) document.getElementById('emoteWallWidgetUrlDisplay').textContent = urls.emoteWall;
+        if (document.getElementById('subgoalsWidgetUrlDisplay')) document.getElementById('subgoalsWidgetUrlDisplay').textContent = urls.subgoals;
+        if (document.getElementById('subgoalsListWidgetUrlDisplay')) document.getElementById('subgoalsListWidgetUrlDisplay').textContent = urls.subgoalsList;
+        if (document.getElementById('rouletteWidgetUrlDisplay')) document.getElementById('rouletteWidgetUrlDisplay').textContent = urls.roulette;
+    } catch (e) { console.error('Erreur URLs widgets', e); }
+}
+
+async function startSpotifyAuth() {
+    try {
+        await API.startSpotifyAuth();
+    } catch (e) { showNotification('Erreur Auth Spotify: ' + e, 'error'); }
+}
+
+async function loadBadgePrefs() {
+    try {
+        const prefs = await API.getBadgePrefs();
+        renderBadgePrefs(prefs);
+    } catch (e) { console.error('Erreur de chargement badges', e); }
+}
+
+function renderBadgePrefs(prefs) {
+    const container = document.getElementById('badgePrefs');
+    if (!container) return;
+    container.innerHTML = '';
+
+    const grid = document.createElement('div');
+    grid.className = 'badge-grid';
+
+    const badges = [
+        { id: 'moderator', label: 'Modérateur' },
+        { id: 'vip', label: 'VIP' },
+        { id: 'subscriber', label: 'Abonné' },
+        { id: 'founder', label: 'Fondateur' },
+        { id: 'partner', label: 'Partenaire' },
+        { id: 'premium', label: 'Prime Gaming' }
+    ];
+
+    badges.forEach(badge => {
+        const isChecked = prefs[badge.id] !== false;
+        const label = document.createElement('label');
+        label.innerHTML = `<input type="checkbox" data-badge="${badge.id}" ${isChecked ? 'checked' : ''}> ${badge.label}`;
+        grid.appendChild(label);
+    });
+
+    container.appendChild(grid);
+}
+
+async function saveBadgePrefs() {
+    const checkboxes = document.querySelectorAll('#badgePrefs input[type="checkbox"]');
+    const prefs = {};
+    checkboxes.forEach(cb => {
+        prefs[cb.dataset.badge] = cb.checked;
+    });
+    try {
+        await API.saveBadgePrefs(prefs);
+        showNotification('Préférences sauvegardées', 'success');
+    } catch (e) { showNotification('Erreur sauvegarde badges: ' + e, 'error'); }
+}
+
+async function loadEmoteWallConfig() {
+    try {
+        const config = await API.widgets.getConfig('emote-wall');
+        if (config) {
+            if (document.getElementById('emoteWallMinSize')) document.getElementById('emoteWallMinSize').value = config.minSize || 24;
+            if (document.getElementById('emoteWallMaxSize')) document.getElementById('emoteWallMaxSize').value = config.maxSize || 64;
+            if (document.getElementById('emoteWallSpawnInterval')) document.getElementById('emoteWallSpawnInterval').value = config.spawnInterval || 100;
+            if (document.getElementById('emoteWallDuration')) document.getElementById('emoteWallDuration').value = config.animationDuration || 5000;
+        }
+    } catch (e) { console.error('Erreur chargement de la config Emote Wall', e); }
+}
+
+async function saveEmoteWallConfig() {
+    const config = {
+        minSize: parseInt(document.getElementById('emoteWallMinSize').value, 10),
+        maxSize: parseInt(document.getElementById('emoteWallMaxSize').value, 10),
+        spawnInterval: parseInt(document.getElementById('emoteWallSpawnInterval').value, 10),
+        animationDuration: parseInt(document.getElementById('emoteWallDuration').value, 10)
+    };
+    try {
+        await API.widgets.saveConfig('emote-wall', config);
+        showNotification('Config Mur d\'Emotes sauvegardée', 'success');
+    } catch (e) { showNotification('Erreur de la sauvegarde Emote Wall: ' + e, 'error'); }
+}
+
+
+let subgoalsSteps = [];
+
+function setupSubgoalsConfig() {
+    const configureBtn = document.getElementById('configureSubgoalsBtn');
+
+    if (configureBtn) {
+        configureBtn.addEventListener('click', async () => {
+
+
+
+            API.widgets.openSubgoalsConfig();
+        });
+    }
+}
+
+function setupRouletteConfig() {
+    const configureBtn = document.getElementById('configureRouletteBtn');
+    if (configureBtn) {
+        configureBtn.addEventListener('click', async () => {
+            await API.widgets.openRouletteConfig();
+        });
+    }
+
+    const spinBtn = document.getElementById('spinRouletteBtn');
+    if (spinBtn) {
+        spinBtn.addEventListener('click', async () => {
+            try {
+                await API.widgets.triggerRouletteSpin();
+                showNotification('Roulette lancée', 'success');
+            } catch (e) {
+                showNotification('Erreur lancement roulette: ' + e, 'error');
+            }
+        });
+    }
+}
+
+async function loadSubgoalsConfig() {
+    try {
+        const config = await API.widgets.getConfig('subgoals');
+        if (config) {
+            document.getElementById('subgoalsStartCount').value = config.startCount || 0;
+            document.getElementById('subgoalsGoalCount').value = config.goalCount || 100;
+            subgoalsSteps = config.steps || [];
+            renderSubgoalsSteps();
+        }
+    } catch (e) { console.error('Erreur du chargement de la config Subgoals', e); }
+}
+
+function renderSubgoalsSteps() {
+    const container = document.getElementById('subgoalsStepsList');
+    container.innerHTML = '';
+
+    subgoalsSteps.forEach((step, index) => {
+        const div = document.createElement('div');
+        div.className = 'list-item';
+        div.innerHTML = `
+            <span><strong>${step.count}</strong> : ${step.label}</span>
+            <button class="btn-link delete-btn" data-index="${index}" title="Supprimer">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" style="pointer-events: none;">
+                    <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2-2h4a2 2 0 0 1 2-2h4a2 2 0 0 1 2-2h4a2 2 0 0 1 2-2h4a2 2 0 0 1 2-2h4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                </svg>
+            </button>
+        `;
+        container.appendChild(div);
+    });
+
+    container.querySelectorAll('.delete-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const idx = parseInt(e.target.dataset.index, 10);
+            subgoalsSteps.splice(idx, 1);
+            renderSubgoalsSteps();
+        });
+    });
+}
+
+async function saveSubgoalsConfig() {
+    const config = {
+        startCount: parseInt(document.getElementById('subgoalsStartCount').value, 10),
+        goalCount: parseInt(document.getElementById('subgoalsGoalCount').value, 10),
+        steps: subgoalsSteps
+    };
+    try {
+        await API.widgets.saveConfig('subgoals', config);
+        showNotification('Config Subgoals sauvegardée', 'success');
+    } catch (e) { showNotification('Erreur sauvegarde Subgoals: ' + e, 'error'); }
+}

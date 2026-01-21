@@ -15,6 +15,7 @@ const ALLOWED_INVOKE_CHANNELS = [
     'save-badge-prefs', 'get-widget-url', 'spotify-start-auth', 'spotify-redirect-uri',
     'get-participants-count', 'open-external-url', 'get-sub-count', 'simulate-sub',
     'get-reward-sounds', 'save-reward-sounds', 'get-reward-images', 'save-reward-images',
+    'get-reward-functions', 'save-reward-functions',
     'get-points-global-volume', 'save-points-global-volume', 'twitch-search-categories',
     'twitch-get-steamgriddb-image', 'twitch-get-schedule', 'twitch-create-schedule-segment',
     'twitch-update-schedule-segment', 'twitch-delete-schedule-segment', 'save-planning-base64',

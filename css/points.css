@@ -47,15 +47,65 @@
 
 .reward-editor-container {
     background: var(--bg-secondary);
-    padding: 20px;
-    border-radius: 8px;
+    padding: 15px;
+    border-radius: 12px;
     margin-bottom: 20px;
     border: 1px solid var(--border);
+    overflow: hidden;
 }
 
+.reward-editor-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.reward-editor-header h3 {
+    font-size: 14px;
+    margin: 0;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    letter-spacing: 0.5px;
+}
 
 .reward-form-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 15px;
+    gap: 12px 20px;
+}
+
+.reward-form-grid .span-2 {
+    grid-column: span 2;
+}
+
+.form-row {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+    padding: 5px 0;
+}
+
+.checkbox-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    user-select: none;
+}
+
+.checkbox-group input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    margin: 0;
+    cursor: pointer;
+}
+
+.checkbox-group label {
+    margin: 0;
+    font-size: 13px;
+    color: var(--text-primary);
+    cursor: pointer;
 }

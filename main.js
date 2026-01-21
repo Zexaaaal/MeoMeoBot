@@ -500,6 +500,12 @@ function setupBotEvents() {
     bot.onAlert = (alertData) => {
         if (alertsWidgetServer) alertsWidgetServer.addToQueue(alertData);
     };
+
+    bot.onEmoteRain = (emotes) => {
+        if (chatServer) {
+            chatServer.broadcast({ type: 'emote-rain', emotes });
+        }
+    };
 }
 
 app.on('window-all-closed', () => {
@@ -1133,6 +1139,15 @@ ipcMain.handle('get-reward-images', () => {
 
 ipcMain.handle('save-reward-images', (event, images) => {
     bot.updateConfig({ rewardImages: images });
+    return { success: true };
+});
+
+ipcMain.handle('get-reward-functions', () => {
+    return bot.getConfig().rewardFunctions || {};
+});
+
+ipcMain.handle('save-reward-functions', (event, functions) => {
+    bot.updateConfig({ rewardFunctions: functions });
     return { success: true };
 });
 

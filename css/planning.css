@@ -225,6 +225,88 @@
     align-items: center;
 }
 
+.segment-time-selectors {
+    display: flex;
+    gap: 10px;
+    width: 100%;
+}
+
+.time-picker-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.time-picker-item label {
+    margin-bottom: 0px;
+    font-size: 10px;
+    text-transform: uppercase;
+    font-weight: 700;
+    color: var(--text-tertiary);
+}
+
+.custom-picker-container {
+    position: relative;
+    width: 100%;
+}
+
+.custom-picker-btn {
+    width: 100%;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    color: var(--text-primary);
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 13px;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: all 0.2s;
+    height: 38px;
+}
+
+.custom-picker-btn:hover {
+    border-color: var(--accent);
+    background: var(--bg-tertiary);
+}
+
+.custom-picker-btn::after {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-right: 1px solid var(--text-secondary);
+    border-bottom: 1px solid var(--text-secondary);
+    transform: rotate(45deg);
+    margin-right: 4px;
+    transition: transform 0.3s;
+}
+
+.custom-picker-btn.active::after {
+    transform: rotate(-135deg);
+}
+
+.custom-picker-dropdown {
+    position: absolute;
+    top: calc(100% + 5px);
+    left: 0;
+    width: 100%;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    display: none;
+    flex-direction: column;
+    overflow: hidden;
+    animation: fadeIn 0.15s ease-out;
+}
+
+.custom-picker-dropdown.active {
+    display: flex;
+}
+
 .segment-time-range-picker {
     position: relative;
     width: 100%;
@@ -309,7 +391,7 @@
 }
 
 .time-options-list {
-    flex: 1;
+    max-height: 180px;
     overflow-y: auto;
 }
 

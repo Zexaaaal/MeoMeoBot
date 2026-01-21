@@ -773,6 +773,45 @@ class TwitchBot {
             };
             if (this.onAlert) this.onAlert(alertPayload);
         }
+
+        const rewardFunctions = config.rewardFunctions || {};
+        const boundFunction = rewardFunctions[rewardId];
+
+        if (boundFunction === 'emote_rain') {
+            this.fetchChannelEmotes().then(emotes => {
+                if (emotes && emotes.length > 0) {
+                    if (this.onEmoteRain) this.onEmoteRain(emotes);
+                }
+            }).catch(err => console.error('[BOT] Error triggering emote rain:', err));
+        }
+    }
+
+    async fetchChannelEmotes() {
+        try {
+            if (!this.userId) return [];
+            await this.ensureAppAccessToken();
+
+            const response = await fetch(`https://api.twitch.tv/helix/chat/emotes?broadcaster_id=${this.userId}`, {
+                headers: {
+                    'Client-Id': this.clientId,
+                    'Authorization': `Bearer ${this.appAccessToken}`
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error(`Failed to fetch emotes: ${response.statusText}`);
+            }
+
+            const data = await response.json();
+            const emotes = data.data || [];
+
+            return emotes
+                .filter(e => e.format && e.format.includes('animated'))
+                .map(e => `https://static-cdn.jtvnw.net/emoticons/v2/${e.id}/default/dark/3.0`);
+        } catch (err) {
+            console.error('[BOT] Error fetching channel emotes:', err);
+            return [];
+        }
     }
 
     clearParticipants() {

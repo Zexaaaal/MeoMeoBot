@@ -9,6 +9,7 @@ let editingId = null;
 
 let savedRewardSounds = {};
 let savedRewardImages = {};
+let savedRewardFunctions = {};
 
 
 
@@ -80,6 +81,38 @@ function init() {
 
     loadRewardSounds();
     loadGlobalVolume();
+
+    const funcBtn = document.getElementById('rewardFunctionBtn');
+    const funcDropdown = document.getElementById('rewardFunctionDropdown');
+    const funcOptions = document.querySelectorAll('.custom-picker-option');
+
+    if (funcBtn) {
+        funcBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            funcBtn.classList.toggle('active');
+            funcDropdown.classList.toggle('active');
+        });
+    }
+
+    funcOptions.forEach(opt => {
+        opt.addEventListener('click', () => {
+            const val = opt.dataset.value;
+            const text = opt.textContent;
+            funcBtn.textContent = text;
+            funcBtn.dataset.value = val;
+
+            funcOptions.forEach(o => o.classList.remove('selected'));
+            opt.classList.add('selected');
+
+            funcBtn.classList.remove('active');
+            funcDropdown.classList.remove('active');
+        });
+    });
+
+    document.addEventListener('click', () => {
+        if (funcBtn) funcBtn.classList.remove('active');
+        if (funcDropdown) funcDropdown.classList.remove('active');
+    });
 }
 
 async function loadGlobalVolume() {
@@ -125,6 +158,7 @@ async function loadRewardSounds() {
     try {
         savedRewardSounds = await window.api.invoke('get-reward-sounds') || {};
         savedRewardImages = await window.api.invoke('get-reward-images') || {};
+        savedRewardFunctions = await window.api.invoke('get-reward-functions') || {};
 
 
     } catch (e) {
@@ -261,6 +295,25 @@ function openEditor(reward = null) {
     imageInput.value = stripPrefix(imageVal);
     imageInput.dataset.path = imageVal;
 
+    const functionVal = (reward && savedRewardFunctions[reward.id]) ? savedRewardFunctions[reward.id] : '';
+    const funcBtn = document.getElementById('rewardFunctionBtn');
+    const funcOptions = document.querySelectorAll('.custom-picker-option');
+
+    let found = false;
+    funcOptions.forEach(opt => {
+        opt.classList.remove('selected');
+        if (opt.dataset.value === functionVal) {
+            opt.classList.add('selected');
+            funcBtn.textContent = opt.textContent;
+            funcBtn.dataset.value = functionVal;
+            found = true;
+        }
+    });
+    if (!found) {
+        funcBtn.textContent = 'Aucune';
+        funcBtn.dataset.value = '';
+    }
+
     rewardEditorContainer.classList.remove('hidden');
     rewardsList.classList.add('hidden');
 }
@@ -355,6 +408,16 @@ async function saveReward() {
             }
             await window.api.invoke('save-reward-images', newImages);
             savedRewardImages = newImages;
+
+            const newFunctions = { ...savedRewardFunctions };
+            const funcValue = document.getElementById('rewardFunctionBtn').dataset.value;
+            if (funcValue) {
+                newFunctions[finalId] = funcValue;
+            } else {
+                delete newFunctions[finalId];
+            }
+            await window.api.invoke('save-reward-functions', newFunctions);
+            savedRewardFunctions = newFunctions;
 
 
         }

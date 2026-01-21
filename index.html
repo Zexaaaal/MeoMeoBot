@@ -470,7 +470,13 @@
             </div>
 
             <div id="reward-editor-static" class="reward-editor-container hidden">
-                <h3 id="reward-editor-title">Nouvelle récompense</h3>
+                <div class="reward-editor-header">
+                    <h3 id="reward-editor-title">Nouvelle récompense</h3>
+                    <div class="header-actions">
+                        <button class="btn btn-secondary btn-sm" id="cancelRewardEditorBtn">Annuler</button>
+                        <button class="btn btn-primary btn-sm" id="saveRewardEditorBtn">Sauvegarder</button>
+                    </div>
+                </div>
 
                 <div class="reward-form-grid">
                     <div class="form-group">
@@ -481,61 +487,60 @@
                         <label>Coût</label>
                         <input type="number" id="rewardCostInput">
                     </div>
-
                     <div class="form-group">
-                        <label>Description (Prompt)</label>
-                        <textarea id="rewardPromptInput" rows="3"></textarea>
-                    </div>
-
-                    <div class="input-group">
                         <label>Couleur</label>
                         <input type="color" id="rewardColorInput"
-                            style="width:100%; height:40px; padding:0; border:none;">
+                            style="width:100%; height:38px; padding:0; border:none;">
                     </div>
-
                     <div class="form-group">
-                        <label>Cooldown Global (sec)</label>
+                        <label>Cooldown (sec)</label>
                         <input type="number" id="rewardCooldownInput">
                     </div>
+                    <div class="form-group span-2">
+                        <label>Description (Prompt)</label>
+                        <textarea id="rewardPromptInput" rows="2"></textarea>
+                    </div>
 
-                    <div></div>
+                    <div class="form-group span-2">
+                        <label>Action Spéciale</label>
+                        <div class="custom-picker-container" id="rewardFunctionPicker">
+                            <button class="custom-picker-btn" id="rewardFunctionBtn">Aucune</button>
+                            <div class="custom-picker-dropdown" id="rewardFunctionDropdown">
+                                <div class="custom-picker-option" data-value="">Aucune</div>
+                                <div class="custom-picker-option" data-value="emote_rain">Pluie d'emotes</div>
+                            </div>
+                        </div>
+                    </div>
 
                     <div class="form-group">
-                        <label>Son de l'alerte</label>
+                        <label>Son</label>
                         <div class="file-picker-container">
                             <input type="text" id="rewardSoundInput" class="interactive-input" readonly
-                                placeholder="Cliquer pour choisir un son">
+                                placeholder="Son">
                             <button class="btn btn-secondary clear-btn" id="rewardSoundClearBtn"
                                 title="Vider">✖</button>
                         </div>
                     </div>
-
                     <div class="form-group">
-                        <label>Image de l'alerte (<em style="font-size:0.8em; color:var(--text-secondary);">Icone UI
-                                uniquement</em>)</label>
+                        <label>Icône</label>
                         <div class="file-picker-container">
                             <input type="text" id="rewardImageInput" class="interactive-input" readonly
-                                placeholder="Cliquer pour choisir une image">
+                                placeholder="Image">
                             <button class="btn btn-secondary clear-btn" id="rewardImageClearBtn"
                                 title="Vider">✖</button>
                         </div>
                     </div>
-                </div>
 
-                <div style="display:flex; gap:20px; margin-top:15px;">
-                    <div style="display:flex; align-items:center; gap:8px;">
-                        <input type="checkbox" id="rewardEnabledInput"> <label for="rewardEnabledInput">Activer la
-                            récompense</label>
+                    <div class="form-row span-2">
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="rewardEnabledInput">
+                            <label for="rewardEnabledInput">Activer</label>
+                        </div>
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="rewardUserInputInput">
+                            <label for="rewardUserInputInput">User Input</label>
+                        </div>
                     </div>
-                    <div style="display:flex; align-items:center; gap:8px;">
-                        <input type="checkbox" id="rewardUserInputInput"> <label for="rewardUserInputInput">Demander du
-                            texte (User Input)</label>
-                    </div>
-                </div>
-
-                <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:20px;">
-                    <button class="btn btn-secondary" id="cancelRewardEditorBtn">Annuler</button>
-                    <button class="btn btn-primary" id="saveRewardEditorBtn">Sauvegarder</button>
                 </div>
             </div>
 

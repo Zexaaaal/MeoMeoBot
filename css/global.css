@@ -1020,3 +1020,89 @@ input[type="number"] {
     border-color: var(--danger);
     background: rgba(233, 25, 22, 0.1);
 }
+
+.custom-picker-container {
+    position: relative;
+    width: 100%;
+}
+
+.custom-picker-btn {
+    width: 100%;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border);
+    color: var(--text-primary);
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 13px;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: all 0.2s ease;
+    height: 38px;
+}
+
+.custom-picker-btn:hover {
+    border-color: var(--accent);
+    background: var(--bg-tertiary);
+}
+
+.custom-picker-btn::after {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-right: 1px solid var(--text-secondary);
+    border-bottom: 1px solid var(--text-secondary);
+    transform: rotate(45deg);
+    margin-right: 4px;
+    transition: transform 0.3s;
+}
+
+.custom-picker-btn.active::after {
+    transform: rotate(-135deg);
+}
+
+.custom-picker-dropdown {
+    position: absolute;
+    top: calc(100% + 5px);
+    left: 0;
+    width: 100%;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    display: none;
+    flex-direction: column;
+    overflow: hidden;
+    animation: fadeIn 0.15s ease-out;
+    max-height: 250px;
+}
+
+.custom-picker-dropdown.active {
+    display: flex;
+}
+
+.custom-picker-option {
+    padding: 10px;
+    font-size: 12px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.1s;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.02);
+}
+
+.custom-picker-option:last-child {
+    border-bottom: none;
+}
+
+.custom-picker-option:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--accent);
+}
+
+.custom-picker-option.selected {
+    background: var(--accent);
+    color: white;
+    font-weight: 600;
+}

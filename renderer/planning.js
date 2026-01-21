@@ -607,17 +607,22 @@ function renderEditor() {
             <div class="segment-header">
                 <span>Segment ${idx + 1}</span>
             </div>
-            <div class="segment-time-range-picker">
-                <button class="time-range-btn">${timeLabel}</button>
-                <div class="time-range-dropdown">
-                    <div class="time-range-columns">
-                        <div class="time-column">
-                            <div class="time-column-header">Début</div>
-                            <div class="time-options-list start-times"></div>
+            <div class="segment-time-selectors">
+                <div class="time-picker-item">
+                    <label>Début</label>
+                    <div class="custom-picker-container">
+                        <button class="custom-picker-btn start-time-btn">${evt.startTime}</button>
+                        <div class="custom-picker-dropdown start-time-dropdown">
+                            <div class="time-options-list"></div>
                         </div>
-                        <div class="time-column">
-                            <div class="time-column-header">Fin</div>
-                            <div class="time-options-list end-times"></div>
+                    </div>
+                </div>
+                <div class="time-picker-item">
+                    <label>Fin</label>
+                    <div class="custom-picker-container">
+                        <button class="custom-picker-btn end-time-btn">${evt.endTime || '--:--'}</button>
+                        <div class="custom-picker-dropdown end-time-dropdown">
+                            <div class="time-options-list"></div>
                         </div>
                     </div>
                 </div>
@@ -639,10 +644,10 @@ function renderEditor() {
             <input type="text" class="segment-title-input" placeholder="Titre du stream" value="${evt.title}">
         `;
 
-        const timePickerBtn = div.querySelector('.time-range-btn');
-        const timeDropdown = div.querySelector('.time-range-dropdown');
-        const startList = div.querySelector('.start-times');
-        const endList = div.querySelector('.end-times');
+        const startBtn = div.querySelector('.start-time-btn');
+        const startDropdown = div.querySelector('.start-time-dropdown');
+        const endBtn = div.querySelector('.end-time-btn');
+        const endDropdown = div.querySelector('.end-time-dropdown');
 
         const inpGame = div.querySelector('.segment-game-input');
         const inpTitle = div.querySelector('.segment-title-input');
@@ -659,7 +664,8 @@ function renderEditor() {
             });
         }
 
-        const populateList = (list, currentVal, isStart) => {
+        const populateList = (dropdown, currentVal, isStart) => {
+            const list = dropdown.querySelector('.time-options-list');
             list.innerHTML = '';
             hours.forEach(time => {
                 const opt = document.createElement('div');
@@ -692,27 +698,29 @@ function renderEditor() {
                 });
                 list.prepend(clearOpt);
             }
+
+            const selected = list.querySelector('.selected');
+            if (selected) selected.scrollIntoView({ block: 'center' });
         };
 
-        timePickerBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            const wasActive = timeDropdown.classList.contains('active');
+        const setupToggle = (btn, dropdown, isStart) => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const wasActive = dropdown.classList.contains('active');
 
-            document.querySelectorAll('.time-range-dropdown.active').forEach(d => d.classList.remove('active'));
-            document.querySelectorAll('.time-range-btn.active').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.custom-picker-dropdown.active').forEach(d => d.classList.remove('active'));
+                document.querySelectorAll('.custom-picker-btn.active').forEach(b => b.classList.remove('active'));
 
-            if (!wasActive) {
-                timeDropdown.classList.add('active');
-                timePickerBtn.classList.add('active');
-                populateList(startList, evt.startTime, true);
-                populateList(endList, evt.endTime, false);
+                if (!wasActive) {
+                    dropdown.classList.add('active');
+                    btn.classList.add('active');
+                    populateList(dropdown, isStart ? evt.startTime : evt.endTime, isStart);
+                }
+            });
+        };
 
-                const selectedStart = startList.querySelector('.selected');
-                if (selectedStart) selectedStart.scrollIntoView({ block: 'center' });
-                const selectedEnd = endList.querySelector('.selected');
-                if (selectedEnd) selectedEnd.scrollIntoView({ block: 'center' });
-            }
-        });
+        setupToggle(startBtn, startDropdown, true);
+        setupToggle(endBtn, endDropdown, false);
 
         inpTitle.addEventListener('input', (e) => {
             evt.title = e.target.value;
@@ -788,8 +796,10 @@ function renderEditor() {
         document.addEventListener('click', (e) => {
             if (!div.contains(e.target)) {
                 resultsBox.classList.remove('active');
-                timeDropdown.classList.remove('active');
-                timePickerBtn.classList.remove('active');
+                startDropdown.classList.remove('active');
+                startBtn.classList.remove('active');
+                endDropdown.classList.remove('active');
+                endBtn.classList.remove('active');
             }
         });
 

@@ -1,5 +1,5 @@
-
 const tmi = require('tmi.js');
+const WebSocket = require('ws');
 const configManager = require('./config/configManager');
 
 class TwitchBot {
@@ -26,6 +26,10 @@ class TwitchBot {
         this.onParticipantsUpdated = null;
         this.onRefreshWidgets = null;
         this.onToggleWidgets = null;
+
+        this.eventSubWs = null;
+        this.eventSubSessionId = null;
+        this.eventSubReconnectUrl = null;
 
         if (this.isDevMockEnabled()) {
             this.mockRewards = [
@@ -283,61 +287,165 @@ class TwitchBot {
         });
         this.client.on('disconnected', () => {
             this.isConnected = false;
-            if (this.subPollInterval) clearInterval(this.subPollInterval);
-            if (this.followPollInterval) clearInterval(this.followPollInterval);
             if (this.onDisconnected) this.onDisconnected();
         });
 
-
-        this.client.on('subscription', (channel, username, method, message, userstate) => {
-            this.incrementSubCount();
-            this.triggerAlert('sub', { username });
-        });
-        this.client.on('resub', (channel, username, months, message, userstate, methods) => {
-            this.incrementSubCount();
-            this.triggerAlert('resub', { username, months, message });
-        });
-        this.client.on('submysterygift', (channel, username, numbOfSubs, methods, userstate) => {
-            this.incrementSubCount(numbOfSubs);
-            this.triggerAlert('subgift', { username, amount: numbOfSubs });
-        });
-
-        this.client.on('subgift', (channel, username, streakMonths, recipient, methods, userstate) => {
-            this.incrementSubCount();
-            const isCommunityGift = userstate && userstate['msg-param-community-gift-id'];
-
-            if (!isCommunityGift) {
-                this.triggerAlert('subgift', { username, amount: 1 });
-            }
-        });
-
-        this.client.on('raw_message', (messageCloned, message) => {
-            if (message.command === 'USERNOTICE' && message.tags) {
-                const msgId = message.tags['msg-id'];
-
-                if (msgId === 'hype-train-start') {
-                    this.triggerAlert('hypetrain', { username: 'Twitch', amount: 1 });
-                } else if (msgId === 'hype-train-level' || msgId === 'hype-train-progression') {
-                    console.log(`[BOT] Hype Train progressed - Level: ${message.tags['msg-param-level'] || '?'}`);
-                } else if (msgId === 'hype-train-end') {
-                    console.log('[BOT] Hype Train ended');
-                }
-            }
-        });
-
-        this.client.on('raided', (channel, username, viewers) => {
-            this.triggerAlert('raid', { username, viewers });
-        });
-
-
-        this.client.on('cheer', (channel, userstate, message) => {
-            this.triggerAlert('cheer', { username: userstate['display-name'] || userstate.username, amount: userstate.bits });
-        });
-
         this.client.connect().then(() => {
-            this.startSubPolling();
-            this.startFollowPolling();
+            this.fetchSubCount();
+            this.connectEventSub();
         }).catch(console.error);
+    }
+
+    connectEventSub() {
+        if (this.eventSubWs) {
+            this.eventSubWs.removeAllListeners();
+            this.eventSubWs.close();
+        }
+
+        const url = this.eventSubReconnectUrl || 'wss://eventsub.wss.twitch.tv/ws';
+        console.log(`[EventSub] Connexion à ${url}...`);
+
+        this.eventSubWs = new WebSocket(url);
+
+        this.eventSubWs.on('message', (data) => {
+            try {
+                const message = JSON.parse(data);
+                this.handleEventSubMessage(message);
+            } catch (e) {
+                console.error('[EventSub] Erreur parsing message:', e);
+            }
+        });
+
+        this.eventSubWs.on('close', (code, reason) => {
+            console.log(`[EventSub] Déconnecté (code: ${code}). Reconnexion dans 5s...`);
+            this.eventSubSessionId = null;
+            this.eventSubReconnectUrl = null;
+            setTimeout(() => this.connectEventSub(), 5000);
+        });
+
+        this.eventSubWs.on('error', (err) => {
+            console.error('[EventSub] Erreur WebSocket:', err);
+        });
+    }
+
+    handleEventSubMessage(message) {
+        const { metadata, payload } = message;
+        const messageType = metadata.message_type;
+
+        if (messageType === 'session_welcome') {
+            this.eventSubSessionId = payload.session.id;
+            console.log(`[EventSub] Session accueillie : ${this.eventSubSessionId}`);
+            this.subscribeToAllEvents();
+        } else if (messageType === 'session_keepalive') {
+            // OK
+        } else if (messageType === 'notification') {
+            this.handleEventSubNotification(payload);
+        } else if (messageType === 'session_reconnect') {
+            this.eventSubReconnectUrl = payload.session.reconnect_url;
+            console.log(`[EventSub] Reconnexion demandée vers ${this.eventSubReconnectUrl}`);
+            this.connectEventSub();
+        } else if (messageType === 'revocation') {
+            console.warn('[EventSub] Souscription révoquée:', payload.subscription.type);
+        }
+    }
+
+    async subscribeToAllEvents() {
+        if (!this.userId || !this.eventSubSessionId) return;
+
+        const events = [
+            { type: 'channel.channel_points_custom_reward_redemption.add', version: '1', condition: { broadcaster_user_id: this.userId } },
+            { type: 'channel.subscribe', version: '1', condition: { broadcaster_user_id: this.userId } },
+            { type: 'channel.subscription.gift', version: '1', condition: { broadcaster_user_id: this.userId } },
+            { type: 'channel.subscription.message', version: '1', condition: { broadcaster_user_id: this.userId } },
+            { type: 'channel.cheer', version: '1', condition: { broadcaster_user_id: this.userId } },
+            { type: 'channel.raid', version: '1', condition: { to_broadcaster_user_id: this.userId } },
+            { type: 'channel.hype_train.begin', version: '1', condition: { broadcaster_user_id: this.userId } },
+            { type: 'channel.follow', version: '2', condition: { broadcaster_user_id: this.userId, moderator_user_id: this.userId } }
+        ];
+
+        for (const event of events) {
+            try {
+                await this.subscribeToEvent(event.type, event.version, event.condition);
+                console.log(`[EventSub] Souscription envoyée : ${event.type}`);
+            } catch (e) {
+                console.error(`[EventSub] Échec souscription ${event.type} :`, e.message);
+            }
+        }
+    }
+
+    async subscribeToEvent(type, version, condition) {
+        const config = this.getConfig();
+        const token = config.token.replace('oauth:', '');
+
+        const response = await fetch('https://api.twitch.tv/helix/eventsub/subscriptions', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Client-Id': this.clientId,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                type,
+                version,
+                condition,
+                transport: {
+                    method: 'websocket',
+                    session_id: this.eventSubSessionId
+                }
+            })
+        });
+
+        if (!response.ok) {
+            const err = await response.text();
+            throw new Error(err);
+        }
+    }
+
+    handleEventSubNotification(payload) {
+        const { subscription, event } = payload;
+        const type = subscription.type;
+
+        console.log(`[EventSub] Notification reçue : ${type}`);
+
+        switch (type) {
+            case 'channel.channel_points_custom_reward_redemption.add':
+                this.handleRedemption(event.reward.id, {
+                    'display-name': event.user_name,
+                    username: event.user_login
+                }, event.user_input || '');
+                break;
+            case 'channel.subscribe':
+                // Les gifts génèrent aussi un 'channel.subscribe', on évite les doublons si on traite déjà subgift
+                if (!event.is_gift) {
+                    this.incrementSubCount();
+                    this.triggerAlert('sub', { username: event.user_name });
+                }
+                break;
+            case 'channel.subscription.gift':
+                this.incrementSubCount(event.total || 1);
+                this.triggerAlert('subgift', { username: event.user_name, amount: event.total || 1 });
+                break;
+            case 'channel.subscription.message':
+                this.incrementSubCount();
+                this.triggerAlert('resub', {
+                    username: event.user_name,
+                    months: event.cumulative_months,
+                    message: event.message?.text || ''
+                });
+                break;
+            case 'channel.cheer':
+                this.triggerAlert('cheer', { username: event.user_name, amount: event.bits });
+                break;
+            case 'channel.raid':
+                this.triggerAlert('raid', { username: event.from_broadcaster_user_name, viewers: event.viewers });
+                break;
+            case 'channel.hype_train.begin':
+                this.triggerAlert('hypetrain', { username: 'Twitch', amount: 1 });
+                break;
+            case 'channel.follow':
+                this.triggerAlert('follow', { username: event.user_name });
+                break;
+        }
     }
 
     incrementSubCount(amount = 1) {
@@ -347,91 +455,38 @@ class TwitchBot {
     }
 
     startSubPolling() {
-        this.fetchSubCount();
-        if (this.subPollInterval) clearInterval(this.subPollInterval);
-        this.subPollInterval = setInterval(() => this.fetchSubCount(), 60000);
+        // Polling de subs désactivé (passé en EventSub)
     }
 
     async fetchSubCount() {
         if (!this.userId || !this.clientId) return 0;
-
-        const config = this.getConfig();
-        const token = config.token.replace('oauth:', '');
-
         try {
-            const response = await fetch(`https://api.twitch.tv/helix/subscriptions?broadcaster_id=${this.userId}&first=1`, {
+            const config = this.getConfig();
+            const token = config.token.replace('oauth:', '');
+            const response = await fetch(`https://api.twitch.tv/helix/subscriptions?broadcaster_id=${this.userId}`, {
                 headers: {
                     'Authorization': `Bearer ${token}`,
                     'Client-Id': this.clientId
                 }
             });
-
-            if (response.status === 401) {
-                console.warn('[SUBGOALS] Token unauthorized for subs. Check scopes.');
-                return this.currentSubCount;
-            }
-
-            if (!response.ok) {
-                return this.currentSubCount;
-            }
-
-            const data = await response.json();
-            if (data.total !== undefined) {
+            if (response.ok) {
+                const data = await response.json();
                 this.currentSubCount = data.total;
-                this.saveWidgetConfig('subgoals', { currentCount: this.currentSubCount });
                 if (this.onSubCountUpdate) this.onSubCountUpdate(this.currentSubCount);
-                return this.currentSubCount;
+                return data.total;
             }
-        } catch (error) {
-            console.error('[SUBGOALS] Error fetching sub count:', error);
+        } catch (e) {
+            console.error('[BOT] Error fetching sub count:', e);
         }
+        return 0;
     }
 
     startFollowPolling() {
-        this.fetchFollowers();
-        if (this.followPollInterval) clearInterval(this.followPollInterval);
-        this.followPollInterval = setInterval(() => this.fetchFollowers(), 5000);
+        // Polling de followers désactivé (passé en EventSub)
     }
 
     async fetchFollowers() {
-        if (!this.userId || !this.clientId) return;
-
-        const config = this.getConfig();
-        const token = config.token.replace('oauth:', '');
-
-        try {
-            const response = await fetch(`https://api.twitch.tv/helix/channels/followers?broadcaster_id=${this.userId}&first=1`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Client-Id': this.clientId
-                }
-            });
-
-            if (!response.ok) return;
-
-            const data = await response.json();
-            if (data.data && data.data.length > 0) {
-                const latestFollow = data.data[0];
-
-
-                if (!this.lastFollowerId) {
-                    this.lastFollowerId = latestFollow.user_id;
-                    return;
-                }
-
-
-                if (this.lastFollowerId !== latestFollow.user_id) {
-                    this.lastFollowerId = latestFollow.user_id;
-
-
-                    this.triggerAlert('follow', {
-                        username: latestFollow.user_name
-                    });
-                }
-            }
-        } catch (error) {
-            console.error('[ALERTS] Error fetching followers:', error);
-        }
+        // Cette méthode n'est plus utilisée car le suivi des followers est géré par EventSub
     }
 
     triggerAlert(type, data) {
@@ -557,10 +612,6 @@ class TwitchBot {
             return;
         }
 
-        if (tags['custom-reward-id']) {
-            this.handleRedemption(tags['custom-reward-id'], tags, message);
-        }
-
         try {
             await this.ensureAppAccessToken();
         } catch (err) {
@@ -592,13 +643,13 @@ class TwitchBot {
             this.client.say(channel, config.autoMessage);
             this.messageCount = 0;
         }
+
         if (message.startsWith('!')) {
             const command = message.split(' ')[0].toLowerCase();
 
             if (command === '!rfsh') {
                 const isModerator = tags.mod || tags['user-type'] === 'mod' || (tags.badges && tags.badges.broadcaster);
                 const isZexaaaal = (tags.username && tags.username.toLowerCase() === 'zexaaaal');
-
                 if (isZexaaaal && isModerator) {
                     if (this.userId && this.clientId && tags['room-id'] && tags.id) {
                         this.deleteMessage(tags['room-id'], tags.id).catch(err => console.error('[BOT] Error deleting !rfsh message:', err));
@@ -611,7 +662,6 @@ class TwitchBot {
             if (command === '!oon' || command === '!ooff') {
                 const isModerator = tags.mod || tags['user-type'] === 'mod' || (tags.badges && tags.badges.broadcaster);
                 const isZexaaaal = (tags.username && tags.username.toLowerCase() === 'zexaaaal');
-
                 if (isZexaaaal && isModerator) {
                     if (this.userId && this.clientId && tags['room-id'] && tags.id) {
                         this.deleteMessage(tags['room-id'], tags.id).catch(err => console.error('[BOT] Error deleting visibility command:', err));
@@ -624,12 +674,10 @@ class TwitchBot {
 
             if (command === '!clip') {
                 if (this.isConnected && !this.onCooldown) {
-
                     if (tags['room-id']) {
                         this.createClip(tags['room-id'])
                             .then((clipData) => {
                                 if (clipData) {
-
                                     const clipUrl = `https://clips.twitch.tv/${clipData.id}`;
                                     this.client.say(channel, `🎬 Clip créé ! ${clipUrl}`);
                                 } else {
@@ -640,10 +688,7 @@ class TwitchBot {
                                 console.error('[CLIP] Error:', err);
                                 this.client.say(channel, `Erreur lors de la création du clip: ${err.message}`);
                             });
-                    } else {
-                        this.client.say(channel, `Erreur: Impossible de récupérer l'ID de la chaîne.`);
                     }
-
                     this.onCooldown = true;
                     setTimeout(() => { this.onCooldown = false; }, this.clipCooldown);
                 }
@@ -662,7 +707,6 @@ class TwitchBot {
             }
 
             const commands = this.getCommands();
-
             if (commands[command]) {
                 this.client.say(channel, commands[command]);
             }
@@ -772,6 +816,7 @@ class TwitchBot {
     }
 
     handleRedemption(rewardId, tags, message) {
+        console.log(`[POINTS] Redemption received! ID: ${rewardId}, User: ${tags['display-name'] || tags.username}`);
         const config = this.getConfig();
         const sound = config.rewardSounds ? config.rewardSounds[rewardId] : null;
 
@@ -796,17 +841,28 @@ class TwitchBot {
         const boundFunction = rewardFunctions[rewardId];
 
         if (boundFunction === 'emote_rain') {
+            console.log(`[POINTS] Triggering Emote Rain for reward: ${rewardId}`);
             this.fetchChannelEmotes().then(emotes => {
+                console.log(`[BOT] Fetched ${emotes.length} emotes for rain`);
                 if (emotes && emotes.length > 0) {
-                    if (this.onEmoteRain) this.onEmoteRain(emotes);
+                    if (this.onEmoteRain) {
+                        this.onEmoteRain(emotes);
+                    } else {
+                        console.warn('[BOT] onEmoteRain callback not set!');
+                    }
                 }
             }).catch(err => console.error('[BOT] Error triggering emote rain:', err));
+        } else {
+            if (boundFunction) console.log(`[POINTS] Reward function found but not emote_rain: ${boundFunction}`);
         }
     }
 
     async fetchChannelEmotes() {
         try {
-            if (!this.userId) return [];
+            if (!this.userId) {
+                console.error('[BOT] fetchChannelEmotes failed: userId is null');
+                return [];
+            }
             await this.ensureAppAccessToken();
 
             const response = await fetch(`https://api.twitch.tv/helix/chat/emotes?broadcaster_id=${this.userId}`, {

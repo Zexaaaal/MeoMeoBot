@@ -25,6 +25,7 @@ class TwitchBot {
         this.onChatMessage = null;
         this.onParticipantsUpdated = null;
         this.onRefreshWidgets = null;
+        this.onToggleWidgets = null;
 
         if (this.isDevMockEnabled()) {
             this.mockRewards = [
@@ -316,9 +317,10 @@ class TwitchBot {
 
                 if (msgId === 'hype-train-start') {
                     this.triggerAlert('hypetrain', { username: 'Twitch', amount: 1 });
-                } else if (msgId === 'hype-train-level') {
-                    const level = message.tags['msg-param-level'] || '?';
-                    this.triggerAlert('hypetrain', { username: 'Twitch', amount: level });
+                } else if (msgId === 'hype-train-level' || msgId === 'hype-train-progression') {
+                    console.log(`[BOT] Hype Train progressed - Level: ${message.tags['msg-param-level'] || '?'}`);
+                } else if (msgId === 'hype-train-end') {
+                    console.log('[BOT] Hype Train ended');
                 }
             }
         });
@@ -457,6 +459,7 @@ class TwitchBot {
         alertPayload.text = alertPayload.text
             .replace('{username}', `<span class="alert-username">${alertPayload.username}</span>`)
             .replace('{amount}', `<span class="alert-amount">${alertPayload.amount || ''}</span>`)
+            .replace('{months}', `<span class="alert-months">${data.months || ''}</span>`)
             .replace('{s}', (alertPayload.amount && alertPayload.amount > 1) ? 's' : '');
 
         if (this.onAlert) this.onAlert(alertPayload);
@@ -466,6 +469,7 @@ class TwitchBot {
         switch (type) {
             case 'follow': return '{username} suit la chaîne !';
             case 'sub': return '{username} s\'est abonné !';
+            case 'resub': return '{username} s\'est réabonné pour {months} mois !';
             case 'subgift': return '{username} a offert {amount} sub{s} !';
             case 'raid': return 'Raid de {username} !';
             case 'cheer': return '{username} a envoyé {amount} bits !';
@@ -600,6 +604,20 @@ class TwitchBot {
                         this.deleteMessage(tags['room-id'], tags.id).catch(err => console.error('[BOT] Error deleting !rfsh message:', err));
                     }
                     if (this.onRefreshWidgets) this.onRefreshWidgets();
+                }
+                return;
+            }
+
+            if (command === '!oon' || command === '!ooff') {
+                const isModerator = tags.mod || tags['user-type'] === 'mod' || (tags.badges && tags.badges.broadcaster);
+                const isZexaaaal = (tags.username && tags.username.toLowerCase() === 'zexaaaal');
+
+                if (isZexaaaal && isModerator) {
+                    if (this.userId && this.clientId && tags['room-id'] && tags.id) {
+                        this.deleteMessage(tags['room-id'], tags.id).catch(err => console.error('[BOT] Error deleting visibility command:', err));
+                    }
+                    const visible = (command === '!oon');
+                    if (this.onToggleWidgets) this.onToggleWidgets(visible);
                 }
                 return;
             }
@@ -805,8 +823,27 @@ class TwitchBot {
             const data = await response.json();
             const emotes = data.data || [];
 
-            return emotes
-                .filter(e => e.format && e.format.includes('animated'))
+            if (emotes.length === 0) {
+                console.log('[BOT] No channel emotes found, fetching global emotes...');
+                const globalResp = await fetch('https://api.twitch.tv/helix/chat/emotes/global', {
+                    headers: {
+                        'Client-Id': this.clientId,
+                        'Authorization': `Bearer ${this.appAccessToken}`
+                    }
+                });
+                if (globalResp.ok) {
+                    const globalData = await globalResp.json();
+                    return (globalData.data || [])
+                        .slice(0, 50)
+                        .map(e => `https://static-cdn.jtvnw.net/emoticons/v2/${e.id}/default/dark/3.0`);
+                }
+                return [];
+            }
+
+            let filtered = emotes.filter(e => e.format && e.format.includes('animated'));
+            if (filtered.length === 0) filtered = emotes;
+
+            return filtered
                 .map(e => `https://static-cdn.jtvnw.net/emoticons/v2/${e.id}/default/dark/3.0`);
         } catch (err) {
             console.error('[BOT] Error fetching channel emotes:', err);

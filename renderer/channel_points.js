@@ -6,6 +6,7 @@ let rewardsList;
 let rewardEditorContainer;
 let isEditing = false;
 let editingId = null;
+let currentRewards = [];
 
 let savedRewardSounds = {};
 let savedRewardImages = {};
@@ -174,6 +175,7 @@ async function loadRewards() {
     try {
         rewardsList.innerHTML = '<div class="loading-spinner">Connexion au bot (IPC)...</div>';
         const rewards = await API.points.getRewards();
+        currentRewards = rewards || [];
         rewardsList.innerHTML = '<div class="loading-spinner">Données reçues...</div>';
         renderRewards(rewards);
         showNotification('Mise à jour réussie', 'success');
@@ -346,6 +348,15 @@ async function saveReward() {
 
     if (!title || cost < 1) {
         showNotification('Nom et coût (>0) requis', 'error');
+        return;
+    }
+
+    const isDuplicate = currentRewards.some(r =>
+        r.title.toLowerCase() === title.toLowerCase() && r.id !== editingId
+    );
+
+    if (isDuplicate) {
+        showNotification(`Une récompense nommée "${title}" existe déjà`, 'error');
         return;
     }
 

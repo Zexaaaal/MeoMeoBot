@@ -242,6 +242,9 @@ class BaseWidgetServer {
                                 }
                                 style.textContent = data.config.customCSS;
                             }
+                            if (data.type === 'visibility') {
+                                document.body.style.display = data.visible ? '' : 'none';
+                            }
                             if (onMessage) onMessage(data);
                         } catch (e) {
                             console.error('[Widget] WS Error:', e);

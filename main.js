@@ -485,6 +485,15 @@ function setupBotEvents() {
         if (rouletteServer) rouletteServer.broadcast({ type: 'reload' });
         if (alertsWidgetServer) alertsWidgetServer.refresh();
     };
+    bot.onToggleWidgets = (visible) => {
+        console.log(`[MAIN] Toggling all widgets visibility: ${visible}`);
+        const data = { type: 'visibility', visible };
+        if (chatServer) chatServer.broadcast(data);
+        if (spotifyServer) spotifyServer.broadcast(data);
+        if (subgoalsServer) subgoalsServer.broadcast(data);
+        if (rouletteServer) rouletteServer.broadcast(data);
+        if (alertsWidgetServer) alertsWidgetServer.broadcast(data);
+    };
 
     bot.onChatMessage = (messageData) => {
 

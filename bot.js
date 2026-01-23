@@ -50,6 +50,15 @@ class TwitchBot {
                     is_enabled: true,
                     global_cooldown_setting: { is_enabled: false, global_cooldown_seconds: 0 },
                     should_redemptions_skip_request_queue: false
+                },
+                {
+                    id: 'mock-reward-emote-rain',
+                    title: "Pluie d'emotes",
+                    cost: 10,
+                    background_color: '#FF00FF',
+                    is_enabled: true,
+                    global_cooldown_setting: { is_enabled: false, global_cooldown_seconds: 0 },
+                    should_redemptions_skip_request_queue: false
                 }
             ];
         } else {
@@ -368,9 +377,9 @@ class TwitchBot {
             { type: 'channel.subscription.message', version: '1', condition: { broadcaster_user_id: this.userId } },
             { type: 'channel.cheer', version: '1', condition: { broadcaster_user_id: this.userId } },
             { type: 'channel.raid', version: '1', condition: { to_broadcaster_user_id: this.userId } },
-            { type: 'channel.hype_train.begin', version: '1', condition: { broadcaster_user_id: this.userId } },
-            { type: 'channel.hype_train.progress', version: '1', condition: { broadcaster_user_id: this.userId } },
-            { type: 'channel.hype_train.end', version: '1', condition: { broadcaster_user_id: this.userId } },
+            { type: 'channel.hype_train.begin', version: '2', condition: { broadcaster_user_id: this.userId } },
+            { type: 'channel.hype_train.progress', version: '2', condition: { broadcaster_user_id: this.userId } },
+            { type: 'channel.hype_train.end', version: '2', condition: { broadcaster_user_id: this.userId } },
             { type: 'channel.follow', version: '2', condition: { broadcaster_user_id: this.userId, moderator_user_id: this.userId } }
         ];
 
@@ -747,6 +756,7 @@ class TwitchBot {
 
         if (configClientId && configAppToken) {
             this.appAccessToken = configAppToken;
+            this.appClientId = configClientId;
             this.tokenExpiry = Date.now() + (24 * 60 * 60 * 1000);
             return;
         }
@@ -773,6 +783,7 @@ class TwitchBot {
 
         const data = await response.json();
         this.appAccessToken = data.access_token;
+        this.appClientId = clientId;
         this.tokenExpiry = Date.now() + (data.expires_in * 1000) - 60000;
     }
 
@@ -861,6 +872,15 @@ class TwitchBot {
             if (this.onAlert) this.onAlert(alertPayload);
         }
 
+        if (rewardId === 'mock-reward-emote-rain') {
+            console.log(`[DEV] Mock triggering Emote Rain`);
+            this.fetchChannelEmotes().then(emotes => {
+                if (emotes && emotes.length > 0) {
+                    if (this.onEmoteRain) this.onEmoteRain(emotes);
+                }
+            }).catch(err => console.error('[BOT] Error triggering mock emote rain:', err));
+            return;
+        }
 
         if (boundFunction === 'emote_rain') {
             console.log(`[POINTS] Triggering Emote Rain for reward: ${rewardId}`);
@@ -889,7 +909,7 @@ class TwitchBot {
 
             const response = await fetch(`https://api.twitch.tv/helix/chat/emotes?broadcaster_id=${this.userId}`, {
                 headers: {
-                    'Client-Id': this.clientId,
+                    'Client-Id': this.appClientId || this.clientId,
                     'Authorization': `Bearer ${this.appAccessToken}`
                 }
             });
@@ -905,7 +925,7 @@ class TwitchBot {
                 console.log('[BOT] No channel emotes found, fetching global emotes...');
                 const globalResp = await fetch('https://api.twitch.tv/helix/chat/emotes/global', {
                     headers: {
-                        'Client-Id': this.clientId,
+                        'Client-Id': this.appClientId || this.clientId,
                         'Authorization': `Bearer ${this.appAccessToken}`
                     }
                 });

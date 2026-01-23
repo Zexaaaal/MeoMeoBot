@@ -1116,6 +1116,9 @@ ipcMain.handle('get-channel-rewards', async () => {
         throw e;
     }
 });
+ipcMain.handle('get-mock-rewards', () => {
+    return bot.mockRewards;
+});
 
 ipcMain.handle('create-channel-reward', async (event, data) => {
     try {

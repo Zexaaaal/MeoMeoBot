@@ -1,5 +1,6 @@
 import { API } from './api.js';
 import { showNotification, NOTIFICATIONS, ICONS, createDeleteControl } from './ui.js';
+const DEFAULT_COLOR = '#9146FF';
 
 
 let rewardsList;
@@ -189,14 +190,20 @@ async function loadRewards() {
     } catch (e) {
         console.error(e);
         if (e.message && e.message.includes('partner or affiliate status')) {
-            rewardsList.innerHTML = `
-                <div class="empty-list" style="text-align: center; padding: 20px;">
-                    <p><strong>Fonctionnalité indisponible</strong></p>
-                    <p style="font-size: 0.9em; color: var(--text-secondary); margin-top: 10px;">
-                        La gestion des points de chaîne nécessite le statut <strong>Affilié</strong> ou <strong>Partenaire</strong> Twitch.
-                    </p>
-                </div>`;
-            showNotification('Statut requis : Affilié/Partenaire', 'error');
+            showNotification('Mode démo : Affilié/Partenaire requis chez Twitch', 'warning');
+            try {
+                const rewards = await window.api.invoke('get-mock-rewards');
+                currentRewards = rewards || [];
+                renderRewards(rewards);
+            } catch (mockError) {
+                rewardsList.innerHTML = `
+                    <div class="empty-list" style="text-align: center; padding: 20px;">
+                        <p><strong>Fonctionnalité restreinte</strong></p>
+                        <p style="font-size: 0.9em; color: var(--text-secondary); margin-top: 10px;">
+                            La gestion réelle nécessite le statut <strong>Affilié</strong> ou <strong>Partenaire</strong>.
+                        </p>
+                    </div>`;
+            }
         } else {
             rewardsList.innerHTML = '<div class="error-msg">Erreur lors du chargement des récompenses. Vérifiez la connexion du bot.</div>';
             showNotification('Erreur chargement', 'error');
@@ -262,11 +269,11 @@ function renderRewards(rewards) {
             }
         });
 
-        if (isDevMode) {
+        if (isDevMode || true) { // On force l'affichage du bouton éclair si on est en démo (mock)
             const triggerBtn = document.createElement('button');
             triggerBtn.className = 'btn btn-primary btn-sm';
             triggerBtn.innerHTML = '⚡';
-            triggerBtn.title = 'Déclencher (Dev Mode)';
+            triggerBtn.title = 'Déclencher (Test / Démo)';
             triggerBtn.onclick = () => API.points.triggerMockRedemption(reward.id);
             actions.appendChild(triggerBtn);
         }

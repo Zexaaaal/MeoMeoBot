@@ -477,6 +477,14 @@ function setupBotEvents() {
     bot.onDisconnected = () => safeSend('bot-status', { connected: false });
     bot.onParticipantsUpdated = () => safeSend('participants-updated');
     bot.onParticipantAdded = (username) => safeSend('participant-added', { username });
+    bot.onMessageDeleted = (messageId) => {
+        console.log(`[MAIN] Message deleted: ${messageId}`);
+        if (chatServer) chatServer.broadcast({ type: 'delete-message', messageId });
+    };
+    bot.onClearChat = () => {
+        console.log('[MAIN] Chat cleared');
+        if (chatServer) chatServer.broadcast({ type: 'clear-chat' });
+    };
     bot.onRefreshWidgets = () => {
         console.log('[MAIN] Refreshing all widgets via admin command');
         if (chatServer) chatServer.broadcast({ type: 'reload' });
@@ -1213,6 +1221,20 @@ ipcMain.handle('save-planning-base64', async (event, dataURL) => {
 
 ipcMain.handle('save-points-global-volume', (event, volume) => {
     bot.updateConfig({ pointsGlobalVolume: volume });
+    return { success: true };
+});
+
+ipcMain.handle('is-dev', () => {
+    return !app.isPackaged || process.argv.includes('--dev');
+});
+
+ipcMain.handle('trigger-mock-redemption', (event, rewardId) => {
+    if (bot) {
+        bot.handleRedemption(rewardId, {
+            'display-name': 'DevTest',
+            username: 'dev_test'
+        }, 'Ceci est un test manuel');
+    }
     return { success: true };
 });
 

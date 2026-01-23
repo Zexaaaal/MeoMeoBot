@@ -281,6 +281,14 @@ class TwitchBot {
             if (self) return;
             this.handleMessage(channel, tags, message);
         });
+        this.client.on('messagedeleted', (channel, username, deletedMessage, userstate) => {
+            console.log(`[BOT] Message deleted: ${userstate['target-msg-id']}`);
+            if (this.onMessageDeleted) this.onMessageDeleted(userstate['target-msg-id']);
+        });
+        this.client.on('clearchat', (channel) => {
+            console.log('[BOT] Chat cleared');
+            if (this.onClearChat) this.onClearChat();
+        });
         this.client.on('connected', () => {
             this.isConnected = true;
             if (this.onConnected) this.onConnected();
@@ -339,6 +347,7 @@ class TwitchBot {
         } else if (messageType === 'session_keepalive') {
             // OK
         } else if (messageType === 'notification') {
+            console.log(`[EventSub] NOTIFICATION reçue type: ${payload.subscription.type}`);
             this.handleEventSubNotification(payload);
         } else if (messageType === 'session_reconnect') {
             this.eventSubReconnectUrl = payload.session.reconnect_url;
@@ -360,6 +369,8 @@ class TwitchBot {
             { type: 'channel.cheer', version: '1', condition: { broadcaster_user_id: this.userId } },
             { type: 'channel.raid', version: '1', condition: { to_broadcaster_user_id: this.userId } },
             { type: 'channel.hype_train.begin', version: '1', condition: { broadcaster_user_id: this.userId } },
+            { type: 'channel.hype_train.progress', version: '1', condition: { broadcaster_user_id: this.userId } },
+            { type: 'channel.hype_train.end', version: '1', condition: { broadcaster_user_id: this.userId } },
             { type: 'channel.follow', version: '2', condition: { broadcaster_user_id: this.userId, moderator_user_id: this.userId } }
         ];
 
@@ -397,6 +408,7 @@ class TwitchBot {
 
         if (!response.ok) {
             const err = await response.text();
+            console.error(`[EventSub] Erreur souscription ${type} v${version}:`, err);
             throw new Error(err);
         }
     }
@@ -415,7 +427,6 @@ class TwitchBot {
                 }, event.user_input || '');
                 break;
             case 'channel.subscribe':
-                // Les gifts génèrent aussi un 'channel.subscribe', on évite les doublons si on traite déjà subgift
                 if (!event.is_gift) {
                     this.incrementSubCount();
                     this.triggerAlert('sub', { username: event.user_name });
@@ -440,7 +451,16 @@ class TwitchBot {
                 this.triggerAlert('raid', { username: event.from_broadcaster_user_name, viewers: event.viewers });
                 break;
             case 'channel.hype_train.begin':
-                this.triggerAlert('hypetrain', { username: 'Twitch', amount: 1 });
+                this.triggerAlert('hypetrain', { username: 'Twitch', amount: event.level || 1 });
+                break;
+            case 'channel.hype_train.progress':
+                if (event.level > (this.lastHypeTrainLevel || 0)) {
+                    this.lastHypeTrainLevel = event.level;
+                    this.triggerAlert('hypetrain', { username: 'Twitch', amount: event.level });
+                }
+                break;
+            case 'channel.hype_train.end':
+                this.lastHypeTrainLevel = 0;
                 break;
             case 'channel.follow':
                 this.triggerAlert('follow', { username: event.user_name });
@@ -455,7 +475,6 @@ class TwitchBot {
     }
 
     startSubPolling() {
-        // Polling de subs désactivé (passé en EventSub)
     }
 
     async fetchSubCount() {
@@ -482,11 +501,9 @@ class TwitchBot {
     }
 
     startFollowPolling() {
-        // Polling de followers désactivé (passé en EventSub)
     }
 
     async fetchFollowers() {
-        // Cette méthode n'est plus utilisée car le suivi des followers est géré par EventSub
     }
 
     triggerAlert(type, data) {
@@ -623,6 +640,7 @@ class TwitchBot {
             username: tags.username,
             displayName: tags['display-name'] || tags.username,
             text: message,
+            id: tags.id,
             color: tags.color || '#FFFFFF',
             badgesRaw: tags['badges-raw'] || '',
             badgesObj: tags.badges || null,
@@ -818,6 +836,12 @@ class TwitchBot {
     handleRedemption(rewardId, tags, message) {
         console.log(`[POINTS] Redemption received! ID: ${rewardId}, User: ${tags['display-name'] || tags.username}`);
         const config = this.getConfig();
+        const rewardFunctions = config.rewardFunctions || {};
+        const boundFunction = rewardFunctions[rewardId];
+
+        console.log(`[POINTS] Mapping for reward ${rewardId}: ${boundFunction || 'NONE'}`);
+        console.log(`[POINTS] Available functions map:`, JSON.stringify(rewardFunctions));
+
         const sound = config.rewardSounds ? config.rewardSounds[rewardId] : null;
 
         let volume = 0.5;
@@ -837,8 +861,6 @@ class TwitchBot {
             if (this.onAlert) this.onAlert(alertPayload);
         }
 
-        const rewardFunctions = config.rewardFunctions || {};
-        const boundFunction = rewardFunctions[rewardId];
 
         if (boundFunction === 'emote_rain') {
             console.log(`[POINTS] Triggering Emote Rain for reward: ${rewardId}`);

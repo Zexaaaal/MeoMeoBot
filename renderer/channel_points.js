@@ -14,9 +14,16 @@ let savedRewardFunctions = {};
 
 
 
-const DEFAULT_COLOR = '#00FF00';
 
-function init() {
+let isDevMode = false;
+
+async function init() {
+    try {
+        isDevMode = await API.app.isDev();
+    } catch (e) {
+        console.warn('Could not determine dev mode', e);
+    }
+
     rewardsList = document.getElementById('rewardsList');
     rewardEditorContainer = document.getElementById('reward-editor-static');
 
@@ -254,6 +261,15 @@ function renderRewards(rewards) {
                 showNotification(NOTIFICATIONS.ERROR.DELETE.replace('{error}', e.message), 'error');
             }
         });
+
+        if (isDevMode) {
+            const triggerBtn = document.createElement('button');
+            triggerBtn.className = 'btn btn-primary btn-sm';
+            triggerBtn.innerHTML = '⚡';
+            triggerBtn.title = 'Déclencher (Dev Mode)';
+            triggerBtn.onclick = () => API.points.triggerMockRedemption(reward.id);
+            actions.appendChild(triggerBtn);
+        }
 
         actions.appendChild(editBtn);
         actions.appendChild(deleteControl);

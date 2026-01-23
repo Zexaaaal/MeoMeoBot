@@ -19,7 +19,7 @@ const ALLOWED_INVOKE_CHANNELS = [
     'get-points-global-volume', 'save-points-global-volume', 'twitch-search-categories',
     'twitch-get-steamgriddb-image', 'twitch-get-schedule', 'twitch-create-schedule-segment',
     'twitch-update-schedule-segment', 'twitch-delete-schedule-segment', 'save-planning-base64',
-    'update-config'
+    'is-dev', 'trigger-mock-redemption', 'update-config'
 ];
 
 const ALLOWED_SEND_CHANNELS = [

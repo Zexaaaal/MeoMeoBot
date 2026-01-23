@@ -251,7 +251,24 @@
                     updateSnow();
                 } else if (data.type === 'chat') {
                     await addMessage(data);
-                } else if (data.type === 'clear-chat') {
+                } else if (data.type === 'delete-message') {
+                    const messageId = data.messageId;
+                    const el = document.querySelector(`.msg-line[data-id="${messageId}"]`);
+                    if (el) {
+                        const parent = el.parentElement;
+                        el.remove();
+                        if (parent && parent.children.length === 0) {
+                            const group = parent.parentElement;
+                            if (group) group.remove();
+                            if (group === lastGroup) {
+                                lastGroup = null;
+                                lastUser = null;
+                            }
+                        }
+                        const idx = messageQueue.indexOf(el);
+                        if (idx > -1) messageQueue.splice(idx, 1);
+                    }
+                } else if (data.type === 'clear-chat' || data.type === 'clear') {
                     const container = document.getElementById('chat-container');
                     if (container) container.innerHTML = '';
                     lastUser = null;
@@ -320,6 +337,7 @@
             const messagesDiv = group.querySelector('.msg-messages');
             const line = document.createElement('div');
             line.className = 'msg-line';
+            if (msg.id) line.setAttribute('data-id', msg.id);
             line.appendChild(renderTextWithEmotes(text, emotes));
             messagesDiv.appendChild(line);
             messageQueue.push(line);

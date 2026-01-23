@@ -1,4 +1,7 @@
 export const API = {
+    app: {
+        isDev: () => window.api.invoke('is-dev')
+    },
 
     getConfig: () => window.api.invoke('get-config'),
     saveConfig: (config) => window.api.invoke('save-config', config),
@@ -64,7 +67,8 @@ export const API = {
         getRewards: () => window.api.invoke('get-channel-rewards'),
         createReward: (data) => window.api.invoke('create-channel-reward', data),
         updateReward: (id, data) => window.api.invoke('update-channel-reward', id, data),
-        deleteReward: (id) => window.api.invoke('delete-channel-reward', id)
+        deleteReward: (id) => window.api.invoke('delete-channel-reward', id),
+        triggerMockRedemption: (id) => window.api.invoke('trigger-mock-redemption', id)
     },
 
     cast: {

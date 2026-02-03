@@ -1,58 +1,74 @@
 .widget-list-container {
     display: flex;
-    flex-direction: column;
-    gap: 15px;
-    flex: 1;
+    flex-wrap: wrap;
+    gap: 20px;
+    padding: 10px;
     overflow-y: auto;
-    padding-right: 5px;
-    min-height: 0;
+    align-items: flex-start;
+}
+
+.widget-columns-wrapper {
+    display: flex;
+    width: 100%;
+    gap: 20px;
+}
+
+.widget-col-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    min-width: 0;
 }
 
 .widget-row {
     display: flex;
-    align-items: center;
-    justify-content: space-between;
+    flex-direction: column;
     background: var(--glass-bg);
     border: 1px solid var(--glass-border);
-    border-radius: 8px;
+    border-radius: 12px;
     padding: 15px;
-    gap: 20px;
-    transition: background 0.2s ease;
-}
-
-.widget-row:hover {
-    background: rgba(255, 255, 255, 0.05);
+    gap: 15px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    height: auto;
+    box-sizing: border-box;
+    width: 100%;
 }
 
 .widget-col-name {
-    width: 150px;
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 0;
+    margin-bottom: 5px;
     font-size: 14px;
     font-weight: 600;
-    color: var(--text-primary);
-}
-
-.widget-col-links {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
 }
 
 .widget-col-config {
+    flex: 1;
     display: flex;
-    align-items: center;
+    flex-direction: column;
+    width: 100%;
 }
 
 .widget-col-actions {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     gap: 10px;
     justify-content: flex-end;
+    margin-top: auto;
+    padding-top: 10px;
+}
+
+.widget-col-actions .btn {
+    flex: 1;
 }
 
 .badge-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(2, 1fr);
     gap: 8px;
     width: 100%;
 }
@@ -98,7 +114,6 @@
     word-break: break-all;
     user-select: text;
     display: inline-block;
-    width: fit-content;
 }
 
 .config-inline-grid {
@@ -115,4 +130,17 @@
 .config-inline-grid .inline-input {
     width: 100%;
     box-sizing: border-box;
+}
+
+.copy-source-btn {
+    padding: 2px 8px;
+    font-size: 11px;
+    margin-left: 10px;
+    height: auto;
+    width: auto;
+    flex: 0 0 auto;
+}
+
+.widget-row[data-widget="chat"] .widget-col-config {
+    flex: 2;
 }

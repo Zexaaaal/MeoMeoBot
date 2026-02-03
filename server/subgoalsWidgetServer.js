@@ -8,8 +8,14 @@ class SubgoalsWidgetServer extends BaseWidgetServer {
     }
 
     handleCustomRoutes(req, res) {
-        if (req.url === '/widget/subgoals-list') {
+        const pathname = req.url.split('?')[0];
+
+        if (pathname === '/widget/subgoals-list') {
             this.serveSubgoalsList(req, res);
+            return true;
+        }
+        if (pathname === '/widget/daily-subs') {
+            this.serveDailySubs(req, res);
             return true;
         }
         return false;
@@ -19,7 +25,19 @@ class SubgoalsWidgetServer extends BaseWidgetServer {
         this.serveHtmlFile(res, 'subgoals_list_widget.html', (data) => {
             const config = this.bot.getWidgetConfig('subgoals-list') || {};
             const customCSS = config.customCSS || '';
-            let content = data.replace('/* __CUSTOM_CSS__ */', customCSS);
+            let content = data.replace('/* __CUSTOM_CSS__ */', `<style id="custom-css">${customCSS}</style>`);
+
+            const clientScript = this.getCommonClientScript();
+            content = content.replace('</head>', `${clientScript}</head>`);
+            return content;
+        });
+    }
+
+    serveDailySubs(req, res) {
+        this.serveHtmlFile(res, 'daily_subs_widget.html', (data) => {
+            const config = this.bot.getWidgetConfig('subgoals') || {};
+            const customCSS = config.customCSS || '';
+            let content = data.replace('/* __CUSTOM_CSS__ */', `<style id="custom-css">${customCSS}</style>`);
 
             const clientScript = this.getCommonClientScript();
             content = content.replace('</head>', `${clientScript}</head>`);
@@ -36,6 +54,15 @@ class SubgoalsWidgetServer extends BaseWidgetServer {
                 config: subgoalsListConfig
             }));
         }
+
+        const subgoalsConfig = this.bot.getWidgetConfig('subgoals');
+        if (subgoalsConfig) {
+            ws.send(JSON.stringify({
+                type: 'config-update',
+                widget: 'daily-subs',
+                config: subgoalsConfig
+            }));
+        }
     }
 
     broadcastSubUpdate(count) {
@@ -44,6 +71,10 @@ class SubgoalsWidgetServer extends BaseWidgetServer {
 
     broadcastConfig(config, widgetType = 'subgoals') {
         this.broadcast({ type: 'config-update', widget: widgetType, config });
+
+        if (widgetType === 'subgoals') {
+            this.broadcast({ type: 'config-update', widget: 'daily-subs', config });
+        }
     }
 }
 

@@ -35,7 +35,10 @@ const els = {
     themeCss: null,
     themeResetBtn: null,
     themeConfirmBtn: null,
-    themeCancelBtn: null
+    themeCancelBtn: null,
+    previewWidth: null,
+    previewHeight: null,
+    previewContainer: null
 };
 
 const alertsWidget = API.createWidgetHelper('alerts');
@@ -63,6 +66,10 @@ function init() {
     els.themeResetBtn = document.getElementById('alert-theme-reset-btn');
     els.themeConfirmBtn = document.getElementById('alert-theme-confirm-btn');
     els.themeCancelBtn = document.getElementById('alert-theme-cancel-btn');
+
+    els.previewWidth = document.getElementById('alert-preview-width');
+    els.previewHeight = document.getElementById('alert-preview-height');
+    els.previewContainer = document.getElementById('alert-preview-container');
 
     setupEventListeners();
     setupPreview();
@@ -310,66 +317,19 @@ const DEFAULT_CSS = `
 `;
 
 function setupPreview() {
-    const container = document.getElementById('alert-preview-container');
-    if (!container) return;
-
-    if (!container.shadowRoot) {
-        container.attachShadow({ mode: 'open' });
-    }
-    const shadow = container.shadowRoot;
-    shadow.innerHTML = '';
-
-    const structuralStyle = document.createElement('style');
-    structuralStyle.textContent = `
-        :host { display: block; width: 100%; height: 100%; position: relative; overflow: hidden; font-family: 'Inter', sans-serif; }
-        * { box-sizing: border-box; }
-        .alert-box {
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            text-align: center;
-            width: 100%; height: 100%; pointer-events: none;
-            opacity: 0;
-        }
-        .alert-content { pointer-events: auto; }
-        img { max-width: 100%; height: auto; }
-    `;
-    shadow.appendChild(structuralStyle);
-
-    const fontContainer = document.createElement('div');
-    fontContainer.style.display = 'none';
-    fontContainer.innerHTML = '';
-    shadow.appendChild(fontContainer);
-
-    const themeStyle = document.createElement('style');
-    themeStyle.id = 'theme-style';
-    shadow.appendChild(themeStyle);
-
-    const wrapper = document.createElement('div');
-    wrapper.id = 'alert-wrapper';
-    wrapper.className = 'alert-box';
-    wrapper.innerHTML = `
-        <div id="alert-image-container" class="alert-image"></div>
-        <div class="alert-content">
-            <div id="alert-text" class="alert-text"></div>
-            <div id="alert-message" class="alert-message"></div>
-        </div>
-        <audio id="alert-audio"></audio>
-    `;
-    shadow.appendChild(wrapper);
-
-    connectPreviewWebSocket(shadow);
+    connectPreviewWebSocket();
 }
 
-function connectPreviewWebSocket(shadow) {
+function connectPreviewWebSocket() {
     const ws = new WebSocket(`ws://127.0.0.1:${widgetPort}`);
     ws.onmessage = (event) => {
         try {
             const data = JSON.parse(event.data);
             if (data.type === 'alert') {
                 if (data.alert.type === 'reward-redemption') return;
-                playShadowAlert(shadow, data.alert);
+                playPreviewAlert(data.alert);
             } else if (data.type === 'skip') {
-                const wrapper = shadow.getElementById('alert-wrapper');
+                const wrapper = document.getElementById('alert-wrapper');
                 if (wrapper) wrapper.style.opacity = '0';
             }
         } catch (e) { console.error(e); }
@@ -401,126 +361,34 @@ function transformLocalPath(path) {
     }
 }
 
-function playShadowAlert(shadow, alert) {
-    const wrapper = shadow.getElementById('alert-wrapper');
-    const imgContainer = shadow.getElementById('alert-image-container');
-    const textContainer = shadow.getElementById('alert-text');
-    const msgContainer = shadow.getElementById('alert-message');
-    const audio = shadow.getElementById('alert-audio');
+function playPreviewAlert(alert) {
+    const imgContainer = document.getElementById('alert-image-container');
+    const textContainer = document.getElementById('alert-text');
+    const msgContainer = document.getElementById('alert-message');
 
-    if (!wrapper) return;
-
-    wrapper.className = 'alert-box';
-    wrapper.classList.remove('animate-in', 'animate-out');
-    void wrapper.offsetWidth;
+    if (!imgContainer) return;
 
     imgContainer.innerHTML = '';
     if (alert.image) {
-        let imgPath = transformLocalPath(alert.image);
         const img = document.createElement('img');
-        img.src = imgPath;
+        img.src = transformLocalPath(alert.image);
         img.onerror = (e) => console.error('[Preview] Image load failed:', e);
         imgContainer.appendChild(img);
-    } else {
-        imgContainer.innerHTML = '<div style="font-size:48px; color:#777;">[IMG]</div>';
     }
 
-    textContainer.innerHTML = (alert.text || '')
-        .replace('{username}', '<span class="alert-username">Pseudo</span>')
-        .replace('{amount}', '<span class="alert-amount">100</span>')
-        .replace('{months}', '<span class="alert-months">12</span>')
-        .replace('{s}', 's');
-
-    msgContainer.innerHTML = alert.message || '';
-
-
-    if (alert.audio) {
-        audio.src = transformLocalPath(alert.audio);
-        audio.volume = alert.volume !== undefined ? alert.volume : 0.5;
-        // audio.play().catch(e => console.error('[Preview] Audio play failed:', e)); // Disable sound in app
-    } else {
-        audio.src = '';
+    if (textContainer) {
+        textContainer.innerHTML = (alert.text || '');
     }
 
-    wrapper.style.opacity = '1';
-    wrapper.classList.add('animate-in');
-
-    const duration = alert.duration || 5000;
-    setTimeout(() => {
-        wrapper.classList.remove('animate-in');
-        wrapper.classList.add('animate-out');
-        if (!audio.paused) {
-            let fadeOut = setInterval(() => {
-                if (audio.volume > 0.05) {
-                    audio.volume = Math.max(0, audio.volume - 0.05);
-                } else {
-                    clearInterval(fadeOut);
-                    audio.pause();
-                    audio.currentTime = 0;
-                }
-            }, 50);
-        }
-    }, duration);
+    if (msgContainer) {
+        msgContainer.innerHTML = alert.message || '';
+    }
 }
 
 function updatePreview(type) {
-
-    const container = document.getElementById('alert-preview-container');
-    if (!container || !container.shadowRoot) return;
-
-    const css = currentConfig.customCSS || '';
-    const shadow = container.shadowRoot;
-    const themeStyle = shadow.getElementById('theme-style') || shadow.querySelector('#preview-scaler #theme-style');
-
-    const defaultThemeCSS = `
-        .animate-in { animation: bounceIn 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards; }
-        .animate-out { animation: fadeOut 0.5s ease forwards; }
-
-        @keyframes bounceIn {
-            0% { opacity: 0; transform: translate(-50%, -50%) scale(0.3); }
-            50% { opacity: 1; transform: translate(-50%, -50%) scale(1.05); }
-            70% { transform: translate(-50%, -50%) scale(0.9); }
-            100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
-        }
-        @keyframes fadeOut {
-            from { opacity: 1; transform: translate(-50%, -50%) scale(1); }
-            to { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
-        }
-
-        
-        .alert-text { 
-            font-size: 24px; 
-            font-weight: 900; 
-            color: white; 
-            text-shadow: 0 4px 8px rgba(0,0,0,0.8); 
-            line-height: 1.2; 
-        }
-        .alert-message { 
-            font-size: 16px; 
-            font-weight: 700; 
-            color: #eee; 
-            text-shadow: 0 4px 8px rgba(0,0,0,0.8); 
-            margin-top: 15px; 
-        }
-        .alert-image { max-width: 600px; margin-bottom: 30px; }
-        .alert-image img { width: 100%; display: block; filter: drop-shadow(0 5px 15px rgba(0,0,0,0.5)); }
-        
-        .alert-username {
-            font-size: 32px;
-            font-family: 'Road Rage', cursive;
-            color: yellow;
-            letter-spacing: 0.2rem;
-            text-shadow: 4px 4px #000000;
-        }
-    `;
-
-    if (themeStyle) {
-        themeStyle.textContent = css || defaultThemeCSS;
-    }
 }
 
 function updateGlobalThemePreview(css) {
-    updatePreview();
 }
 
 async function saveConfig() {

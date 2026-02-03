@@ -109,18 +109,73 @@
     gap: 15px;
 }
 
-#alert-preview-box {
+.alert-preview-container {
     width: 100%;
-    aspect-ratio: 16/9;
-    background: #000;
+    height: 280px;
+    background: #1a1a1a;
     border: 1px solid var(--border);
     border-radius: 8px;
     position: relative;
     overflow: hidden;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
-/* Base .form-group handled by global.css */
+.alert-preview-container .alert-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    width: 100%;
+    height: 100%;
+    padding: 15px;
+}
+
+.alert-preview-container .alert-image {
+    margin-bottom: 15px;
+    display: flex;
+    justify-content: center;
+}
+
+.alert-preview-container .alert-image img {
+    max-width: 90%;
+    max-height: 120px;
+    object-fit: contain;
+}
+
+.alert-preview-container .alert-text {
+    font-size: 16px;
+    font-weight: 900;
+    color: white;
+    line-height: 1.2;
+}
+
+.alert-preview-container .alert-message {
+    font-size: 18px;
+    font-weight: 700;
+    color: #eee;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+    margin-top: 10px;
+}
+
+.alert-preview-container .alert-username {
+    padding-right: 5px;
+    letter-spacing: 4px;
+    font-size: 16px;
+    font-family: 'Road Rage', cursive !important;
+    color: yellow;
+    text-shadow: 3px 3px #000000;
+}
+
+.alert-preview-container .alert-amount,
+.alert-preview-container .alert-months {
+    color: #4af;
+    font-weight: bold;
+}
+
 
 .checkbox-group {
     flex-direction: row-reverse;

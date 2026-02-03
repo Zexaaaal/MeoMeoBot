@@ -14,7 +14,7 @@ module.exports = {
         clipCooldown: 60,
         widgetPort: 8087,
         rouletteWidgetPort: 8092,
-        alertsWidgetPort: 8093,
+        alertsWidgetPort: 8097,
         spotifyWidgetPort: 8090,
         spotifyClientId: "",
         spotifyClientSecret: "",

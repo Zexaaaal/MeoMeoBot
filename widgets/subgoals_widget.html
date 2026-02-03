@@ -125,6 +125,7 @@
             }
         }
     </style>
+    /* __CUSTOM_CSS__ */
 </head>
 
 <body>
@@ -150,6 +151,15 @@
                     if (data.widget && data.widget !== 'subgoals') return;
                     if (data.config) {
                         currentConfig = { ...currentConfig, ...data.config };
+                        if (typeof data.config.customCSS === 'string') {
+                            let style = document.getElementById('custom-css');
+                            if (!style) {
+                                style = document.createElement('style');
+                                style.id = 'custom-css';
+                                document.head.appendChild(style);
+                            }
+                            style.textContent = data.config.customCSS;
+                        }
                         render();
                     }
                 } else if (data.type === 'sub-update') {

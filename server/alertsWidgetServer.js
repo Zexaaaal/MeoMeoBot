@@ -1,4 +1,5 @@
 const BaseWidgetServer = require('./BaseWidgetServer');
+const logger = require('../main/logger');
 
 class AlertsWidgetServer extends BaseWidgetServer {
     constructor(bot, defaultPort) {
@@ -14,14 +15,11 @@ class AlertsWidgetServer extends BaseWidgetServer {
                 text-align: center;
             }
             .alert-image {
-                max-width: 300px;
-                padding: 50px 50px 0px 50px;
                 margin-bottom: 20px;
             }
             .alert-image img {
-                width: 100%;
-                display: block;
-                filter: drop-shadow(0 5px 15px rgba(0, 0, 0, 0.5));
+                max-width: 90%;
+                object-fit: contain;
             }
             .alert-text {
                 font-size: 24px;
@@ -37,9 +35,10 @@ class AlertsWidgetServer extends BaseWidgetServer {
                 margin-top: 15px;
             }
             .alert-username {
+                padding-right: 8px;
+                letter-spacing: 6px;
                 font-size: 22px;
                 font-family: 'Road Rage', cursive !important;
-                letter-spacing: 4px;
                 color: yellow;
                 text-shadow: 4px 4px #000000;
             }
@@ -47,7 +46,7 @@ class AlertsWidgetServer extends BaseWidgetServer {
     }
 
     onConnection(ws) {
-        console.log('[ALERTS] Client connected');
+        logger.log('[ALERTS] Client connected');
         this.isPlaying = false;
         this.processQueue();
 
@@ -56,16 +55,16 @@ class AlertsWidgetServer extends BaseWidgetServer {
                 const msgStr = message.toString();
                 const data = JSON.parse(msgStr);
                 if (data.type === 'alert-finished') {
-                    console.log('[ALERTS] Alert finished');
+                    logger.log('[ALERTS] Alert finished');
                     this.isPlaying = false;
                     this.processQueue();
                 }
-            } catch (e) { console.error('[ALERTS] Error parsing message:', e); }
+            } catch (e) { logger.error('[ALERTS] Error parsing message:', e); }
         });
     }
 
     addToQueue(alertData) {
-        console.log(`[ALERTS] Added to queue: ${alertData.type}`);
+        logger.log(`[ALERTS] Added to queue: ${alertData.type}`);
         this.alertQueue.push(alertData);
         this.processQueue();
     }
@@ -84,7 +83,7 @@ class AlertsWidgetServer extends BaseWidgetServer {
         if (this.safetyTimer) clearTimeout(this.safetyTimer);
         this.safetyTimer = setTimeout(() => {
             if (this.isPlaying) {
-                console.log('[ALERTS] Safety timeout triggered - forcing next alert');
+                logger.log('[ALERTS] Safety timeout triggered - forcing next alert');
                 this.isPlaying = false;
                 this.processQueue();
             }

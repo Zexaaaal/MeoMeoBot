@@ -65,7 +65,15 @@
             return listStyle.display !== 'none' && wheelStyle.display === 'none';
         }
 
+        let listVisualsRunning = false;
+
         function updateListVisuals() {
+            if (!isListMode()) {
+                listVisualsRunning = false;
+                return;
+            }
+            listVisualsRunning = true;
+
             try {
                 if (listContainer.offsetParent === null) {
                     requestAnimationFrame(updateListVisuals);
@@ -128,6 +136,12 @@
             }
 
             requestAnimationFrame(updateListVisuals);
+        }
+
+        function startListVisualsIfNeeded() {
+            if (isListMode() && !listVisualsRunning) {
+                updateListVisuals();
+            }
         }
 
         function drawRouletteWheel() {
@@ -317,8 +331,12 @@
                     }
                     if (data.config.customCSS) {
                         setTimeout(() => {
-                            if (isListMode()) renderList();
-                            else drawRouletteWheel();
+                            if (isListMode()) {
+                                renderList();
+                                startListVisualsIfNeeded();
+                            } else {
+                                drawRouletteWheel();
+                            }
                         }, 100);
                     }
                 } else if (data.type === 'spin') {
@@ -329,7 +347,7 @@
 
         drawRouletteWheel();
         renderList();
-        updateListVisuals();
+        startListVisualsIfNeeded();
         connectWs();
 
     </script>

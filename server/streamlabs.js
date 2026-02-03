@@ -1,4 +1,5 @@
 const io = require('socket.io-client');
+const logger = require('../main/logger');
 
 class StreamlabsClient {
     constructor(bot) {
@@ -9,7 +10,7 @@ class StreamlabsClient {
 
     start(token) {
         if (!token) {
-            console.log('[Streamlabs] Pas de token configuré.');
+            logger.log('[Streamlabs] Pas de token configuré.');
             return;
         }
 
@@ -20,7 +21,7 @@ class StreamlabsClient {
             });
 
             this.socket.on('connect', () => {
-                console.log('[Streamlabs] Connecté au socket API.');
+                logger.log('[Streamlabs] Connecté au socket API.');
             });
 
             this.socket.on('event', (eventData) => {
@@ -32,20 +33,20 @@ class StreamlabsClient {
             });
 
             this.socket.on('disconnect', () => {
-                console.log('[Streamlabs] Déconnecté.');
+                logger.log('[Streamlabs] Déconnecté.');
             });
 
             this.socket.on('connect_error', (err) => {
-                console.error('[Streamlabs] Erreur de connexion:', err.message);
+                logger.error('[Streamlabs] Erreur de connexion:', err.message);
             });
 
         } catch (error) {
-            console.error('[Streamlabs] Erreur d\'initialisation:', error);
+            logger.error('[Streamlabs] Erreur d\'initialisation:', error);
         }
     }
 
     handleDonation(msg) {
-        console.log(`[Streamlabs] Donation reçue de ${msg.name}: ${msg.formatted_amount}`);
+        logger.log(`[Streamlabs] Donation reçue de ${msg.name}: ${msg.formatted_amount}`);
         const alertData = {
             type: 'donation',
             username: msg.name,

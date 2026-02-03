@@ -14,7 +14,7 @@
     <link rel="stylesheet" href="css/giveaway.css">
     <link rel="stylesheet" href="css/moderation.css">
     <link rel="stylesheet" href="css/widgets.css">
-    <link rel="stylesheet" href="css/points.css">
+
     <link rel="stylesheet" href="css/planning.css">
 </head>
 
@@ -231,119 +231,140 @@
     <div class="tab-content" id="widgets-tab">
         <div class="card full-height-card">
             <div class="widget-list-container">
-
-                <div class="widget-row" data-widget="chat">
-                    <div class="widget-col-name"><strong>Tchat</strong></div>
-                    <div class="widget-col-links">
-                        <p class="chat-widget-url">Source OBS : <code class="chat-widget-url"
-                                id="widgetUrlDisplay">Chargement...</code></p>
-                    </div>
-                    <div class="widget-col-config" id="badgePrefs"></div>
-                    <div class="widget-col-actions">
-                        <button class="btn btn-secondary btn-sm" onclick="editWidgetCss('chat')">Thèmes</button>
-                        <button class="btn btn-danger btn-sm" id="resetChatConfigBtn"
-                            title="Réinitialiser la config">Réinitialiser</button>
-                        <button class="btn btn-primary btn-sm" id="saveBadgePrefs" title="Sauvegarder">💾</button>
-                    </div>
-                </div>
-
-                <div class="widget-row" data-widget="spotify">
-                    <div class="widget-col-name"><strong>Spotify</strong></div>
-                    <div class="widget-col-links">
-                        <p class="chat-widget-url">Source OBS : <code class="chat-widget-url"
-                                id="spotifyWidgetUrlDisplay">Chargement...</code></p>
-                        <p style="margin-top:6px;font-size:12px;color:var(--text-secondary);">
-                            Dashboard : <code
-                                id="spotifyRedirectDisplay">http://127.0.0.1:8090/auth/spotify/callback</code>
-                        </p>
-                    </div>
-                    <div class="widget-col-config">
-                        <div id="spotify-device-picker" class="hidden">
-                            <select id="spotify-devices" class="form-select"></select>
-                            <button class="btn btn-primary btn-sm" id="confirm-device">Valider</button>
+                <div class="widget-columns-wrapper">
+                    <div class="widget-col-container">
+                        <div class="widget-row" data-widget="chat">
+                            <div class="widget-col-name">
+                                <strong>Tchat</strong>
+                                <button class="btn btn-sm btn-secondary copy-source-btn" id="btnCopyChatUrl">📄
+                                    Source</button>
+                            </div>
+                            <div class="widget-col-config" id="badgePrefs"></div>
+                            <div class="widget-col-actions">
+                                <button class="btn btn-secondary btn-sm" onclick="editWidgetCss('chat')">Thèmes</button>
+                                <button class="btn btn-danger btn-sm" id="resetChatConfigBtn"
+                                    title="Réinitialiser la config">Réinitialiser</button>
+                                <button class="btn btn-primary btn-sm" id="saveBadgePrefs"
+                                    title="Sauvegarder">Sauvegarder</button>
+                            </div>
                         </div>
-                    </div>
-                    <div class="widget-col-actions">
-                        <button class="btn btn-secondary btn-sm" onclick="editWidgetCss('spotify')">Thèmes</button>
-                    </div>
-                </div>
 
-                <div class="widget-row" data-widget="emote-wall">
-                    <div class="widget-col-name"><strong>Mur d'Emotes</strong></div>
-                    <div class="widget-col-links">
-                        <p class="chat-widget-url">Source OBS : <code class="chat-widget-url"
-                                id="emoteWallWidgetUrlDisplay">Chargement...</code></p>
-                    </div>
-                    <div class="widget-col-config">
-                        <div class="config-inline-grid">
-                            <div class="form-group">
-                                <label>Taille Min (px)</label>
-                                <input type="number" id="emoteWallMinSize" value="24" class="inline-input">
+                        <div class="widget-row" data-widget="subgoals">
+                            <div class="widget-col-name">
+                                <strong>Subgoals</strong>
+                                <button class="btn btn-sm btn-secondary copy-source-btn" id="btnCopySubgoalsUrl">📄
+                                    Source</button>
                             </div>
-                            <div class="form-group">
-                                <label>Taille Max (px)</label>
-                                <input type="number" id="emoteWallMaxSize" value="64" class="inline-input">
-                            </div>
-                            <div class="form-group">
-                                <label>Intervalle (ms)</label>
-                                <input type="number" id="emoteWallSpawnInterval" value="100" class="inline-input">
-                            </div>
-                            <div class="form-group">
-                                <label>Durée (ms)</label>
-                                <input type="number" id="emoteWallDuration" value="5000" class="inline-input">
+                            <div class="widget-col-actions">
+                                <button class="btn btn-primary btn-sm" id="configureSubgoalsBtn">Configurer</button>
+                                <button class="btn btn-secondary btn-sm"
+                                    onclick="editWidgetCss('subgoals')">Thèmes</button>
                             </div>
                         </div>
                     </div>
-                    <div class="widget-col-actions">
-                        <button class="btn btn-primary btn-sm" id="saveEmoteWallConfig" title="Sauvegarder">💾</button>
+
+                    <div class="widget-col-container">
+                        <div class="widget-row" data-widget="emote-wall">
+                            <div class="widget-col-name">
+                                <strong>Mur d'Emotes</strong>
+                                <button class="btn btn-sm btn-secondary copy-source-btn" id="btnCopyEmoteWallUrl">📄
+                                    Source</button>
+                            </div>
+                            <div class="widget-col-config">
+                                <div class="config-inline-grid">
+                                    <div class="form-group">
+                                        <label>Taille Min (px)</label>
+                                        <input type="number" id="emoteWallMinSize" value="24" class="inline-input">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Taille Max (px)</label>
+                                        <input type="number" id="emoteWallMaxSize" value="64" class="inline-input">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Intervalle (ms)</label>
+                                        <input type="number" id="emoteWallSpawnInterval" value="100"
+                                            class="inline-input">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Durée (ms)</label>
+                                        <input type="number" id="emoteWallDuration" value="5000" class="inline-input">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="widget-col-actions">
+                                <button class="btn btn-primary btn-sm" id="saveEmoteWallConfig"
+                                    title="Sauvegarder">Sauvegarder</button>
+                            </div>
+                        </div>
+
+                        <div class="widget-row" data-widget="daily-subs">
+                            <div class="widget-col-name">
+                                <strong>Daily Subs</strong>
+                                <button class="btn btn-sm btn-secondary copy-source-btn" id="btnCopyDailySubsUrl">📄
+                                    Source</button>
+                            </div>
+                            <div class="widget-col-config">
+                                <div class="form-group">
+                                    <label>Objectif</label>
+                                    <input type="number" id="dailyGoalCount" class="inline-input" value="10">
+                                </div>
+                            </div>
+                            <div class="widget-col-actions">
+                                <button class="btn btn-primary btn-sm" id="saveDailySubsBtn">Sauvegarder</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="widget-col-container">
+                        <div class="widget-row" data-widget="spotify">
+                            <div class="widget-col-name">
+                                <strong>Spotify</strong>
+                                <button class="btn btn-sm btn-secondary copy-source-btn" id="btnCopySpotifyUrl">📄
+                                    Source</button>
+                            </div>
+                            <div class="widget-col-config">
+                                <p style="margin-bottom:6px;font-size:12px;color:var(--text-secondary);">
+                                    <code id="spotifyRedirectDisplay">http://127.0.0.1:8090/auth/spotify/callback</code>
+                                </p>
+                                <div id="spotify-device-picker" class="hidden">
+                                    <select id="spotify-devices" class="form-select"></select>
+                                    <button class="btn btn-primary btn-sm" id="confirm-device">Valider</button>
+                                </div>
+                            </div>
+                            <div class="widget-col-actions">
+                                <button class="btn btn-secondary btn-sm"
+                                    onclick="editWidgetCss('spotify')">Thèmes</button>
+                            </div>
+                        </div>
+
+                        <div class="widget-row" data-widget="roulette">
+                            <div class="widget-col-name">
+                                <strong>Roulette</strong>
+                                <button class="btn btn-sm btn-secondary copy-source-btn" id="btnCopyRouletteUrl">📄
+                                    Source</button>
+                            </div>
+                            <div class="widget-col-actions">
+                                <button class="btn btn-primary btn-sm" id="configureRouletteBtn">Configurer</button>
+                                <button class="btn btn-secondary btn-sm"
+                                    onclick="editWidgetCss('roulette')">Thèmes</button>
+                                <button class="btn btn-success btn-sm" id="spinRouletteBtn"
+                                    title="Lancer la roulette">Lancer</button>
+                            </div>
+                        </div>
+
+                        <div class="widget-row" data-widget="subgoals-list">
+                            <div class="widget-col-name">
+                                <strong>Liste Subgoals</strong>
+                                <button class="btn btn-sm btn-secondary copy-source-btn" id="btnCopySubgoalsListUrl">📄
+                                    Source</button>
+                            </div>
+                            <div class="widget-col-actions">
+                                <button class="btn btn-secondary btn-sm"
+                                    onclick="editWidgetCss('subgoals-list')">Thèmes</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
-
-                <div class="widget-row" data-widget="subgoals">
-                    <div class="widget-col-name"><strong>Subgoals</strong></div>
-                    <div class="widget-col-links">
-                        <p class="chat-widget-url">Source OBS : <code class="chat-widget-url"
-                                id="subgoalsWidgetUrlDisplay">Chargement...</code></p>
-                    </div>
-                    <div class="widget-col-config">
-                        <button class="btn btn-primary btn-sm" id="configureSubgoalsBtn">Configurer</button>
-                    </div>
-                    <div class="widget-col-actions">
-                        <button class="btn btn-secondary btn-sm" onclick="editWidgetCss('subgoals')">Thèmes</button>
-                    </div>
-                </div>
-
-                <div class="widget-row" data-widget="subgoals-list">
-                    <div class="widget-col-name"><strong>Subgoals List</strong></div>
-                    <div class="widget-col-links">
-                        <p class="chat-widget-url">Source OBS : <code class="chat-widget-url"
-                                id="subgoalsListWidgetUrlDisplay">Chargement...</code></p>
-                    </div>
-                    <div class="widget-col-config">
-                        <p style="font-size: 12px; color: var(--text-secondary);">Partage la configuration avec Subgoals
-                        </p>
-                    </div>
-                    <div class="widget-col-actions">
-                        <button class="btn btn-secondary btn-sm"
-                            onclick="editWidgetCss('subgoals-list')">Thèmes</button>
-                    </div>
-                </div>
-
-                <div class="widget-row" data-widget="roulette">
-                    <div class="widget-col-name"><strong>Roulette</strong></div>
-                    <div class="widget-col-links">
-                        <p class="chat-widget-url">Source OBS : <code class="chat-widget-url"
-                                id="rouletteWidgetUrlDisplay">Chargement...</code></p>
-                    </div>
-                    <div class="widget-col-actions">
-                        <button class="btn btn-primary btn-sm" id="configureRouletteBtn">Configurer</button>
-                        <button class="btn btn-secondary btn-sm" onclick="editWidgetCss('roulette')">Thèmes</button>
-                        <button class="btn btn-success btn-sm" id="spinRouletteBtn"
-                            title="Lancer la roulette">Lancer</button>
-                    </div>
-                </div>
-
-
             </div>
         </div>
     </div>
@@ -442,13 +463,24 @@
                 </div>
 
                 <div class="alerts-preview-col">
-                    <div id="alert-preview-box"
-                        style="width: 100%; height: 320px; background: #333; border: 1px solid #555; position: relative; overflow: hidden; margin-bottom: 10px; display: flex; align-items: center; justify-content: center;">
+                    <div class="preview-dimensions"
+                        style="display: flex; gap: 10px; margin-bottom: 10px; align-items: center;">
+                        <label style="font-size: 12px; color: #aaa;">Dimensions OBS:</label>
+                        <input type="number" id="alert-preview-width" value="300" min="100" max="1920"
+                            style="width: 70px; padding: 4px 8px;">
+                        <span style="color: #666;">×</span>
+                        <input type="number" id="alert-preview-height" value="350" min="100" max="1080"
+                            style="width: 70px; padding: 4px 8px;">
+                        <span style="font-size: 11px; color: #666;">px</span>
+                    </div>
 
-                        <div id="preview-frame-wrapper"
-                            style="width: 300px; height: 300px; position: relative; border: 1px dashed #666; background: transparent;">
-                            <div id="alert-preview-container" style="width: 100%; height: 100%;"></div>
+                    <div id="alert-preview-container" class="alert-preview-container">
+                        <div id="alert-wrapper" class="alert-box">
+                            <div id="alert-image-container" class="alert-image"></div>
+                            <div id="alert-text" class="alert-text"></div>
+                            <div id="alert-message" class="alert-message"></div>
                         </div>
+                        <audio id="alert-audio"></audio>
                     </div>
 
                     <button class="btn btn-success" id="testAlertBtn">Tester l'alerte</button>
@@ -707,7 +739,6 @@
     </div>
     </div>
 
-    <div id="notification-container"></div>
 
     <div id="device-picker-overlay" class="confirmation-overlay">
         <div class="device-picker-box">

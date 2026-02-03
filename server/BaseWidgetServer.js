@@ -2,6 +2,7 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 const WebSocket = require('ws');
+const logger = require('../main/logger');
 
 class BaseWidgetServer {
     constructor(bot, defaultPort, widgetName) {
@@ -22,8 +23,8 @@ class BaseWidgetServer {
         this.port = this.resolvePort();
         this.server = http.createServer(this.handleRequest.bind(this));
 
-        this.server.listen(this.port, () => {
-            console.log(`[${this.widgetName.toUpperCase()}] Widget Server running on port ${this.port}`);
+        this.server.listen(this.port, '127.0.0.1', () => {
+            logger.log(`[${this.widgetName.toUpperCase()}] Widget Server running on port ${this.port} (Localhost Only)`);
 
             if (this.bot && this.bot.updateConfig) {
                 this.bot.updateConfig({ [this.configKey]: this.port });
@@ -35,11 +36,11 @@ class BaseWidgetServer {
 
         this.server.on('error', (err) => {
             if (err.code === 'EADDRINUSE') {
-                console.error(`[${this.widgetName.toUpperCase()}] Port ${this.port} in use, trying random...`);
+                logger.error(`[${this.widgetName.toUpperCase()}] Port ${this.port} in use, trying random...`);
                 this.port = 0;
-                this.server.listen(0);
+                this.server.listen(0, '127.0.0.1');
             } else {
-                console.error(`[${this.widgetName.toUpperCase()}] Server error: `, err);
+                logger.error(`[${this.widgetName.toUpperCase()}] Server error: `, err);
             }
         });
     }
@@ -136,9 +137,25 @@ class BaseWidgetServer {
             return res.end('No path specified');
         }
 
+        const ext = path.extname(filePath).toLowerCase();
+        const allowedTypes = {
+            '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg',
+            '.gif': 'image/gif', '.svg': 'image/svg+xml', '.webp': 'image/webp',
+            '.webm': 'video/webm', '.mp4': 'video/mp4', '.avi': 'video/x-msvideo',
+            '.mov': 'video/quicktime', '.mkv': 'video/x-matroska',
+            '.mp3': 'audio/mpeg', '.wav': 'audio/wav', '.ogg': 'audio/ogg',
+            '.flac': 'audio/flac', '.m4a': 'audio/mp4', '.aac': 'audio/aac'
+        };
+
+        if (!allowedTypes[ext]) {
+            logger.error(`[BaseWidgetServer] Blocked access to restricted file type: ${filePath}`);
+            res.statusCode = 403;
+            return res.end('Forbidden File Type');
+        }
+
         fs.stat(filePath, (err, stats) => {
             if (err || !stats.isFile()) {
-                console.error(`[BaseWidgetServer] Local file not found: ${filePath}`, err || '');
+                logger.error(`[BaseWidgetServer] Local file not found: ${filePath}`, err || '');
                 res.statusCode = 404;
                 return res.end('File not found');
             }
@@ -148,14 +165,9 @@ class BaseWidgetServer {
                     res.statusCode = 500;
                     return res.end('Error reading file');
                 }
-                const ext = path.extname(filePath).toLowerCase();
-                const mimeTypes = {
-                    '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg',
-                    '.gif': 'image/gif', '.svg': 'image/svg+xml', '.webm': 'video/webm',
-                    '.mp3': 'audio/mpeg', '.wav': 'audio/wav', '.ogg': 'audio/ogg'
-                };
+
                 res.writeHead(200, {
-                    'Content-Type': mimeTypes[ext] || 'application/octet-stream',
+                    'Content-Type': allowedTypes[ext],
                     'Access-Control-Allow-Origin': '*'
                 });
                 res.end(data);
@@ -322,7 +334,7 @@ class BaseWidgetServer {
         });
         if (count > 0 || data.type === 'reload') {
             if (data.type !== 'config-update' && data.type !== 'sub-update' && data.type !== 'alert' && data.type !== 'chat') {
-                console.log(`[${this.widgetName.toUpperCase()}] Broadcasting: ${JSON.stringify(data)} to ${count} clients`);
+                logger.log(`[${this.widgetName.toUpperCase()}] Broadcasting: ${JSON.stringify(data)} to ${count} clients`);
             }
         }
     }

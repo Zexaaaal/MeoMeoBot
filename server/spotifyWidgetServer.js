@@ -2,6 +2,7 @@ const BaseWidgetServer = require('./BaseWidgetServer');
 const crypto = require('crypto');
 const path = require('path');
 const fs = require('fs');
+const logger = require('../main/logger');
 
 class SpotifyWidgetServer extends BaseWidgetServer {
     constructor(bot, { defaultPort = 8090, scopes = 'user-read-currently-playing user-read-playback-state', pollInterval = 5000 } = {}) {
@@ -151,7 +152,7 @@ class SpotifyWidgetServer extends BaseWidgetServer {
             res.writeHead(200, { 'Content-Type': 'text/html' });
             res.end('<html><body><p>Connexion Spotify reussie. Vous pouvez fermer cette fenetre.</p><script>window.close();</script></body></html>');
         } catch (err) {
-            console.error('[SPOTIFY AUTH] Callback error', err);
+            logger.error('[SPOTIFY AUTH] Callback error', err);
             res.writeHead(500, { 'Content-Type': 'text/plain' });
             res.end('Erreur lors de la connexion Spotify.');
         }
@@ -193,7 +194,7 @@ class SpotifyWidgetServer extends BaseWidgetServer {
         try {
             token = await this.ensureAccessToken();
         } catch (err) {
-            console.error('[SPOTIFY] Refresh token error:', err.message);
+            logger.error('[SPOTIFY] Refresh token error:', err.message);
             return null;
         }
         if (!token) return null;
@@ -207,7 +208,7 @@ class SpotifyWidgetServer extends BaseWidgetServer {
             return null;
         }
         if (!resp.ok) {
-            console.warn('[SPOTIFY] current track fetch failed', resp.status);
+            logger.warn('[SPOTIFY] current track fetch failed', resp.status);
             return null;
         }
         const data = await resp.json();
@@ -242,7 +243,7 @@ class SpotifyWidgetServer extends BaseWidgetServer {
                 const track = await this.fetchCurrentTrack();
                 if (track) this.updateTrackConfig(track);
             } catch (err) {
-                console.warn('[SPOTIFY] Polling error', err.message);
+                logger.warn('[SPOTIFY] Polling error', err.message);
             }
         };
         pollOnce();

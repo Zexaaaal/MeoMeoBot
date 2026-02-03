@@ -1,5 +1,5 @@
 import { setupTabs } from './tabs.js';
-import { setupWindowControls, setupConfirmationOverlay, updateUpdaterStatus, setupInlineConfirmLogic, NOTIFICATIONS, showNotification } from './ui.js';
+import { setupWindowControls, updateUpdaterStatus, setupInlineConfirmLogic, NOTIFICATIONS, showNotification } from './ui.js';
 import { API } from './api.js';
 import { loadParticipants, startGiveaway, stopGiveaway, drawWinner, clearParticipants, saveGiveawayConfig } from './giveaway.js';
 import { loadCommands, addCommand } from './commands.js';
@@ -17,7 +17,6 @@ document.addEventListener('DOMContentLoaded', initializeApp);
 async function initializeApp() {
     setupTabs();
     setupWindowControls();
-    setupConfirmationOverlay();
     setupCast();
     initPlanning();
     setupEventListeners();
@@ -29,6 +28,7 @@ async function initializeApp() {
     loadEmoteWallConfig();
     loadBadgePrefs();
     setupSubgoalsConfig();
+    loadDailySubsConfig();
     setupRouletteConfig();
 }
 
@@ -124,6 +124,9 @@ function setupEventListeners() {
     const saveEmoteWallBtn = document.getElementById('saveEmoteWallConfig');
     if (saveEmoteWallBtn) saveEmoteWallBtn.addEventListener('click', saveEmoteWallConfig);
 
+    const saveDailySubsBtn = document.getElementById('saveDailySubsBtn');
+    if (saveDailySubsBtn) saveDailySubsBtn.addEventListener('click', saveDailySubsConfig);
+
     const updateStatus = document.getElementById('updateStatus');
     updateStatus.addEventListener('click', (e) => {
         if (!e.target.closest('.update-popover') && (updateStatus.classList.contains('update-available') || updateStatus.classList.contains('downloaded'))) {
@@ -151,6 +154,22 @@ function setupEventListeners() {
     window.api.on('notification', (msg, type) => showNotification(msg, type));
     window.api.on('participants-updated', () => loadParticipants());
     window.api.on('refresh-widget-urls', () => loadWidgetUrls());
+
+    document.getElementById('widgets-tab').addEventListener('click', async (e) => {
+        if (e.target.classList.contains('copy-source-btn')) {
+            const url = e.target.dataset.url;
+            if (url) {
+                try {
+                    await navigator.clipboard.writeText(url);
+                    showNotification('URL copiée dans le presse-papier !', 'success');
+                } catch (err) {
+                    showNotification('Erreur de copie : ' + err, 'error');
+                }
+            } else {
+                showNotification('URL non disponible', 'error');
+            }
+        }
+    });
 }
 
 async function connectBot() {
@@ -236,12 +255,20 @@ function updateBotStatus(status) {
 async function loadWidgetUrls() {
     try {
         const urls = await API.widgets.getUrls();
-        if (document.getElementById('widgetUrlDisplay')) document.getElementById('widgetUrlDisplay').textContent = urls.chat;
-        if (document.getElementById('spotifyWidgetUrlDisplay')) document.getElementById('spotifyWidgetUrlDisplay').textContent = urls.spotify;
-        if (document.getElementById('emoteWallWidgetUrlDisplay')) document.getElementById('emoteWallWidgetUrlDisplay').textContent = urls.emoteWall;
-        if (document.getElementById('subgoalsWidgetUrlDisplay')) document.getElementById('subgoalsWidgetUrlDisplay').textContent = urls.subgoals;
-        if (document.getElementById('subgoalsListWidgetUrlDisplay')) document.getElementById('subgoalsListWidgetUrlDisplay').textContent = urls.subgoalsList;
-        if (document.getElementById('rouletteWidgetUrlDisplay')) document.getElementById('rouletteWidgetUrlDisplay').textContent = urls.roulette;
+
+        const setBtnUrl = (id, url) => {
+            const btn = document.getElementById(id);
+            if (btn) btn.dataset.url = url;
+        };
+
+        setBtnUrl('btnCopyChatUrl', urls.chat);
+        setBtnUrl('btnCopySpotifyUrl', urls.spotify);
+        setBtnUrl('btnCopyEmoteWallUrl', urls.emoteWall);
+        setBtnUrl('btnCopySubgoalsUrl', urls.subgoals);
+        setBtnUrl('btnCopyDailySubsUrl', urls.dailySubs);
+        setBtnUrl('btnCopySubgoalsListUrl', urls.subgoalsList);
+        setBtnUrl('btnCopyRouletteUrl', urls.roulette);
+
     } catch (e) { console.error('Erreur URLs widgets', e); }
 }
 
@@ -408,4 +435,38 @@ async function saveSubgoalsConfig() {
         await API.widgets.saveConfig('subgoals', config);
         showNotification('Config Subgoals sauvegardée', 'success');
     } catch (e) { showNotification('Erreur sauvegarde Subgoals: ' + e, 'error'); }
+}
+
+async function loadDailySubsConfig() {
+    try {
+        const config = await API.widgets.getConfig('subgoals');
+        if (config) {
+            if (document.getElementById('dailyStartCount')) document.getElementById('dailyStartCount').value = config.dailyStartCount || 0;
+            if (document.getElementById('dailyGoalCount')) document.getElementById('dailyGoalCount').value = config.dailyGoalCount || 10;
+            if (document.getElementById('dailyCurrentCount')) document.getElementById('dailyCurrentCount').value = config.dailyCurrentCount || 0;
+        }
+    } catch (e) { console.error('Erreur chargement config Daily Subs', e); }
+}
+
+async function saveDailySubsConfig() {
+    try {
+        const currentConfig = await API.widgets.getConfig('subgoals') || {};
+
+        // Helper to get int value safely
+        const getInt = (id) => {
+            const el = document.getElementById(id);
+            return el ? parseInt(el.value, 10) : 0;
+        };
+
+        const newConfig = {
+            ...currentConfig,
+            dailyGoalCount: getInt('dailyGoalCount'),
+            // Only update start/current if inputs exist, else preserve existing or default to 0
+            dailyStartCount: document.getElementById('dailyStartCount') ? getInt('dailyStartCount') : (currentConfig.dailyStartCount || 0),
+            dailyCurrentCount: document.getElementById('dailyCurrentCount') ? getInt('dailyCurrentCount') : (currentConfig.dailyCurrentCount || 0)
+        };
+
+        await API.widgets.saveConfig('subgoals', newConfig);
+        showNotification('Config Daily Subs sauvegardée', 'success');
+    } catch (e) { showNotification('Erreur sauvegarde Daily Subs: ' + e, 'error'); }
 }

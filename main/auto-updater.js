@@ -6,7 +6,7 @@ const UPDATE_CHECK_INTERVAL = 800000;
 let updateCheckTimer = null;
 
 autoUpdater.logger = logger;
-autoUpdater.logger.transports.file.level = 'info';
+// autoUpdater.logger.transports.file.level = 'info'; // Removing this as our custom logger doesn't support transports
 
 function init(mainWindow) {
     autoUpdater.on('checking-for-update', () => {

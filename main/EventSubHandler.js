@@ -13,7 +13,14 @@ class EventSubHandler {
     connect() {
         if (this.ws) {
             this.ws.removeAllListeners();
-            this.ws.close();
+            if (this.ws.readyState !== WebSocket.CLOSED && this.ws.readyState !== WebSocket.CLOSING) {
+                try {
+                    this.ws.close();
+                } catch (e) {
+                    logger.warn('[EventSub] Error closing socket:', e.message);
+                }
+            }
+            this.ws = null;
         }
 
         const url = this.reconnectUrl || 'wss://eventsub.wss.twitch.tv/ws';

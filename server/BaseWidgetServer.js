@@ -63,6 +63,7 @@ class BaseWidgetServer {
         res.setHeader('Pragma', 'no-cache');
         res.setHeader('Expires', '0');
         res.setHeader('Surrogate-Control', 'no-store');
+        res.setHeader('Content-Security-Policy', "default-src * 'unsafe-inline' 'unsafe-eval' data: blob:; img-src * data: blob:; media-src * data: blob:;");
 
         if (req.method === 'OPTIONS') {
             res.writeHead(204);
@@ -71,8 +72,6 @@ class BaseWidgetServer {
         }
 
         const urlPath = req.url.split('?')[0];
-
-        // DEBUG LOG
         console.error(`[${this.widgetName.toUpperCase()}] Request: ${req.method} ${req.url}`);
 
         if (req.url.startsWith('/widget/assets/')) {

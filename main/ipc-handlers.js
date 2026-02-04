@@ -311,6 +311,12 @@ function registerHandlers(deps) {
         return { success: true };
     });
 
+    ipcMain.handle('open-file-dialog', async (event, filters = []) => {
+        const result = await dialog.showOpenDialog({ properties: ['openFile'], filters });
+        if (result.canceled) return null;
+        return result.filePaths[0];
+    });
+
     ipcMain.handle('select-folder', async () => {
         const result = await dialog.showOpenDialog({ properties: ['openDirectory'] });
         if (result.canceled) return null;

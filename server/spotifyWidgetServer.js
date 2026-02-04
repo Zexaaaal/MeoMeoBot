@@ -241,8 +241,13 @@ class SpotifyWidgetServer extends BaseWidgetServer {
         const pollOnce = async () => {
             try {
                 const track = await this.fetchCurrentTrack();
-                if (track) this.updateTrackConfig(track);
+                if (track) {
+                    this.updateTrackConfig(track);
+                } else {
+                    console.error('[SPOTIFY] No track fetched or auth error');
+                }
             } catch (err) {
+                console.error('[SPOTIFY] Polling error details:', err);
                 logger.warn('[SPOTIFY] Polling error', err.message);
             }
         };

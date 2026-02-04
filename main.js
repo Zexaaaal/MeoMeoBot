@@ -189,7 +189,17 @@ function setupBotEvents() {
     bot.onConnected = () => safeSend('bot-status', { connected: true, channel: bot.getConfig().channel });
     bot.onDisconnected = () => safeSend('bot-status', { connected: false });
     bot.onParticipantsUpdated = () => safeSend('participants-updated');
+    bot.onParticipantsUpdated = () => safeSend('participants-updated');
     bot.onParticipantAdded = (username) => safeSend('participant-added', { username });
+
+    bot.onSubCountUpdate = (count) => {
+        if (subgoalsServer) {
+            const config = bot.getWidgetConfig('subgoals');
+            subgoalsServer.broadcastConfig({ ...config, currentCount: count }, 'subgoals');
+            subgoalsServer.broadcastSubUpdate(count);
+        }
+        safeSend('sub-count-updated', count);
+    };
 
     bot.onMessageDeleted = (messageId) => {
         logger.log(`[MAIN] Message deleted: ${messageId}`);

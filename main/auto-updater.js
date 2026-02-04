@@ -8,15 +8,18 @@ let updateCheckTimer = null;
 autoUpdater.logger = logger;
 function init(mainWindow) {
     autoUpdater.on('checking-for-update', () => {
+        logger.log('[AUTO-UPDATER] Checking for update...');
         mainWindow.webContents.send('update-status-check', { status: 'checking' });
     });
 
-    autoUpdater.on('update-available', () => {
+    autoUpdater.on('update-available', (info) => {
+        logger.log(`[AUTO-UPDATER] Update available: ${info.version}`);
         mainWindow.webContents.send('update-available');
         if (updateCheckTimer) clearInterval(updateCheckTimer);
     });
 
-    autoUpdater.on('update-not-available', () => {
+    autoUpdater.on('update-not-available', (info) => {
+        logger.log(`[AUTO-UPDATER] Update not available. Current version is latest.`);
         mainWindow.webContents.send('update-status-check', { status: 'up-to-date' });
     });
 

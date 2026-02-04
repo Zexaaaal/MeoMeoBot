@@ -252,6 +252,18 @@ function registerHandlers(deps) {
         return { success: true };
     });
 
+    ipcMain.handle('save-reward-sounds', (event, soundsMap) => {
+        if (!soundsMap || typeof soundsMap !== 'object') throw new Error('Invalid arguments');
+        bot.updateConfig({ rewardSounds: soundsMap });
+        return { success: true };
+    });
+
+    ipcMain.handle('save-reward-images', (event, imagesMap) => {
+        if (!imagesMap || typeof imagesMap !== 'object') throw new Error('Invalid arguments');
+        bot.updateConfig({ rewardImages: imagesMap });
+        return { success: true };
+    });
+
     ipcMain.handle('trigger-mock-redemption', (event, rewardId) => {
         if (bot) {
             bot.handleRedemption(rewardId, {

@@ -17,6 +17,7 @@ const ALLOWED_INVOKE_CHANNELS = [
     'get-reward-sounds', 'save-reward-sounds', 'get-reward-images', 'save-reward-images',
     'get-reward-functions', 'save-reward-functions',
     'get-points-global-volume', 'save-points-global-volume', 'twitch-search-categories',
+    'get-reward-folders', 'save-reward-folders',
     'twitch-get-steamgriddb-image', 'twitch-get-schedule', 'twitch-create-schedule-segment',
     'twitch-update-schedule-segment', 'twitch-delete-schedule-segment', 'save-planning-base64',
     'is-dev', 'trigger-mock-redemption', 'update-config'

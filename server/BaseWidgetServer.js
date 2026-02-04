@@ -23,7 +23,8 @@ class BaseWidgetServer {
         this.port = this.resolvePort();
         this.server = http.createServer(this.handleRequest.bind(this));
 
-        this.server.listen(this.port, '127.0.0.1', () => {
+        this.server.listen(this.port, '0.0.0.0', () => {
+            console.error(`[${this.widgetName.toUpperCase()}] DEBUG: Widget Server running on port ${this.port}`);
             logger.log(`[${this.widgetName.toUpperCase()}] Widget Server running on port ${this.port} (Localhost Only)`);
 
             if (this.bot && this.bot.updateConfig) {
@@ -70,6 +71,9 @@ class BaseWidgetServer {
         }
 
         const urlPath = req.url.split('?')[0];
+
+        // DEBUG LOG
+        console.error(`[${this.widgetName.toUpperCase()}] Request: ${req.method} ${req.url}`);
 
         if (req.url.startsWith('/widget/assets/')) {
             return this.serveAsset(req, res);
@@ -184,6 +188,7 @@ class BaseWidgetServer {
         const filePath = path.join(__dirname, '..', 'widgets', filename);
         fs.readFile(filePath, 'utf8', (err, data) => {
             if (err) {
+                console.error(`[BaseWidgetServer] Error loading file: ${filePath}`, err);
                 res.statusCode = 500;
                 return res.end('Error loading widget file');
             }

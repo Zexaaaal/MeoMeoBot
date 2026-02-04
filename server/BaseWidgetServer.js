@@ -127,7 +127,8 @@ class BaseWidgetServer {
                 '.gif': 'image/gif', '.svg': 'image/svg+xml', '.mp3': 'audio/mpeg',
                 '.wav': 'audio/wav', '.ogg': 'audio/ogg'
             };
-            res.writeHead(200, { 'Content-Type': mimeTypes[ext] || 'application/octet-stream' });
+            res.statusCode = 200;
+            res.setHeader('Content-Type', mimeTypes[ext] || 'application/octet-stream');
             res.end(data);
         });
     }
@@ -170,10 +171,9 @@ class BaseWidgetServer {
                     return res.end('Error reading file');
                 }
 
-                res.writeHead(200, {
-                    'Content-Type': allowedTypes[ext],
-                    'Access-Control-Allow-Origin': '*'
-                });
+                res.statusCode = 200;
+                res.setHeader('Content-Type', allowedTypes[ext]);
+                res.setHeader('Access-Control-Allow-Origin', '*');
                 res.end(data);
             });
         });
@@ -196,7 +196,8 @@ class BaseWidgetServer {
             if (processContent) {
                 content = processContent(content);
             }
-            res.writeHead(200, { 'Content-Type': 'text/html' });
+            res.statusCode = 200;
+            res.setHeader('Content-Type', 'text/html');
             res.end(content);
         });
     }

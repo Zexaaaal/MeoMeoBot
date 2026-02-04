@@ -5,16 +5,25 @@ const ffmpeg = require('fluent-ffmpeg');
 const { app } = require('electron');
 const logger = require('./logger');
 
-const ffmpegPath = require('@ffmpeg-installer/ffmpeg').path;
-const ffprobePath = require('@ffprobe-installer/ffprobe').path;
+
+let ffmpegPath;
+let ffprobePath;
 
 if (app.isPackaged) {
-    ffmpeg.setFfmpegPath(path.join(process.resourcesPath, 'ffmpeg.exe'));
-    ffmpeg.setFfprobePath(path.join(process.resourcesPath, 'ffprobe.exe'));
+    ffmpegPath = path.join(process.resourcesPath, 'ffmpeg.exe');
+    ffprobePath = path.join(process.resourcesPath, 'ffprobe.exe');
 } else {
-    ffmpeg.setFfmpegPath(ffmpegPath);
-    ffmpeg.setFfprobePath(ffprobePath);
+    try {
+        ffmpegPath = require('@ffmpeg-installer/ffmpeg').path;
+        ffprobePath = require('@ffprobe-installer/ffprobe').path;
+    } catch (e) {
+        console.error("FFmpeg binaries not found in node_modules", e);
+    }
 }
+
+if (ffmpegPath) ffmpeg.setFfmpegPath(ffmpegPath);
+if (ffprobePath) ffmpeg.setFfprobePath(ffprobePath);
+
 
 let mediaServer = null;
 let currentlyPlayingPath = null;

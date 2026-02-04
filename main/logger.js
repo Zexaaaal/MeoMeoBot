@@ -1,11 +1,11 @@
 const isDev = process.argv.includes('--dev');
 
 const log = (...args) => {
-    if (isDev) console.log(...args);
+    console.log(...args);
 };
 
 const warn = (...args) => {
-    if (isDev) console.warn(...args);
+    console.warn(...args);
 };
 
 const error = (...args) => {
@@ -13,7 +13,7 @@ const error = (...args) => {
 };
 
 const info = (...args) => {
-    if (isDev) console.info(...args);
+    console.info(...args);
 };
 
 module.exports = { log, warn, error, info, isDev };

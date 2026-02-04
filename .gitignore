@@ -33,4 +33,6 @@ widgets/assets/soso.png
 /tools/
 project_strings.csv
 
-dev_options.js
+
+# Certificates
+meomeobot_selfsigned.pfx

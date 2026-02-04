@@ -1,13 +1,14 @@
 {
   "name": "meomeobot",
-  "version": "3.7.35",
+  "version": "3.7.36",
   "main": "main.js",
   "repository": "github:Zexaaaal/MeoMeoBot",
   "scripts": {
     "start": "electron .",
     "dev": "electron . --dev",
     "build": "electron-builder",
-    "publish": "electron-builder --publish always"
+    "publish": "electron-builder --publish always",
+    "prepare": "husky"
   },
   "dependencies": {
     "@ffmpeg-installer/ffmpeg": "^1.1.0",
@@ -26,7 +27,8 @@
   "devDependencies": {
     "cross-env": "^10.1.0",
     "electron": "38.2.2",
-    "electron-builder": "^26.6.0"
+    "electron-builder": "^26.6.0",
+    "husky": "^9.1.7"
   },
   "author": "MeoMeoBot",
   "license": "MIT",
@@ -48,7 +50,8 @@
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
-      "uninstallDisplayName": "${productName}"
+      "uninstallDisplayName": "${productName}",
+      "include": "build/installer.nsh"
     },
     "files": [
       "main.js",

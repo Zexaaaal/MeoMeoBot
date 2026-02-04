@@ -330,7 +330,7 @@ function renderRewardCard(reward) {
         }
     });
 
-    if (isDevMode || true) {
+    if (isDevMode) {
         const triggerBtn = document.createElement('button');
         triggerBtn.className = 'btn btn-primary btn-sm';
         triggerBtn.innerHTML = '⚡';

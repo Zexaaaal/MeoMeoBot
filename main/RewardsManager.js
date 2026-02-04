@@ -228,7 +228,9 @@ class RewardsManager {
         const rewardFunctions = config.rewardFunctions || {};
         const boundFunction = rewardFunctions[rewardId];
 
-        logger.log(`[POINTS] Mapping for reward ${rewardId}: ${boundFunction || 'NONE'}`);
+        // DEBUG LOGS
+        logger.log(`[POINTS] Available bindings: ${JSON.stringify(rewardFunctions)}`);
+        logger.log(`[POINTS] Function for this reward: '${boundFunction || 'NONE'}'`);
 
         const sound = config.rewardSounds ? config.rewardSounds[rewardId] : null;
         let volume = config.pointsGlobalVolume !== undefined ? config.pointsGlobalVolume : 0.5;

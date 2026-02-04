@@ -188,6 +188,15 @@ class TwitchAPI {
                 return [];
             }
 
+            if (process.argv.includes('--dev')) {
+                logger.log('[BOT] (DEV) Returning mock emotes');
+                return [
+                    'https://static-cdn.jtvnw.net/emoticons/v2/25/default/dark/3.0',
+                    'https://static-cdn.jtvnw.net/emoticons/v2/81274/default/dark/3.0',
+                    'https://static-cdn.jtvnw.net/emoticons/v2/30259/default/dark/3.0'
+                ];
+            }
+
             await this.bot.ensureAppAccessToken();
 
             const response = await fetch(

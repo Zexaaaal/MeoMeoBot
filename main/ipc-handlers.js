@@ -34,6 +34,12 @@ function registerHandlers(deps) {
         if (deps.streamlabsClient && config.streamlabsSocketToken !== undefined) {
             deps.streamlabsClient.updateToken(config.streamlabsSocketToken);
         }
+        const servers = getServers();
+        if (servers.spotifyServer && (config.spotifyClientId || config.spotifyClientSecret)) {
+            servers.spotifyServer.stopPolling();
+            servers.spotifyServer.startPolling();
+        }
+
         if (config.channel || config.username || config.token) setTimeout(() => bot.connect(), 500);
         return { success: true };
     });
@@ -283,10 +289,23 @@ function registerHandlers(deps) {
 
     ipcMain.handle('start-spotify-auth', async () => {
         const servers = getServers();
-        if (!servers.spotifyServer) return { success: false };
-        const url = servers.spotifyServer.getLoginUrl();
-        shell.openExternal(url);
-        return { url };
+        if (!servers.spotifyServer) {
+            logger.error('[IPC] start-spotify-auth failed: No Spotify server found');
+            return { success: false, error: 'Server not running' };
+        }
+        try {
+            const url = servers.spotifyServer.getLoginUrl();
+            logger.log(`[IPC] Opening Spotify auth URL: ${url}`);
+            if (!url || url.includes('undefined')) {
+                logger.error('[IPC] Invalid Spotify URL generated. Check Client ID.');
+                return { success: false, error: 'Invalid URL' };
+            }
+            await shell.openExternal(url);
+            return { url };
+        } catch (e) {
+            logger.error('[IPC] Error opening Spotify URL:', e);
+            throw e;
+        }
     });
 
     ipcMain.handle('trigger-alert-test', (event, data = {}) => {

@@ -8,14 +8,10 @@ let rewardEditorContainer;
 let isEditing = false;
 let editingId = null;
 let currentRewards = [];
-
 let savedRewardSounds = {};
 let savedRewardImages = {};
 let savedRewardFunctions = {};
-
-
-
-
+let rewardFolders = [];
 let isDevMode = false;
 
 async function init() {
@@ -30,6 +26,8 @@ async function init() {
 
     const addBtn = document.getElementById('addRewardBtn');
     if (addBtn) addBtn.addEventListener('click', () => openEditor());
+    const createFolderBtn = document.getElementById('createFolderBtn');
+    if (createFolderBtn) createFolderBtn.addEventListener('click', createFolder);
 
     const refreshBtn = document.getElementById('refreshRewardsBtn');
     if (refreshBtn) refreshBtn.addEventListener('click', loadRewards);
@@ -122,6 +120,38 @@ async function init() {
         if (funcBtn) funcBtn.classList.remove('active');
         if (funcDropdown) funcDropdown.classList.remove('active');
     });
+
+    if (rewardsList) {
+        rewardsList.addEventListener('dragover', (e) => {
+            e.preventDefault();
+        });
+
+        rewardsList.addEventListener('drop', async (e) => {
+            if (e.target.closest('.reward-folder')) return;
+
+            e.preventDefault();
+            const type = e.dataTransfer.getData('text/type');
+            const id = e.dataTransfer.getData('text/id');
+            const sourceFolderId = e.dataTransfer.getData('text/source-folder');
+
+            if (type === 'reward' && id && sourceFolderId) {
+                const srcFolder = rewardFolders.find(f => f.id === sourceFolderId);
+                const draggedChip = document.querySelector(`.reward-chip[data-reward-id="${id}"]`);
+
+                if (srcFolder) {
+                    srcFolder.rewardIds = srcFolder.rewardIds.filter(rid => rid !== id);
+
+                    if (draggedChip) draggedChip.remove();
+                    const reward = currentRewards.find(r => String(r.id) === String(id));
+                    if (reward) {
+                        renderRewardCard(reward);
+                    }
+
+                    await updateLocalFolders();
+                }
+            }
+        });
+    }
 }
 
 async function loadGlobalVolume() {
@@ -168,8 +198,7 @@ async function loadRewardSounds() {
         savedRewardSounds = await window.api.invoke('get-reward-sounds') || {};
         savedRewardImages = await window.api.invoke('get-reward-images') || {};
         savedRewardFunctions = await window.api.invoke('get-reward-functions') || {};
-
-
+        rewardFolders = await window.api.invoke('get-reward-folders') || [];
     } catch (e) {
         console.error('Error loading reward assets:', e);
     }
@@ -184,8 +213,7 @@ async function loadRewards() {
         rewardsList.innerHTML = '<div class="loading-spinner">Connexion au bot (IPC)...</div>';
         const rewards = await API.points.getRewards();
         currentRewards = rewards || [];
-        rewardsList.innerHTML = '<div class="loading-spinner">Données reçues...</div>';
-        renderRewards(rewards);
+        refreshUI();
         showNotification('Mise à jour réussie', 'success');
     } catch (e) {
         console.error(e);
@@ -194,7 +222,7 @@ async function loadRewards() {
             try {
                 const rewards = await window.api.invoke('get-mock-rewards');
                 currentRewards = rewards || [];
-                renderRewards(rewards);
+                refreshUI();
             } catch (mockError) {
                 rewardsList.innerHTML = `
                     <div class="empty-list" style="text-align: center; padding: 20px;">
@@ -211,81 +239,114 @@ async function loadRewards() {
     }
 }
 
-function renderRewards(rewards) {
+function refreshUI() {
+    if (!rewardsList) return;
     rewardsList.innerHTML = '';
+    renderFolders();
+    renderRewardsMain(currentRewards);
+}
 
-    if (!rewards || rewards.length === 0) {
+
+
+function renderRewardsMain(rewards) {
+    if (!rewardsList) return;
+
+    let orphanedRewards = rewards.filter(r => {
+        return !rewardFolders.some(f => f.rewardIds && f.rewardIds.includes(r.id));
+    });
+
+    if (orphanedRewards.length === 0 && rewardFolders.length === 0) {
         rewardsList.innerHTML = '<div class="empty-list">Aucune récompense personnalisée trouvée.</div>';
         return;
     }
 
-    rewards.sort((a, b) => a.cost - b.cost);
+    orphanedRewards.sort((a, b) => a.cost - b.cost);
 
-    rewards.forEach(reward => {
-        const card = document.createElement('div');
-        card.className = 'reward-card';
-        card.style.borderLeft = `5px solid ${reward.background_color}`;
-
-        const details = document.createElement('div');
-        details.className = 'reward-details';
-
-        const hasSound = savedRewardSounds[reward.id];
-        const soundIcon = hasSound ? '<span title="Son configuré">🔊</span> ' : '';
-
-        const title = document.createElement('div');
-        title.className = 'reward-title';
-        title.innerHTML = `${soundIcon}<strong>${reward.title}</strong> <span class="cost-badge">${reward.cost} pts</span>`;
-
-        const sub = document.createElement('div');
-        sub.className = 'reward-sub';
-        const cooldownTxt = reward.global_cooldown_setting.is_enabled ? `${reward.global_cooldown_setting.global_cooldown_seconds}s` : 'Aucun';
-        sub.textContent = `Cooldown: ${cooldownTxt} | Status: ${reward.is_enabled ? 'Activé' : 'Désactivé'}`;
-
-        details.appendChild(title);
-        details.appendChild(sub);
-
-        const actions = document.createElement('div');
-        actions.className = 'reward-actions';
-
-        const editBtn = document.createElement('button');
-        editBtn.className = 'btn btn-secondary btn-sm';
-        editBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>';
-        editBtn.title = 'Modifier';
-        editBtn.onclick = () => openEditor(reward);
-
-        const deleteControl = createDeleteControl(async () => {
-            try {
-                await API.points.deleteReward(reward.id);
-                const newSounds = { ...savedRewardSounds };
-                delete newSounds[reward.id];
-                await window.api.invoke('save-reward-sounds', newSounds);
-                savedRewardSounds = newSounds;
-
-                showNotification('Récompense supprimée', 'success');
-                loadRewards();
-            } catch (e) {
-                console.error(e);
-                showNotification(NOTIFICATIONS.ERROR.DELETE.replace('{error}', e.message), 'error');
-            }
-        });
-
-        if (isDevMode || true) { // On force l'affichage du bouton éclair si on est en démo (mock)
-            const triggerBtn = document.createElement('button');
-            triggerBtn.className = 'btn btn-primary btn-sm';
-            triggerBtn.innerHTML = '⚡';
-            triggerBtn.title = 'Déclencher (Test / Démo)';
-            triggerBtn.onclick = () => API.points.triggerMockRedemption(reward.id);
-            actions.appendChild(triggerBtn);
-        }
-
-        actions.appendChild(editBtn);
-        actions.appendChild(deleteControl);
-
-        card.appendChild(details);
-        card.appendChild(actions);
-        rewardsList.appendChild(card);
+    orphanedRewards.forEach(reward => {
+        renderRewardCard(reward);
     });
 }
+
+function renderRewardCard(reward) {
+    const card = document.createElement('div');
+    card.className = 'reward-card';
+    card.id = `reward-card-${reward.id}`;
+    card.draggable = true;
+    card.dataset.rewardId = reward.id;
+
+    card.addEventListener('dragstart', (e) => {
+        e.dataTransfer.setData('text/type', 'reward');
+        e.dataTransfer.setData('text/id', reward.id);
+        e.dataTransfer.effectAllowed = 'move';
+        card.style.opacity = '0.5';
+    });
+
+    card.addEventListener('dragend', (e) => {
+        card.style.opacity = '1';
+    });
+
+    card.style.borderLeft = `5px solid ${reward.background_color}`;
+
+    const details = document.createElement('div');
+    details.className = 'reward-details';
+
+    const hasSound = savedRewardSounds[reward.id];
+    const soundIcon = hasSound ? '<span title="Son configuré">🔊</span> ' : '';
+
+    const title = document.createElement('div');
+    title.className = 'reward-title';
+    title.innerHTML = `${soundIcon}<strong>${reward.title}</strong> <span class="cost-badge">${reward.cost} pts</span>`;
+
+    const sub = document.createElement('div');
+    sub.className = 'reward-sub';
+    const cooldownTxt = reward.global_cooldown_setting.is_enabled ? `${reward.global_cooldown_setting.global_cooldown_seconds}s` : 'Aucun';
+    sub.textContent = `Cooldown: ${cooldownTxt} | Status: ${reward.is_enabled ? 'Activé' : 'Désactivé'}`;
+
+    details.appendChild(title);
+    details.appendChild(sub);
+
+    const actions = document.createElement('div');
+    actions.className = 'reward-actions';
+
+    const editBtn = document.createElement('button');
+    editBtn.className = 'btn btn-secondary btn-sm';
+    editBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>';
+    editBtn.title = 'Modifier';
+    editBtn.onclick = () => openEditor(reward);
+
+    const deleteControl = createDeleteControl(async () => {
+        try {
+            await API.points.deleteReward(reward.id);
+            const newSounds = { ...savedRewardSounds };
+            delete newSounds[reward.id];
+            await window.api.invoke('save-reward-sounds', newSounds);
+            savedRewardSounds = newSounds;
+
+            showNotification('Récompense supprimée', 'success');
+            loadRewards();
+        } catch (e) {
+            console.error(e);
+            showNotification(NOTIFICATIONS.ERROR.DELETE.replace('{error}', e.message), 'error');
+        }
+    });
+
+    if (isDevMode || true) {
+        const triggerBtn = document.createElement('button');
+        triggerBtn.className = 'btn btn-primary btn-sm';
+        triggerBtn.innerHTML = '⚡';
+        triggerBtn.title = 'Déclencher (Test / Démo)';
+        triggerBtn.onclick = () => API.points.triggerMockRedemption(reward.id);
+        actions.appendChild(triggerBtn);
+    }
+
+    actions.appendChild(editBtn);
+    actions.appendChild(deleteControl);
+
+    card.appendChild(details);
+    card.appendChild(actions);
+    rewardsList.appendChild(card);
+};
+
 
 function openEditor(reward = null) {
     if (!rewardEditorContainer) return;
@@ -465,7 +526,216 @@ async function saveReward() {
     }
 }
 
+async function createFolder() {
+    const newFolder = {
+        id: 'folder-' + Date.now(),
+        name: 'Nouveau Dossier',
+        is_enabled: true,
+        rewardIds: []
+    };
+    rewardFolders.push(newFolder);
+    const folderEl = createFolderElement(newFolder);
+    const firstReward = rewardsList.querySelector('.reward-card');
+    if (firstReward) {
+        rewardsList.insertBefore(folderEl, firstReward);
+    } else {
+        rewardsList.appendChild(folderEl);
+    }
+}
 
+async function updateLocalFolders() {
+    await window.api.invoke('save-reward-folders', rewardFolders);
+}
+
+function renderFolders() {
+    if (!rewardsList) return;
+
+    rewardFolders.forEach(folder => {
+        rewardsList.appendChild(createFolderElement(folder));
+    });
+}
+
+function createFolderElement(folder) {
+    const folderEl = document.createElement('div');
+    folderEl.className = 'reward-folder';
+    folderEl.dataset.folderId = folder.id;
+
+    folderEl.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        folderEl.classList.add('drag-over');
+    });
+
+    folderEl.addEventListener('dragleave', () => {
+        folderEl.classList.remove('drag-over');
+    });
+
+    folderEl.addEventListener('drop', async (e) => {
+        e.preventDefault();
+        folderEl.classList.remove('drag-over');
+        const type = e.dataTransfer.getData('text/type');
+        const id = e.dataTransfer.getData('text/id');
+        const sourceFolderId = e.dataTransfer.getData('text/source-folder');
+
+        if (type === 'reward' && id) {
+            if (sourceFolderId && sourceFolderId !== folder.id) {
+                const srcFolder = rewardFolders.find(f => f.id === sourceFolderId);
+                if (srcFolder) {
+                    srcFolder.rewardIds = srcFolder.rewardIds.filter(rid => rid !== id);
+                }
+            } else if (!sourceFolderId) {
+            } else if (sourceFolderId === folder.id) {
+                return;
+            }
+            if (!folder.rewardIds.includes(id)) {
+                folder.rewardIds.push(id);
+
+                if (sourceFolderId && sourceFolderId !== folder.id) {
+                    const srcFolder = rewardFolders.find(f => f.id === sourceFolderId);
+                    if (srcFolder) {
+                        srcFolder.rewardIds = srcFolder.rewardIds.filter(rid => rid !== id);
+                        const oldFolderEl = document.querySelector(`.reward-folder[data-folder-id="${sourceFolderId}"]`);
+                        if (oldFolderEl) {
+                            const oldChip = oldFolderEl.querySelector(`.reward-chip[data-reward-id="${id}"]`);
+                            if (oldChip) oldChip.remove();
+                        }
+                    }
+                } else if (!sourceFolderId) {
+                    const card = document.getElementById(`reward-card-${id}`);
+                    if (card) card.remove();
+                }
+
+                const reward = currentRewards.find(r => String(r.id) === String(id));
+                if (reward) {
+                    const chip = createRewardChip(reward, folder.id);
+                    folderEl.querySelector('.folder-content').appendChild(chip);
+
+                    const placeholder = folderEl.querySelector('.folder-empty-placeholder');
+                    if (placeholder) placeholder.remove();
+                }
+
+                await updateLocalFolders();
+            }
+        }
+    });
+
+    const header = document.createElement('div');
+    header.className = 'folder-header';
+
+    const nameInput = document.createElement('input');
+    nameInput.type = 'text';
+    nameInput.className = 'folder-name-input';
+    nameInput.value = folder.name;
+
+    const saveName = async () => {
+        if (folder.name !== nameInput.value) {
+            folder.name = nameInput.value;
+            await updateLocalFolders();
+        }
+    };
+    nameInput.addEventListener('blur', saveName);
+    nameInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') nameInput.blur();
+    });
+
+    const toggleContainer = document.createElement('div');
+    toggleContainer.className = 'folder-toggle-container';
+
+    const toggleSwitch = document.createElement('label');
+    toggleSwitch.className = 'toggle-switch';
+
+    const toggleInput = document.createElement('input');
+    toggleInput.type = 'checkbox';
+    toggleInput.checked = folder.is_enabled;
+    toggleInput.addEventListener('change', async () => {
+        folder.is_enabled = toggleInput.checked;
+        await toggleFolder(folder);
+    });
+
+    const slider = document.createElement('span');
+    slider.className = 'slider';
+
+    toggleSwitch.appendChild(toggleInput);
+    toggleSwitch.appendChild(slider);
+    toggleContainer.appendChild(toggleSwitch);
+    toggleContainer.appendChild(document.createTextNode('Activer tout'));
+
+    const deleteControl = createDeleteControl(async () => {
+        rewardFolders = rewardFolders.filter(f => f.id !== folder.id);
+        await updateLocalFolders();
+        refreshUI();
+        showNotification('Dossier supprimé', 'success');
+    });
+
+    const content = document.createElement('div');
+    content.className = 'folder-content';
+
+    if (folder.rewardIds.length === 0) {
+        const placeholder = document.createElement('span');
+        placeholder.className = 'folder-empty-placeholder';
+        placeholder.textContent = 'Glissez des récompenses ici...';
+        content.appendChild(placeholder);
+    } else {
+        folder.rewardIds.forEach(rewId => {
+            const reward = currentRewards.find(r => r.id === rewId);
+            if (reward) {
+                const chip = createRewardChip(reward, folder.id);
+                content.appendChild(chip);
+            }
+        });
+    }
+
+    header.appendChild(nameInput);
+    header.appendChild(content);
+    header.appendChild(toggleContainer);
+    header.appendChild(deleteControl);
+
+    folderEl.appendChild(header);
+
+    return folderEl;
+}
+
+function createRewardChip(reward, folderId) {
+    const chip = document.createElement('div');
+    chip.className = 'reward-chip';
+    chip.draggable = true;
+    chip.dataset.rewardId = reward.id;
+    chip.style.borderLeftColor = reward.background_color;
+
+    chip.innerHTML = `<strong>${reward.title}</strong> <span class="chip-cost">${reward.cost}</span>`;
+
+    chip.onclick = () => openEditor(reward);
+
+    chip.addEventListener('dragstart', (e) => {
+        e.dataTransfer.setData('text/type', 'reward');
+        e.dataTransfer.setData('text/id', reward.id);
+        e.dataTransfer.setData('text/source-folder', folderId);
+        e.dataTransfer.effectAllowed = 'move';
+        setTimeout(() => chip.style.opacity = '0.5', 0);
+    });
+
+    chip.addEventListener('dragend', () => {
+        chip.style.opacity = '1';
+    });
+
+    return chip;
+}
+
+async function toggleFolder(folder) {
+    const newState = folder.is_enabled;
+    for (const rid of folder.rewardIds) {
+        const reward = currentRewards.find(r => r.id === rid);
+        if (reward && reward.is_enabled !== newState) {
+            try {
+                await API.points.updateReward(reward.id, { is_enabled: newState });
+                reward.is_enabled = newState;
+            } catch (e) {
+                console.error(`Failed to toggle reward ${reward.title}`, e);
+            }
+        }
+    }
+    refreshUI();
+}
 
 document.addEventListener('DOMContentLoaded', init);
 

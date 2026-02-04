@@ -214,6 +214,17 @@ function registerHandlers(deps) {
         return { success: true };
     });
 
+    ipcMain.handle('get-reward-folders', () => {
+        const config = bot.getConfig();
+        return config.rewardFolders || [];
+    });
+
+    ipcMain.handle('save-reward-folders', (event, folders) => {
+        if (!Array.isArray(folders)) throw new Error('Invalid arguments: folders must be an array');
+        bot.updateConfig({ rewardFolders: folders });
+        return { success: true };
+    });
+
     ipcMain.handle('get-points-global-volume', () => {
         const config = bot.getConfig();
         return config.pointsGlobalVolume !== undefined ? config.pointsGlobalVolume : 0.5;

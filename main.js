@@ -309,18 +309,27 @@ app.whenReady().then(async () => {
         }
     };
 
-    chatServer.start(onServerPortChanged);
-    spotifyServer.start(onServerPortChanged);
-    subgoalsServer.start(onServerPortChanged);
-    rouletteServer.start(onServerPortChanged);
-    alertsWidgetServer.start(onServerPortChanged);
+    Promise.all([
+        chatServer.start(),
+        spotifyServer.start(),
+        subgoalsServer.start(),
+        rouletteServer.start(),
+        alertsWidgetServer.start()
+    ]).then(() => {
+        onServerPortChanged();
+        logger.log('[MAIN] All widget servers started.');
+    }).catch(err => {
+        logger.error('[MAIN] Error starting widget servers:', err);
+    });
 
     bot.onAlert = onAlert;
     if (streamlabsClient) streamlabsClient.onAlert = onAlert;
 
     autoUpdaterModule.init(mainWindow);
     if (app.isPackaged) {
-        autoUpdaterModule.startCheckLoop();
+        setTimeout(() => {
+            autoUpdaterModule.startCheckLoop();
+        }, 10000);
     }
 
     ipcHandlers.registerHandlers({

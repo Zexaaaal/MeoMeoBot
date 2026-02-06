@@ -199,12 +199,21 @@ class TwitchAPI {
 
             await this.bot.ensureAppAccessToken();
 
+            const config = this.bot.getConfig();
+            const userToken = config.token ? config.token.replace('oauth:', '') : null;
+            const tokenToUse = this.bot.appAccessToken || userToken;
+
+            if (!tokenToUse) {
+                logger.error('[BOT] fetchChannelEmotes failed: No valid token (App or User) available');
+                return [];
+            }
+
             const response = await fetch(
                 `https://api.twitch.tv/helix/chat/emotes?broadcaster_id=${this.bot.userId}`,
                 {
                     headers: {
                         'Client-Id': this.bot.appClientId || this.bot.clientId,
-                        'Authorization': `Bearer ${this.bot.appAccessToken}`
+                        'Authorization': `Bearer ${tokenToUse}`
                     }
                 }
             );

@@ -17,32 +17,41 @@ class BaseWidgetServer {
         this.runId = Date.now().toString();
     }
 
-    start(onPortChanged) {
-        if (this.server) return;
-
-        this.port = this.resolvePort();
-        this.server = http.createServer(this.handleRequest.bind(this));
-
-        this.server.listen(this.port, '0.0.0.0', () => {
-            console.error(`[${this.widgetName.toUpperCase()}] DEBUG: Widget Server running on port ${this.port}`);
-            logger.log(`[${this.widgetName.toUpperCase()}] Widget Server running on port ${this.port} (Localhost Only)`);
-
-            if (this.bot && this.bot.updateConfig) {
-                this.bot.updateConfig({ [this.configKey]: this.port });
+    start() {
+        return new Promise((resolve) => {
+            if (this.server) {
+                return resolve(this.port);
             }
 
-            this.initWebSocket();
-            if (onPortChanged) onPortChanged();
-        });
+            this.port = this.resolvePort();
+            this.server = http.createServer(this.handleRequest.bind(this));
 
-        this.server.on('error', (err) => {
-            if (err.code === 'EADDRINUSE') {
-                logger.error(`[${this.widgetName.toUpperCase()}] Port ${this.port} in use, trying random...`);
-                this.port = 0;
-                this.server.listen(0, '127.0.0.1');
-            } else {
-                logger.error(`[${this.widgetName.toUpperCase()}] Server error: `, err);
-            }
+            this.server.on('listening', () => {
+                const address = this.server.address();
+                this.port = typeof address === 'string' ? 0 : address.port;
+
+                console.error(`[${this.widgetName.toUpperCase()}] DEBUG: Widget Server running on port ${this.port}`);
+                logger.log(`[${this.widgetName.toUpperCase()}] Widget Server running on port ${this.port} (Localhost Only)`);
+
+                if (this.bot && this.bot.updateConfig) {
+                    this.bot.updateConfig({ [this.configKey]: this.port });
+                }
+
+                this.initWebSocket();
+                resolve(this.port);
+            });
+
+            this.server.on('error', (err) => {
+                if (err.code === 'EADDRINUSE') {
+                    logger.error(`[${this.widgetName.toUpperCase()}] Port ${this.port} in use, trying random...`);
+                    this.port = 0;
+                    this.server.listen(0, '127.0.0.1');
+                } else {
+                    logger.error(`[${this.widgetName.toUpperCase()}] Server error: `, err);
+                    resolve(0);
+                }
+            });
+            this.server.listen(this.port, '0.0.0.0');
         });
     }
 

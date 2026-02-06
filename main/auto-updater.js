@@ -6,6 +6,8 @@ const UPDATE_CHECK_INTERVAL = 800000;
 let updateCheckTimer = null;
 
 autoUpdater.logger = logger;
+autoUpdater.autoDownload = false; // Disable auto download to verify check first
+
 function init(mainWindow) {
     autoUpdater.on('checking-for-update', () => {
         logger.log('[AUTO-UPDATER] Checking for update...');

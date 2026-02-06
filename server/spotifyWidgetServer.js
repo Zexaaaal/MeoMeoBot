@@ -14,13 +14,12 @@ class SpotifyWidgetServer extends BaseWidgetServer {
         this.currentSpotifyTrack = null;
     }
 
-    start(onPortChanged) {
+    async start() {
         this.currentSpotifyTrack = this.bot.getWidgetConfig('spotify') || null;
 
-        super.start(() => {
-            this.startPolling();
-            if (onPortChanged) onPortChanged(this.port);
-        });
+        await super.start();
+        this.startPolling();
+        return this.port;
     }
 
     stop() {

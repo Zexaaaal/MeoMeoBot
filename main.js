@@ -331,7 +331,7 @@ app.whenReady().then(async () => {
             logger.log('[MAIN] Starting initial update check...');
             autoUpdaterModule.checkNow();
             autoUpdaterModule.startCheckLoop();
-        }, 10000);
+        }, 2000);
     }
 
     ipcHandlers.registerHandlers({

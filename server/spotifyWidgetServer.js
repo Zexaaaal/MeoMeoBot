@@ -55,13 +55,12 @@ class SpotifyWidgetServer extends BaseWidgetServer {
     }
 
     onConnection(ws) {
-        if (this.currentSpotifyTrack) {
-            ws.send(JSON.stringify({
-                type: 'config-update',
-                widget: 'spotify',
-                config: this.currentSpotifyTrack
-            }));
-        }
+        const config = this.currentSpotifyTrack || this.bot.getWidgetConfig('spotify') || { isPlaying: false };
+        ws.send(JSON.stringify({
+            type: 'config-update',
+            widget: 'spotify',
+            config: config
+        }));
     }
 
 
@@ -244,6 +243,13 @@ class SpotifyWidgetServer extends BaseWidgetServer {
                 if (track) {
                     this.updateTrackConfig(track);
                 } else {
+                    // If no track or error, likely not playing or auth failed. 
+                    // Consider sending an "Idle" state if appropriate, or just log.
+                    // For now, if we assume null means "Error/Stop", we might want to tell the widget?
+                    // But 'fetchCurrentTrack' returns {isPlaying: false} for 204. 
+                    // It returns NULL for Auth Error. 
+                    // If Auth Error, maybe we SHOULD clear the widget?
+                    // Let's safe fallback:
                     console.error('[SPOTIFY] No track fetched or auth error');
                 }
             } catch (err) {

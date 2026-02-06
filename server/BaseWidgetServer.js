@@ -367,7 +367,13 @@ class BaseWidgetServer {
             this.wss = null;
         }
         if (this.server) {
-            this.server.close();
+            console.log(`[${this.widgetName.toUpperCase()}] Stopping server...`);
+            this.server.close((err) => {
+                if (err) console.error(`[${this.widgetName.toUpperCase()}] Check server close error:`, err);
+            });
+            if (this.server.closeAllConnections) {
+                this.server.closeAllConnections();
+            }
             this.server = null;
         }
     }

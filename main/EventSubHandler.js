@@ -207,6 +207,10 @@ class EventSubHandler {
             this.ws.close();
             this.ws = null;
         }
+        if (this.keepaliveTimeout) {
+            clearTimeout(this.keepaliveTimeout);
+            this.keepaliveTimeout = null;
+        }
     }
 }
 

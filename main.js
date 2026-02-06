@@ -328,6 +328,8 @@ app.whenReady().then(async () => {
     autoUpdaterModule.init(mainWindow);
     if (app.isPackaged) {
         setTimeout(() => {
+            logger.log('[MAIN] Starting initial update check...');
+            autoUpdaterModule.checkNow();
             autoUpdaterModule.startCheckLoop();
         }, 10000);
     }

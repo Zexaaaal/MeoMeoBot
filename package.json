@@ -1,6 +1,6 @@
 {
   "name": "meomeobot",
-  "version": "3.7.58",
+  "version": "3.7.59",
   "main": "main.js",
   "repository": "github:Zexaaaal/MeoMeoBot",
   "scripts": {
@@ -50,8 +50,7 @@
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
-      "uninstallDisplayName": "${productName}",
-      "include": "build/installer.nsh"
+      "uninstallDisplayName": "${productName}"
     },
     "files": [
       "main.js",

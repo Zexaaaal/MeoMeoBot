@@ -181,7 +181,7 @@ class TwitchAPI {
         return 0;
     }
 
-    async fetchChannelEmotes() {
+    async fetchChannelEmotes(retryCount = 0) {
         try {
             if (!this.bot.userId) {
                 logger.error('[BOT] fetchChannelEmotes failed: userId is null');
@@ -201,6 +201,7 @@ class TwitchAPI {
 
             const config = this.bot.getConfig();
             const userToken = config.token ? config.token.replace('oauth:', '') : null;
+            const usingAppToken = !!this.bot.appAccessToken;
             const tokenToUse = this.bot.appAccessToken || userToken;
 
             if (!tokenToUse) {
@@ -218,6 +219,16 @@ class TwitchAPI {
                 }
             );
 
+            if (response.status === 401) {
+                if (retryCount < 1 && usingAppToken) {
+                    logger.warn('[BOT] fetchChannelEmotes received 401. Invalidating App Token and retrying...');
+                    this.bot.appAccessToken = null;
+                    this.bot.appClientId = null;
+                    this.bot.updateConfig({ twitchAppToken: null, twitchClientId: null });
+                    return this.fetchChannelEmotes(retryCount + 1);
+                }
+            }
+
             if (!response.ok) {
                 throw new Error(`Failed to fetch emotes: ${response.statusText}`);
             }
@@ -230,7 +241,7 @@ class TwitchAPI {
                 const globalResp = await fetch('https://api.twitch.tv/helix/chat/emotes/global', {
                     headers: {
                         'Client-Id': this.bot.appClientId || this.bot.clientId,
-                        'Authorization': `Bearer ${this.bot.appAccessToken}`
+                        'Authorization': `Bearer ${this.bot.appAccessToken || userToken}`
                     }
                 });
                 if (globalResp.ok) {

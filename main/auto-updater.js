@@ -43,6 +43,11 @@ function init(mainWindow) {
     ipcMain.on('quit-and-install', () => {
         autoUpdater.quitAndInstall();
     });
+
+    ipcMain.on('check-for-updates', () => {
+        checkNow();
+        mainWindow.webContents.send('update-status-check', { status: 'checking' });
+    });
 }
 
 function startCheckLoop() {

@@ -185,6 +185,10 @@ body {
     animation: pulse 2s infinite;
 }
 
+.status.up-to-date {
+    cursor: pointer;
+}
+
 .status.up-to-date .status-dot {
     background: var(--update-color-ok);
 }

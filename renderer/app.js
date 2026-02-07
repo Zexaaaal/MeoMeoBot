@@ -129,8 +129,12 @@ function setupEventListeners() {
 
     const updateStatus = document.getElementById('updateStatus');
     updateStatus.addEventListener('click', (e) => {
-        if (!e.target.closest('.update-popover') && (updateStatus.classList.contains('update-available') || updateStatus.classList.contains('downloaded'))) {
-            updateStatus.classList.toggle('active');
+        if (!e.target.closest('.update-popover')) {
+            if (updateStatus.classList.contains('update-available') || updateStatus.classList.contains('downloaded')) {
+                updateStatus.classList.toggle('active');
+            } else if (updateStatus.classList.contains('up-to-date')) {
+                window.api.send('check-for-updates');
+            }
         }
     });
     document.getElementById('update-confirm-icon').addEventListener('click', (e) => {

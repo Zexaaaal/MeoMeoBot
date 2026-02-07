@@ -12,9 +12,11 @@ class EventSubHandler {
 
     connect() {
         if (this.ws) {
+            this.ws.on('error', () => { });
             this.ws.removeAllListeners();
             if (this.ws.readyState !== WebSocket.CLOSED && this.ws.readyState !== WebSocket.CLOSING) {
                 try {
+                    this.ws.on('error', () => { });
                     this.ws.close();
                 } catch (e) {
                     logger.warn('[EventSub] Error closing socket:', e.message);
@@ -204,6 +206,7 @@ class EventSubHandler {
     close() {
         if (this.ws) {
             this.ws.removeAllListeners();
+            this.ws.on('error', () => { }); // Catch any error during close
             this.ws.close();
             this.ws = null;
         }

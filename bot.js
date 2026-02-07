@@ -17,15 +17,11 @@ class TwitchBot {
         this.appClientId = null;
         this.tokenExpiry = null;
         this.badgesWarningLogged = false;
-
         this.userId = null;
         this.clientId = null;
         this.clipCooldown = (this.getConfig().clipCooldown || 30) * 1000;
         this.onCooldown = false;
-
         this.currentSubCount = this.getWidgetConfig('subgoals')?.currentCount || 0;
-
-        // Callbacks
         this.onAlert = null;
         this.onChatMessage = null;
         this.onParticipantsUpdated = null;
@@ -318,6 +314,12 @@ class TwitchBot {
         this.currentSubCount += amount;
         this.saveWidgetConfig('subgoals', { currentCount: this.currentSubCount });
         if (this.onSubCountUpdate) this.onSubCountUpdate(this.currentSubCount);
+    }
+
+    incrementDailySubCount(amount = 1) {
+        const config = this.getWidgetConfig('subgoals') || {};
+        const newCount = (config.dailyCurrentCount || 0) + amount;
+        this.saveWidgetConfig('subgoals', { dailyCurrentCount: newCount });
     }
 
     getSubCount() {

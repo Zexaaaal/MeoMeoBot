@@ -145,6 +145,9 @@ class EventSubHandler {
             case 'channel.subscribe':
                 if (!event.is_gift) {
                     this.bot.incrementSubCount();
+                    if (event.tier !== 'Prime') {
+                        this.bot.incrementDailySubCount();
+                    }
                     this.bot.triggerAlert('sub', { username: event.user_name });
                 }
                 break;
@@ -159,6 +162,9 @@ class EventSubHandler {
 
             case 'channel.subscription.message':
                 this.bot.incrementSubCount();
+                if (event.tier !== 'Prime') {
+                    this.bot.incrementDailySubCount();
+                }
                 this.bot.triggerAlert('resub', {
                     username: event.user_name,
                     months: event.cumulative_months,
@@ -206,7 +212,7 @@ class EventSubHandler {
     close() {
         if (this.ws) {
             this.ws.removeAllListeners();
-            this.ws.on('error', () => { }); // Catch any error during close
+            this.ws.on('error', () => { });
             this.ws.close();
             this.ws = null;
         }

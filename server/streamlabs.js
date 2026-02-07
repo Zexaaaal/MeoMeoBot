@@ -14,6 +14,8 @@ class StreamlabsClient {
             return;
         }
 
+        logger.log(`[Streamlabs] Démarrage avec token (fin): ...${token.slice(-5)}`);
+
         this.token = token;
         try {
             this.socket = io(`https://sockets.streamlabs.com?token=${token}`, {
@@ -25,6 +27,7 @@ class StreamlabsClient {
             });
 
             this.socket.on('event', (eventData) => {
+                logger.log('[Streamlabs] Event reçu:', eventData);
                 if (eventData.type === 'donation') {
                     eventData.message.forEach((msg) => {
                         this.handleDonation(msg);
@@ -32,12 +35,15 @@ class StreamlabsClient {
                 }
             });
 
-            this.socket.on('disconnect', () => {
-                logger.log('[Streamlabs] Déconnecté.');
+            this.socket.on('disconnect', (reason) => {
+                logger.log(`[Streamlabs] Déconnecté. Raison: ${reason}`);
             });
 
             this.socket.on('connect_error', (err) => {
                 logger.error('[Streamlabs] Erreur de connexion:', err.message);
+                if (err.message.includes('websocket error')) {
+                    logger.error('[Streamlabs] Vérifiez votre Socket Token !');
+                }
             });
 
         } catch (error) {

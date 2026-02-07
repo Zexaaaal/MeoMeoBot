@@ -45,6 +45,16 @@ function init(mainWindow) {
     });
 
     ipcMain.on('check-for-updates', () => {
+        if (!app.isPackaged) {
+            logger.log('[AUTO-UPDATER] Dev mode: check-for-updates triggered (simulated)');
+            mainWindow.webContents.send('update-status-check', { status: 'checking' });
+            setTimeout(() => {
+                mainWindow.webContents.send('update-status-check', { status: 'up-to-date' });
+            }, 2000);
+            return;
+        }
+
+        logger.log('[AUTO-UPDATER] Manual update check triggered');
         checkNow();
         mainWindow.webContents.send('update-status-check', { status: 'checking' });
     });

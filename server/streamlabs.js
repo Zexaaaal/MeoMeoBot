@@ -61,7 +61,9 @@ class StreamlabsClient {
             currency: msg.currency
         };
 
-        if (this.bot.onAlert) {
+        if (this.bot && typeof this.bot.triggerAlert === 'function') {
+            this.bot.triggerAlert('donation', alertData);
+        } else if (this.bot.onAlert) {
             this.bot.onAlert(alertData);
         }
     }

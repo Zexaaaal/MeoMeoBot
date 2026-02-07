@@ -278,6 +278,11 @@ class TwitchBot {
         const clientSecret = process.env.TWITCH_CLIENT_SECRET;
 
         if (!clientId || !clientSecret) {
+            logger.log(`[DEBUG] Config Check - ClientID: ${!!clientId}, AppToken: ${!!configAppToken}, Secret: ${!!clientSecret}`);
+            logger.log(`[DEBUG] Config Values - ID: ${configClientId ? 'OK' : 'MISSING'}, Token: ${configAppToken ? 'OK' : 'MISSING'}`);
+        }
+
+        if (!clientId || !clientSecret) {
             if (!this.badgesWarningLogged) {
                 logger.warn("Badges désactivés : fournissez TWITCH_CLIENT_ID/TWITCH_CLIENT_SECRET dans .env ou twitchClientId/twitchAppToken dans la config.");
                 this.badgesWarningLogged = true;

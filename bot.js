@@ -149,6 +149,8 @@ class TwitchBot {
             logger.error(err);
         }
 
+        const config = this.getConfig();
+
         const messageData = {
             type: 'chat',
             username: tags.username,
@@ -166,17 +168,20 @@ class TwitchBot {
             },
             isWidgetHidden: !!tags['custom-reward-id']
         };
+        const isCommand = message.startsWith('!');
+        const isAutoMessage = config.autoMessage && message === config.autoMessage;
 
-        if (this.onChatMessage) this.onChatMessage(messageData);
+        if (this.onChatMessage && !isCommand && !isAutoMessage) {
+            this.onChatMessage(messageData);
+        }
 
-        const config = this.getConfig();
         this.messageCount++;
         if (config.autoMessage && this.messageCount >= config.autoMessageInterval) {
             this.client.say(channel, config.autoMessage);
             this.messageCount = 0;
         }
 
-        if (message.startsWith('!')) {
+        if (isCommand) {
             this.handleCommand(channel, tags, message);
         }
     }

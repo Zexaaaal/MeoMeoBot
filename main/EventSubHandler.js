@@ -146,13 +146,13 @@ class EventSubHandler {
                 break;
 
             case 'channel.subscribe':
+                this.bot.updateLastSub(event.user_name);
                 if (!event.is_gift) {
                     this.bot.incrementSubCount();
                     const subgoalsConfig = this.bot.getWidgetConfig('subgoals') || {};
                     if (subgoalsConfig.countRegularSubs !== false) {
                         this.bot.incrementDailySubCount();
                     }
-                    this.bot.updateLastSub(event.user_name);
                     this.bot.triggerAlert('sub', { username: event.user_name });
                 }
                 break;

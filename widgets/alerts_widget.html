@@ -58,6 +58,29 @@
             console.log(`[AlertsWidget] ${msg}`, err || '');
             if (err) console.error(err);
         }
+        function transformLocalPath(path) {
+            if (!path) return path;
+            if (path.startsWith('http')) return path;
+
+            try {
+                let rawPath = path;
+                if (rawPath.startsWith('file://')) {
+                    rawPath = rawPath.replace(/^file:\/\/+/, '');
+                }
+
+                try { rawPath = decodeURIComponent(rawPath); } catch (e) { log('Decode error', e); }
+
+                if (navigator.platform.toUpperCase().indexOf('WIN') >= 0 || rawPath.match(/^\/[a-zA-Z]:/)) {
+                    if (rawPath.startsWith('/')) rawPath = rawPath.substring(1);
+                }
+
+                return `${window.location.protocol}//${host}/local-file?path=${encodeURIComponent(rawPath)}`;
+            } catch (e) {
+                log('Path transform error', e);
+                return path;
+            }
+        }
+
         function connectWs() {
             log(`Connecting to ${protocol}//${host}`);
             ws = connectWidget((data) => {

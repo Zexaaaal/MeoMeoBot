@@ -12,6 +12,7 @@ class AlertManager {
             case 'resub': return '{username} s\'est réabonné pour {months} mois !';
             case 'subgift': return '{username} a offert {amount} sub{s} !';
             case 'raid': return 'Raid de {username} !';
+            case 'donation': return '{amount} - {username}';
             case 'cheer': return '{username} a envoyé {amount} bits !';
             case 'hypetrain': return 'Hype Train Niveau {amount} !';
             default: return 'Nouvelle alerte';
@@ -30,6 +31,7 @@ class AlertManager {
             type,
             username: data.username || 'Inconnu',
             amount: data.amount,
+            message: data.message || '',
             text: typeConfig?.textTemplate || this.getDefaultText(type),
             image: typeConfig?.image,
             audio: typeConfig?.audio,
@@ -38,9 +40,11 @@ class AlertManager {
             layout: typeConfig?.layout
         };
 
+        let displayAmount = alertPayload.amount || '';
+
         alertPayload.text = alertPayload.text
             .replace('{username}', `<span class="alert-username">${alertPayload.username}</span>`)
-            .replace('{amount}', `<span class="alert-amount">${alertPayload.amount || ''}</span>`)
+            .replace('{amount}', `<span class="alert-amount">${displayAmount}</span>`)
             .replace('{months}', `<span class="alert-months">${data.months || ''}</span>`)
             .replace('{s}', (alertPayload.amount && alertPayload.amount > 1) ? 's' : '');
 

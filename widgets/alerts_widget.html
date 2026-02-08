@@ -57,6 +57,9 @@
         function log(msg, err) {
             console.log(`[AlertsWidget] ${msg}`, err || '');
             if (err) console.error(err);
+            if (ws) {
+                ws.send(JSON.stringify({ type: 'log', message: msg + (err ? ' ' + err : '') }));
+            }
         }
 
         function transformLocalPath(path) {
@@ -66,7 +69,7 @@
             try {
                 let rawPath = path;
                 if (rawPath.startsWith('file://')) {
-                    rawPath = rawPath.replace(/^file:\/\
+                    rawPath = rawPath.replace(/^file:\/\/+/, '');
                 }
 
                 try { rawPath = decodeURIComponent(rawPath); } catch (e) { log('Decode error', e); }
@@ -101,54 +104,64 @@
             log('Audio error:', audio.error);
         };
 
-        function playAlert(alert) {
-            log('Playing alert:', alert);
-            imgContainer.innerHTML = '';
-            textContainer.innerHTML = alert.text || '';
-            msgContainer.innerHTML = alert.message || '';
+        async function playAlert(alert) {
+            try {
+                log('Playing alert:', alert);
+                imgContainer.innerHTML = '';
+                textContainer.innerHTML = alert.text || '';
+                msgContainer.innerHTML = alert.message || '';
 
-            if (alert.audio) {
-                audio.src = alert.audio;
-                audio.volume = alert.volume !== undefined ? alert.volume : 0.5;
-            } else {
-                audio.src = '';
-            }
-
-            const hasVisuals = alert.image || alert.text || alert.message;
-
-            if (hasVisuals) {
-                container.className = 'alert-box';
-                container.style.opacity = '0';
-
-                if (alert.image) {
-                    const img = document.createElement('img');
-                    img.src = alert.image;
-                    img.onerror = (e) => log('Image load error', e);
-                    imgContainer.appendChild(img);
+                if (alert.audio) {
+                    log('Setting audio src: ' + alert.audio);
+                    audio.src = alert.audio;
+                    audio.volume = alert.volume !== undefined ? alert.volume : 0.5;
+                } else {
+                    audio.src = '';
                 }
 
+                const hasVisuals = alert.image || alert.text || alert.message;
 
-                container.classList.remove('animate-out');
-                void container.offsetWidth;
-                container.classList.add('animate-in');
-                container.style.opacity = '1';
-            }
+                if (hasVisuals) {
+                    log('Showing visuals');
+                    container.className = 'alert-box';
+                    container.style.opacity = '0';
 
-            const duration = (alert.duration || 5000);
+                    if (alert.image) {
+                        const img = document.createElement('img');
+                        img.src = alert.image;
+                        img.onerror = (e) => log('Image load error', e);
+                        imgContainer.appendChild(img);
+                    }
 
-            if (alert.audio) {
-                audio.play()
-                    .then(() => log('Audio started'))
-                    .catch(e => {
+                    container.classList.remove('animate-out');
+                    void container.offsetWidth;
+                    container.classList.add('animate-in');
+                    container.style.opacity = '1';
+                }
+
+                const duration = (alert.duration || 5000);
+
+                if (alert.audio) {
+                    try {
+                        log('Attempting audio play');
+                        await audio.play();
+                        log('Audio started');
+                    } catch (e) {
                         log('Audio playback failed', e);
-                    });
-            }
+                    }
+                }
 
-            setTimeout(() => {
-                log('Alert duration ended');
-                if (hasVisuals) stopAlert();
-                else ws.send(JSON.stringify({ type: 'alert-finished' }));
-            }, duration);
+                setTimeout(() => {
+                    log('Alert duration ended');
+                    if (hasVisuals) stopAlert();
+                    else ws.send(JSON.stringify({ type: 'alert-finished' }));
+                }, duration);
+
+            } catch (err) {
+                log('CRITICAL ERROR in playAlert', err);
+                // Ensure we don't hang the queue
+                ws.send(JSON.stringify({ type: 'alert-finished' }));
+            }
         }
 
         function stopAlert() {

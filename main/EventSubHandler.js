@@ -60,7 +60,7 @@ class EventSubHandler {
             logger.log(`[EventSub] Session accueillie : ${this.sessionId}`);
             this.subscribeToAllEvents();
         } else if (messageType === 'session_keepalive') {
-            
+
         } else if (messageType === 'notification') {
             logger.log(`[EventSub] NOTIFICATION reçue type: ${payload.subscription.type}`);
             this.handleNotification(payload);
@@ -86,7 +86,10 @@ class EventSubHandler {
             { type: 'channel.hype_train.begin', version: '2', condition: { broadcaster_user_id: this.bot.userId } },
             { type: 'channel.hype_train.progress', version: '2', condition: { broadcaster_user_id: this.bot.userId } },
             { type: 'channel.hype_train.end', version: '2', condition: { broadcaster_user_id: this.bot.userId } },
-            { type: 'channel.follow', version: '2', condition: { broadcaster_user_id: this.bot.userId, moderator_user_id: this.bot.userId } }
+            { type: 'channel.hype_train.progress', version: '2', condition: { broadcaster_user_id: this.bot.userId } },
+            { type: 'channel.hype_train.end', version: '2', condition: { broadcaster_user_id: this.bot.userId } },
+            { type: 'channel.follow', version: '2', condition: { broadcaster_user_id: this.bot.userId, moderator_user_id: this.bot.userId } },
+            { type: 'stream.online', version: '1', condition: { broadcaster_user_id: this.bot.userId } }
         ];
 
         for (const event of events) {
@@ -214,6 +217,10 @@ class EventSubHandler {
             case 'channel.follow':
                 this.bot.updateLastFollow(event.user_name);
                 this.bot.triggerAlert('follow', { username: event.user_name });
+                break;
+
+            case 'stream.online':
+                this.bot.resetDailySubCount();
                 break;
         }
     }

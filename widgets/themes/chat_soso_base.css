@@ -33,6 +33,7 @@ body {
     font-weight: 700;
     color: var(--user-color, #6dd4ff);
     letter-spacing: 0.1px;
+    font-size: 16px;
     text-shadow: #ffcc00 1px 0 15px;
 }
 
@@ -55,7 +56,8 @@ body {
 
 .msg-line {
     color: #e7eef5;
-    line-height: 1.4;
+    line-height: 1.2;
+    font-size: 18px;
 }
 
 .msg-line img {

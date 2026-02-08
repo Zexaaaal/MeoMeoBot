@@ -330,6 +330,11 @@ class TwitchBot {
         this.saveWidgetConfig('subgoals', { dailyCurrentCount: newCount });
     }
 
+    resetDailySubCount() {
+        this.saveWidgetConfig('subgoals', { dailyCurrentCount: 0 });
+        logger.log('[BOT] Daily Subs Reset (Stream Start)');
+    }
+
     getSubCount() {
         return this.currentSubCount;
     }

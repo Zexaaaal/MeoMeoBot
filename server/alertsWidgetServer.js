@@ -59,9 +59,6 @@ class AlertsWidgetServer extends BaseWidgetServer {
                     this.isPlaying = false;
                     this.processQueue();
                 }
-                if (data.type === 'log') {
-                    logger.log(`[ALERTS CLIENT] ${data.message}`);
-                }
             } catch (e) { logger.error('[ALERTS] Error parsing message:', e); }
         });
     }

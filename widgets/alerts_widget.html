@@ -57,34 +57,7 @@
         function log(msg, err) {
             console.log(`[AlertsWidget] ${msg}`, err || '');
             if (err) console.error(err);
-            if (ws) {
-                ws.send(JSON.stringify({ type: 'log', message: msg + (err ? ' ' + err : '') }));
-            }
         }
-
-        function transformLocalPath(path) {
-            if (!path) return path;
-            if (path.startsWith('http')) return path;
-
-            try {
-                let rawPath = path;
-                if (rawPath.startsWith('file://')) {
-                    rawPath = rawPath.replace(/^file:\/\/+/, '');
-                }
-
-                try { rawPath = decodeURIComponent(rawPath); } catch (e) { log('Decode error', e); }
-
-                if (navigator.platform.toUpperCase().indexOf('WIN') >= 0 || rawPath.match(/^\/[a-zA-Z]:/)) {
-                    if (rawPath.startsWith('/')) rawPath = rawPath.substring(1);
-                }
-
-                return `${window.location.protocol}//${host}/local-file?path=${encodeURIComponent(rawPath)}`;
-            } catch (e) {
-                log('Path transform error', e);
-                return path;
-            }
-        }
-
         function connectWs() {
             log(`Connecting to ${protocol}//${host}`);
             ws = connectWidget((data) => {
@@ -112,7 +85,6 @@
                 msgContainer.innerHTML = alert.message || '';
 
                 if (alert.audio) {
-                    log('Setting audio src: ' + alert.audio);
                     audio.src = alert.audio;
                     audio.volume = alert.volume !== undefined ? alert.volume : 0.5;
                 } else {
@@ -122,7 +94,6 @@
                 const hasVisuals = alert.image || alert.text || alert.message;
 
                 if (hasVisuals) {
-                    log('Showing visuals');
                     container.className = 'alert-box';
                     container.style.opacity = '0';
 
@@ -143,23 +114,19 @@
 
                 if (alert.audio) {
                     try {
-                        log('Attempting audio play');
                         await audio.play();
-                        log('Audio started');
                     } catch (e) {
                         log('Audio playback failed', e);
                     }
                 }
 
                 setTimeout(() => {
-                    log('Alert duration ended');
                     if (hasVisuals) stopAlert();
                     else ws.send(JSON.stringify({ type: 'alert-finished' }));
                 }, duration);
 
             } catch (err) {
-                log('CRITICAL ERROR in playAlert', err);
-                // Ensure we don't hang the queue
+                log('Error in playAlert', err);
                 ws.send(JSON.stringify({ type: 'alert-finished' }));
             }
         }

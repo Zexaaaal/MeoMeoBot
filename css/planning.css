@@ -679,7 +679,7 @@
 
 .preview-event-info {
     padding: 10px;
-    /* Reduced padding */
+    
     flex: 1;
     display: flex;
     flex-direction: column;
@@ -690,7 +690,7 @@
     position: relative;
     z-index: 1;
     gap: 4px;
-    /* Reduced gap */
+    
 }
 
 .preview-event.has-image .preview-event-info {
@@ -699,7 +699,7 @@
 
 .preview-event-title {
     font-size: clamp(14px, 12cqh, 32px);
-    /* Adaptive title */
+    
     font-weight: 800;
     color: white;
     text-transform: uppercase;

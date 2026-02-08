@@ -92,7 +92,7 @@ function setupEventListeners() {
         renderAll();
     });
 
-    const stripPrefix = (path) => path ? path.replace(/^file:\/\//, '') : '';
+    const stripPrefix = (path) => path ? path.replace(/^file:\/\/+/, '') : path;
 
     els.bgInput.style.cursor = 'pointer';
     els.bgInput.addEventListener('click', async () => {
@@ -243,7 +243,7 @@ function loadState(loadEvents = false) {
             if (parsed.startSunday !== undefined) currentState.startSunday = parsed.startSunday;
             if (parsed.bgImage) {
                 currentState.bgImage = parsed.bgImage;
-                const stripPrefix = (path) => path ? path.replace(/^file:\/\//, '') : '';
+                const stripPrefix = (path) => path ? path.replace(/^file:\/\/+/, '') : path;
                 els.bgInput.value = stripPrefix(parsed.bgImage);
             }
             if (parsed.title !== undefined) {
@@ -277,7 +277,7 @@ function importPreviousState() {
         }
         if (parsed.bgImage) {
             currentState.bgImage = parsed.bgImage;
-            const stripPrefix = (path) => path ? path.replace(/^file:\/\//, '') : '';
+            const stripPrefix = (path) => path ? path.replace(/^file:\/\/+/, '') : path;
             els.bgInput.value = stripPrefix(parsed.bgImage);
         }
         if (parsed.title !== undefined) {

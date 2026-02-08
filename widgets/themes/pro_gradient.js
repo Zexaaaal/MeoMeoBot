@@ -10,10 +10,10 @@ class ProGradient {
         }
 
         const baseColors = colors || [
-            [0.35, 0.21, 0.54], // #5a3689
-            [0.59, 0.35, 0.90], // #965ae5
-            [0.63, 0.42, 0.91], // #a16be8
-            [0.345, 0.208, 0.529] // #583587
+            [0.35, 0.21, 0.54], 
+            [0.59, 0.35, 0.90], 
+            [0.63, 0.42, 0.91], 
+            [0.345, 0.208, 0.529] 
         ];
         this.colors = this.shuffleColors(baseColors, seed);
 
@@ -150,7 +150,7 @@ class ProGradient {
             return;
         }
 
-        // Create buffer
+        
         this.positionBuffer = this.gl.createBuffer();
         this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.positionBuffer);
         const positions = [

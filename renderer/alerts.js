@@ -127,7 +127,7 @@ function setupEventListeners() {
 
     els.msgInput.addEventListener('input', (e) => updateConfigValue(currentType, 'textTemplate', e.target.value));
 
-    const stripPrefix = (path) => path ? path.replace(/^file:\/\//, '') : '';
+    const stripPrefix = (path) => path ? path.replace(/^file:\/\/+/, '') : path;
 
     els.imgInput.style.cursor = 'pointer';
     els.imgInput.addEventListener('click', async () => {
@@ -232,7 +232,7 @@ function updateUI() {
         els.widgetUrl.textContent = `http://127.0.0.1:${widgetPort}/widget/alerts`;
 
 
-        const stripPrefix = (path) => path ? path.replace(/^file:\/\//, '') : '';
+        const stripPrefix = (path) => path ? path.replace(/^file:\/\/+/, '') : path;
 
         els.msgInput.value = typeConfig.textTemplate || meta.defaultText;
         els.imgInput.value = stripPrefix(typeConfig.image || '');
@@ -343,7 +343,7 @@ function transformLocalPath(path) {
     try {
         let rawPath = path;
         if (rawPath.startsWith('file://')) {
-            rawPath = rawPath.replace(/^file:\/\//, '');
+            rawPath = rawPath.replace(/^file:\/\/+/, '');
         }
 
         try { rawPath = decodeURIComponent(rawPath); } catch (e) {

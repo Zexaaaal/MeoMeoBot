@@ -228,7 +228,7 @@ class RewardsManager {
         const rewardFunctions = config.rewardFunctions || {};
         const boundFunction = rewardFunctions[rewardId];
 
-        // DEBUG LOGS
+        
         logger.log(`[POINTS] Available bindings: ${JSON.stringify(rewardFunctions)}`);
         logger.log(`[POINTS] Function for this reward: '${boundFunction || 'NONE'}'`);
 

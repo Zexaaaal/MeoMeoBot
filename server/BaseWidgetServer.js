@@ -72,7 +72,7 @@ class BaseWidgetServer {
         res.setHeader('Pragma', 'no-cache');
         res.setHeader('Expires', '0');
         res.setHeader('Surrogate-Control', 'no-store');
-        // Explicitly allow data/blob for img-src to fix ERR_INVALID_URL
+
         res.setHeader('Content-Security-Policy', "default-src * 'unsafe-inline' 'unsafe-eval' data: blob:; img-src * 'self' data: blob: https: http:; media-src * 'self' data: blob: https: http:; script-src * 'unsafe-inline' 'unsafe-eval'; style-src * 'unsafe-inline';");
 
         if (req.method === 'OPTIONS') {
@@ -407,8 +407,6 @@ class BaseWidgetServer {
     }
 
     getUrl(localIp, widgetType) {
-
-
         const name = widgetType || this.widgetName;
         return `http://${localIp}:${this.port}/widget/${name}`;
     }

@@ -60,7 +60,7 @@ class EventSubHandler {
             logger.log(`[EventSub] Session accueillie : ${this.sessionId}`);
             this.subscribeToAllEvents();
         } else if (messageType === 'session_keepalive') {
-            // OK - heartbeat
+            
         } else if (messageType === 'notification') {
             logger.log(`[EventSub] NOTIFICATION reçue type: ${payload.subscription.type}`);
             this.handleNotification(payload);

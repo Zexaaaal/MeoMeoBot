@@ -38,7 +38,7 @@ async function init() {
     const saveBtn = document.getElementById('saveRewardEditorBtn');
     if (saveBtn) saveBtn.addEventListener('click', saveReward);
 
-    const stripPrefix = (path) => path ? path.replace(/^file:\/\//, '') : '';
+    const stripPrefix = (path) => path ? path.replace(/^file:\/\/+/, '') : path;
 
     const soundInput = document.getElementById('rewardSoundInput');
     const imageInput = document.getElementById('rewardImageInput');
@@ -368,7 +368,7 @@ function openEditor(reward = null) {
     document.getElementById('rewardEnabledInput').checked = (!reward || reward.is_enabled);
     document.getElementById('rewardUserInputInput').checked = (reward && reward.is_user_input_required);
 
-    const stripPrefix = (path) => path ? path.replace(/^file:\/\//, '') : '';
+    const stripPrefix = (path) => path ? path.replace(/^file:\/\/+/, '') : path;
     const soundVal = (reward && savedRewardSounds[reward.id]) ? savedRewardSounds[reward.id] : '';
     const imageVal = (reward && savedRewardImages[reward.id]) ? savedRewardImages[reward.id] : '';
 

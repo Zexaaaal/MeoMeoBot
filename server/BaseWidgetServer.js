@@ -110,10 +110,38 @@ class BaseWidgetServer {
             return this.serveLocalFile(req, res);
         }
 
+        if (req.url.startsWith('/widget/themes/')) {
+            return this.serveTheme(req, res);
+        }
+
         if (this.handleCustomRoutes(req, res)) return;
 
         res.statusCode = 404;
         res.end('Not Found');
+    }
+
+    serveTheme(req, res) {
+        const cleanUrl = req.url.split('?')[0];
+        const themeFile = cleanUrl.replace('/widget/themes/', '');
+        const safeName = path.normalize(themeFile).replace(/^(\.\.[\/\\])+/, '');
+        const themePath = path.join(__dirname, '..', 'widgets', 'themes', safeName);
+
+        fs.readFile(themePath, (err, data) => {
+            if (err) {
+                res.statusCode = 404;
+                return res.end('Theme File Not Found');
+            }
+
+            const ext = path.extname(themePath).toLowerCase();
+            const mimeTypes = {
+                '.css': 'text/css',
+                '.js': 'application/javascript',
+                '.json': 'application/json'
+            };
+            res.statusCode = 200;
+            res.setHeader('Content-Type', mimeTypes[ext] || 'text/plain');
+            res.end(data);
+        });
     }
 
     serveAsset(req, res) {

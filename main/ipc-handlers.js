@@ -157,6 +157,9 @@ function registerHandlers(deps) {
             subgoals: servers.subgoalsServer ? servers.subgoalsServer.getUrl(localIp) : '',
             subgoalsList: servers.subgoalsServer ? servers.subgoalsServer.getUrl(localIp, 'subgoals-list') : '',
             dailySubs: servers.subgoalsServer ? servers.subgoalsServer.getUrl(localIp, 'daily-subs') : '',
+            lastSub: servers.subgoalsServer ? servers.subgoalsServer.getUrl(localIp, 'last-sub') : '',
+            lastFollow: servers.subgoalsServer ? servers.subgoalsServer.getUrl(localIp, 'last-follow') : '',
+            lastDonation: servers.subgoalsServer ? servers.subgoalsServer.getUrl(localIp, 'last-donation') : '',
             roulette: servers.rouletteServer ? servers.rouletteServer.getUrl(localIp) : ''
         };
     });

@@ -98,6 +98,14 @@ class ConfigManager {
         const currentConfig = this.getWidgetConfig(widgetName) || {};
         this.store.set(`widgets.${widgetName}`, { ...currentConfig, ...newConfig });
     }
+
+    getLastEvents() {
+        return this.store.get('lastEvents', {});
+    }
+
+    setLastEvent(type, data) {
+        this.store.set(`lastEvents.${type}`, data);
+    }
 }
 
 module.exports = new ConfigManager();

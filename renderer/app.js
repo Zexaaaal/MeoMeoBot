@@ -271,6 +271,9 @@ async function loadWidgetUrls() {
         setBtnUrl('btnCopySubgoalsUrl', urls.subgoals);
         setBtnUrl('btnCopyDailySubsUrl', urls.dailySubs);
         setBtnUrl('btnCopySubgoalsListUrl', urls.subgoalsList);
+        setBtnUrl('btnCopyLastSubUrl', urls.lastSub);
+        setBtnUrl('btnCopyLastFollowUrl', urls.lastFollow);
+        setBtnUrl('btnCopyLastDonationUrl', urls.lastDonation);
         setBtnUrl('btnCopyRouletteUrl', urls.roulette);
 
     } catch (e) { console.error('Erreur URLs widgets', e); }

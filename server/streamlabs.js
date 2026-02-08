@@ -53,6 +53,7 @@ class StreamlabsClient {
 
     handleDonation(msg) {
         logger.log(`[Streamlabs] Donation reçue de ${msg.name}: ${msg.formatted_amount}`);
+        this.bot.updateLastDonation(msg.name, msg.formatted_amount);
         const alertData = {
             type: 'donation',
             username: msg.name,

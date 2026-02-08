@@ -34,6 +34,14 @@ class TwitchBot {
         this.onEmoteRain = null;
         this.onSubCountUpdate = null;
         this.onParticipantAdded = null;
+        this.onLastSub = null;
+        this.onLastFollow = null;
+        this.onLastDonation = null;
+
+        const lastEvents = this.configManager.getLastEvents();
+        this.lastSub = lastEvents.sub || null;
+        this.lastFollow = lastEvents.follow || null;
+        this.lastDonation = lastEvents.donation || null;
 
         this.eventSubHandler = new EventSubHandler(this);
         this.twitchAPI = new TwitchAPI(this);
@@ -443,6 +451,23 @@ class TwitchBot {
     async createChannelReward(data) { return this.createCustomReward(data); }
     async updateChannelReward(id, data) { return this.updateCustomReward(id, data); }
     async deleteChannelReward(id) { return this.deleteCustomReward(id); }
+    updateLastSub(name) {
+        this.lastSub = { name };
+        this.configManager.setLastEvent('sub', this.lastSub);
+        if (this.onLastSub) this.onLastSub(this.lastSub);
+    }
+
+    updateLastFollow(name) {
+        this.lastFollow = { name };
+        this.configManager.setLastEvent('follow', this.lastFollow);
+        if (this.onLastFollow) this.onLastFollow(this.lastFollow);
+    }
+
+    updateLastDonation(name, amount) {
+        this.lastDonation = { name, amount };
+        this.configManager.setLastEvent('donation', this.lastDonation);
+        if (this.onLastDonation) this.onLastDonation(this.lastDonation);
+    }
 }
 
 module.exports = TwitchBot;

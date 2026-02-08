@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>Daily Subs Widget</title>
+    <title>Last Follow Widget</title>
     <style>
         body {
             margin: 0;
@@ -77,63 +77,63 @@
     <div id="widget-container">
         <div class="progress-container">
             <div class="progress-bar" id="progress-bar"></div>
-            <div class="progress-value" id="progress-value">0 / 10</div>
+            <div class="progress-value" id="text-content"></div>
         </div>
-        <div class="widget-label">DAILY SUBS</div>
+        <div class="widget-label">DERNIER FOLLOW</div>
     </div>
 
     <script>
-        let currentConfig = {
-            dailyStartCount: 0,
-            dailyGoalCount: 10,
-            dailyCurrentCount: 0
-        };
-
         function connectWebSocket() {
-            connectWidget((data) => {
-                if (data.type === 'config' || data.type === 'config-update') {
-                    if (data.widget && data.widget !== 'daily-subs' && data.widget !== 'subgoals') return;
+            const connect = () => {
+                const ws = new WebSocket('ws://localhost:8091');
 
-                    if (data.config) {
-                        currentConfig = { ...currentConfig, ...data.config };
-                        if (typeof data.config.customCSS === 'string') {
-                            let style = document.getElementById('custom-css');
-                            if (!style) {
-                                style = document.createElement('style');
-                                style.id = 'custom-css';
-                                document.head.appendChild(style);
-                            }
-                            style.textContent = data.config.customCSS;
+                ws.onopen = () => {
+                    console.log('Connected to Widget Server');
+                };
+
+                ws.onmessage = (event) => {
+                    try {
+                        const data = JSON.parse(event.data);
+
+                        if (data.type === 'last-follow') {
+                            update(data.data);
                         }
-                        render();
+
+                        if (data.type === 'config' || data.type === 'config-update') {
+                            if (data.config && typeof data.config.customCSS === 'string') {
+                                let style = document.getElementById('custom-css');
+                                if (!style) {
+                                    style = document.createElement('style');
+                                    style.id = 'custom-css';
+                                    document.head.appendChild(style);
+                                }
+                                style.textContent = data.config.customCSS;
+                            }
+                        }
+
+                    } catch (e) {
+                        console.error('Error parsing message:', e);
                     }
-                }
-            });
+                };
+
+                ws.onclose = () => {
+                    setTimeout(connect, 5000);
+                };
+
+                ws.onerror = (err) => {
+                    ws.close();
+                };
+            };
+            connect();
         }
 
-        function render() {
-            let { dailyStartCount, dailyGoalCount, dailyCurrentCount } = currentConfig;
-
-            dailyStartCount = parseFloat(dailyStartCount) || 0;
-            dailyGoalCount = parseFloat(dailyGoalCount) || 10;
-            dailyCurrentCount = parseFloat(dailyCurrentCount) || 0;
-
-            const totalRange = dailyGoalCount - dailyStartCount;
-            const progress = dailyCurrentCount - dailyStartCount;
-
-            let percentage = 0;
-            if (totalRange > 0) {
-                percentage = (progress / totalRange) * 100;
+        function update(data) {
+            const el = document.getElementById('text-content');
+            if (data && data.name && data.name !== '---') {
+                el.textContent = data.name;
+            } else {
+                el.textContent = '';
             }
-
-            if (percentage < 0) percentage = 0;
-            if (percentage > 100) percentage = 100;
-
-            const bar = document.getElementById('progress-bar');
-            bar.style.width = `${percentage}%`;
-
-            const text = document.getElementById('progress-value');
-            text.textContent = `${dailyCurrentCount} / ${dailyGoalCount}`;
         }
 
         connectWebSocket();

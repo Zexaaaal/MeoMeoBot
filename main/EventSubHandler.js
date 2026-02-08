@@ -149,6 +149,7 @@ class EventSubHandler {
                     if (subgoalsConfig.countRegularSubs !== false) {
                         this.bot.incrementDailySubCount();
                     }
+                    this.bot.updateLastSub(event.user_name);
                     this.bot.triggerAlert('sub', { username: event.user_name });
                 }
                 break;
@@ -171,6 +172,7 @@ class EventSubHandler {
                 if (subgoalsConfigResub.countRegularSubs !== false) {
                     this.bot.incrementDailySubCount();
                 }
+                this.bot.updateLastSub(event.user_name);
                 this.bot.triggerAlert('resub', {
                     username: event.user_name,
                     months: event.cumulative_months,
@@ -210,6 +212,7 @@ class EventSubHandler {
                 break;
 
             case 'channel.follow':
+                this.bot.updateLastFollow(event.user_name);
                 this.bot.triggerAlert('follow', { username: event.user_name });
                 break;
         }

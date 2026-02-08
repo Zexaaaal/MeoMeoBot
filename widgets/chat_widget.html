@@ -41,6 +41,7 @@
     <video id="bg-video" loop autoplay muted playsinline>
         <source src="assets/pranax.webm" type="video/webm">
     </video>
+
     <div id="chat-container"></div>
     <style id="custom-css">
         /* __CUSTOM_CSS__ */
@@ -397,8 +398,63 @@
             }
         }
 
+        let proEnabled = false;
+
+        function updatePro() {
+            const enable = getComputedStyle(document.body).getPropertyValue('--enable-pro').trim() === '1';
+
+            let header = document.getElementById('pro-header');
+            let dots = document.getElementById('pro-header-dots');
+            let footer = document.getElementById('pro-footer');
+            let background = document.getElementById('pro-background');
+
+            if (enable) {
+                if (!header) {
+                    header = document.createElement('div');
+                    header.id = 'pro-header';
+                    header.textContent = 'Soo_Meo';
+                    header.style.cssText = 'position:fixed;top:20px;left:20px;right:20px;font-family:"Road Rage",cursive;font-weight:900;font-size:40px;letter-spacing:8px;color:#fff;text-shadow:0 4px 15px rgba(0,0,0,1);background:linear-gradient(135deg,#fdf102 0%,#965ae5 100%);padding:18px 80px 18px 30px;clip-path:polygon(0 0,calc(100% - 40px) 0,100% 25px,100% 100%,0 100%);box-shadow:0 6px 20px rgba(253,241,2,.5),inset 0 3px 0 rgba(255,255,255,.25),inset 0 -3px 0 rgba(0,0,0,.6);border:1px solid rgba(150,90,229,.5);border-left:2px solid rgba(255,255,255,.15);border-top:2px solid rgba(255,255,255,.15);z-index:1000;pointer-events:none';
+                    document.body.appendChild(header);
+
+                    dots = document.createElement('div');
+                    dots.id = 'pro-header-dots';
+                    dots.style.cssText = 'position:fixed;top:40px;right:55px;width:70px;height:10px;background:radial-gradient(circle,#1a1410 40%,transparent 45%) 0 0/16px 10px,radial-gradient(circle,#1a1410 40%,transparent 45%) 24px 0/16px 10px,radial-gradient(circle,#1a1410 40%,transparent 45%) 48px 0/16px 10px;background-repeat:no-repeat;z-index:1001;pointer-events:none';
+                    document.body.appendChild(dots);
+
+                    footer = document.createElement('div');
+                    footer.id = 'pro-footer';
+                    footer.style.cssText = 'position:fixed;bottom:20px;left:20px;right:20px;height:150px;background:linear-gradient(135deg,#fdf102 0%,#965ae5 100%);clip-path:polygon(0 0,100% 0,100% calc(100% - 25px),calc(100% - 40px) 100%,40px 100%,0 calc(100% - 25px));box-shadow:0 -6px 20px rgba(253,241,2,.5),inset 0 3px 0 rgba(255,255,255,.25),inset 0 -3px 0 rgba(0,0,0,.6);border:1px solid rgba(150,90,229,.5);border-left:2px solid rgba(255,255,255,.15);border-bottom:2px solid rgba(255,255,255,.15);z-index:1000;pointer-events:none';
+                    document.body.appendChild(footer);
+
+                    background = document.createElement('div');
+                    background.id = 'pro-background';
+                    background.style.cssText = 'position:fixed;top:88px;left:20px;right:20px;bottom:168px;background:rgba(221, 219, 220, 0.2);z-index:-1;pointer-events:none;display:block';
+                    document.body.appendChild(background);
+
+                    const chatContainer = document.getElementById('chat-container');
+                    if (chatContainer) {
+                        chatContainer.style.paddingTop = '90px';
+                        chatContainer.style.paddingBottom = '170px';
+                    }
+                }
+                proEnabled = true;
+            } else {
+                if (header) header.remove();
+                if (dots) dots.remove();
+                if (footer) footer.remove();
+                if (background) background.remove();
+                const chatContainer = document.getElementById('chat-container');
+                if (chatContainer) {
+                    chatContainer.style.paddingTop = '';
+                    chatContainer.style.paddingBottom = '';
+                }
+                proEnabled = false;
+            }
+        }
+
         const styleObserver = new MutationObserver(() => {
             requestAnimationFrame(updateSnow);
+            requestAnimationFrame(updatePro);
         });
         const customCssEl = document.getElementById('custom-css');
         if (customCssEl) {
@@ -407,6 +463,7 @@
 
         connectWebSocket();
         updateSnow();
+        updatePro();
     </script>
 </body>
 

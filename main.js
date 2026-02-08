@@ -352,8 +352,15 @@ app.on('window-all-closed', () => {
     if (spotifyServer) spotifyServer.stop();
     if (subgoalsServer) subgoalsServer.stop();
     if (rouletteServer) rouletteServer.stop();
+    if (alertsWidgetServer) alertsWidgetServer.stop();
+    if (streamlabsClient) streamlabsClient.stop();
+    mediaServerModule.stop();
     castManager.cleanup();
     autoUpdaterModule.stopCheckLoop();
+
+    if (process.platform !== 'darwin') {
+        app.quit();
+    }
 });
 
 app.on('will-quit', () => {

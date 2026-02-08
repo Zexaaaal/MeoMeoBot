@@ -145,7 +145,8 @@ class EventSubHandler {
             case 'channel.subscribe':
                 if (!event.is_gift) {
                     this.bot.incrementSubCount();
-                    if (event.tier !== 'Prime') {
+                    const subgoalsConfig = this.bot.getWidgetConfig('subgoals') || {};
+                    if (subgoalsConfig.countRegularSubs !== false) {
                         this.bot.incrementDailySubCount();
                     }
                     this.bot.triggerAlert('sub', { username: event.user_name });
@@ -154,6 +155,10 @@ class EventSubHandler {
 
             case 'channel.subscription.gift':
                 this.bot.incrementSubCount(event.total || 1);
+                const subgoalsConfigGift = this.bot.getWidgetConfig('subgoals') || {};
+                if (subgoalsConfigGift.countSubGifts === true) {
+                    this.bot.incrementDailySubCount(event.total || 1);
+                }
                 this.bot.triggerAlert('subgift', {
                     username: event.user_name,
                     amount: event.total || 1
@@ -162,7 +167,8 @@ class EventSubHandler {
 
             case 'channel.subscription.message':
                 this.bot.incrementSubCount();
-                if (event.tier !== 'Prime') {
+                const subgoalsConfigResub = this.bot.getWidgetConfig('subgoals') || {};
+                if (subgoalsConfigResub.countRegularSubs !== false) {
                     this.bot.incrementDailySubCount();
                 }
                 this.bot.triggerAlert('resub', {

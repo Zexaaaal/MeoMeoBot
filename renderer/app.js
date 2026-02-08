@@ -448,6 +448,10 @@ async function loadDailySubsConfig() {
             if (document.getElementById('dailyStartCount')) document.getElementById('dailyStartCount').value = config.dailyStartCount || 0;
             if (document.getElementById('dailyGoalCount')) document.getElementById('dailyGoalCount').value = config.dailyGoalCount || 10;
             if (document.getElementById('dailyCurrentCount')) document.getElementById('dailyCurrentCount').value = config.dailyCurrentCount || 0;
+            const countRegularSubs = config.countRegularSubs !== false;
+            const countSubGifts = config.countSubGifts === true;
+            if (document.getElementById('countRegularSubs')) document.getElementById('countRegularSubs').checked = countRegularSubs;
+            if (document.getElementById('countSubGifts')) document.getElementById('countSubGifts').checked = countSubGifts;
         }
     } catch (e) { console.error('Erreur chargement config Daily Subs', e); }
 }
@@ -455,19 +459,20 @@ async function loadDailySubsConfig() {
 async function saveDailySubsConfig() {
     try {
         const currentConfig = await API.widgets.getConfig('subgoals') || {};
-
-        // Helper to get int value safely
         const getInt = (id) => {
             const el = document.getElementById(id);
             return el ? parseInt(el.value, 10) : 0;
         };
+        const countRegularSubsEl = document.getElementById('countRegularSubs');
+        const countSubGiftsEl = document.getElementById('countSubGifts');
 
         const newConfig = {
             ...currentConfig,
             dailyGoalCount: getInt('dailyGoalCount'),
-            // Only update start/current if inputs exist, else preserve existing or default to 0
             dailyStartCount: document.getElementById('dailyStartCount') ? getInt('dailyStartCount') : (currentConfig.dailyStartCount || 0),
-            dailyCurrentCount: document.getElementById('dailyCurrentCount') ? getInt('dailyCurrentCount') : (currentConfig.dailyCurrentCount || 0)
+            dailyCurrentCount: document.getElementById('dailyCurrentCount') ? getInt('dailyCurrentCount') : (currentConfig.dailyCurrentCount || 0),
+            countRegularSubs: countRegularSubsEl ? countRegularSubsEl.checked : true,
+            countSubGifts: countSubGiftsEl ? countSubGiftsEl.checked : false
         };
 
         await API.widgets.saveConfig('subgoals', newConfig);

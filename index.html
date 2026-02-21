@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MeoMeoBot</title>
+    <link rel="stylesheet" href="css/global.css">
+    <link rel="stylesheet" href="css/points.css">
+    <link rel="stylesheet" href="css/alerts.css">
+    <link rel="stylesheet" href="css/cast.css">
+    <link rel="stylesheet" href="css/commands.css">
+    <link rel="stylesheet" href="css/config.css">
+    <link rel="stylesheet" href="css/giveaway.css">
+    <link rel="stylesheet" href="css/moderation.css">
+    <link rel="stylesheet" href="css/widgets.css">
+
+    <link rel="stylesheet" href="css/planning.css">
+</head>
+
+<body>
+    <div class="header">
+        <h2 class="app-title">
+            <img src="assets/icon.png" alt="App Icon" class="app-icon">
+            <span>MeoMeoBot</span>
+        </h2>
+        <div class="header-right">
+            <div id="updateStatus" class="status checking">
+                <span class="status-dot"></span>
+                <span class="update-text-label">Vérification...</span>
+                <div id="update-action-container" class="hidden">
+                    <span id="update-confirm-icon" class="update-icon confirm-icon"
+                        title="Cliquer pour télécharger/installer">📥</span>
+                    <span id="update-deny-icon" class="update-icon deny-icon" title="Refuser/Annuler">❌</span>
+                </div>
+            </div>
+            <div id="connectionStatus" class="status disconnected">
+                <span class="status-dot"></span>
+                <span>Déconnecté</span>
+            </div>
+            <div class="window-controls">
+                <span id="global-status-msg" class="status-msg" style="margin-right: 15px;"></span>
+                <div class="control-btn" id="minimize-btn" title="Minimiser"><svg width="12" height="12"
+                        viewBox="0 0 107.97 10.8">
+                        <path fill="currentColor" d="M0,0h107.97v10.8H0V0Z" />
+                    </svg></div>
+                <div class="control-btn" id="maximize-btn" title="Agrandir"><svg width="12" height="12"
+                        viewBox="0 0 107.97 88.52">
+                        <path fill="currentColor"
+                            d="M97.18,0H0v88.52h107.97V0h-10.8ZM97.18,77.72H10.8V10.8h86.38v66.93Z" />
+                    </svg></div>
+                <div class="control-btn" id="close-btn" title="Fermer"><svg width="12" height="12"
+                        viewBox="0 0 91.14 91.14">
+                        <polygon fill="currentColor"
+                            points="91.14 8.29 82.86 0 45.57 37.28 8.29 0 0 8.29 37.29 45.57 0 82.86 8.29 91.14 45.57 53.86 82.86 91.14 91.14 82.86 53.86 45.57 91.14 8.29" />
+                    </svg></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="notification-container"></div>
+
+    <div class="tabs-container">
+        <div class="main-tabs">
+            <div class="tab active" data-tab="commands">Commandes</div>
+            <div class="tab" data-tab="giveaway">Giveaway</div>
+            <div class="tab" data-tab="moderation">Modération</div>
+            <div class="tab" data-tab="cast">Cast</div>
+            <div class="tab" data-tab="widgets">Widgets</div>
+            <div class="tab" data-tab="alerts">Alertes</div>
+            <div class="tab" data-tab="points">Points</div>
+            <div class="tab" data-tab="planning">Planning</div>
+        </div>
+        <div class="settings-tab">
+            <div class="tab icon-tab" data-tab="config" title="Configuration">
+                <svg width="20" height="20" viewBox="0 0 192.1 192.1" fill="none" stroke="currentColor"
+                    stroke-width="8.08" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="96.05" cy="96.05" r="25.09"></circle>
+                    <path
+                        d="M157.95,121.14c-2.28,5.16-1.18,11.19,2.76,15.22l.5.5c6.54,6.53,6.54,17.12.01,23.66h-.01c-6.53,6.55-17.12,6.56-23.66.03h-.01s-.5-.52-.5-.52c-4.03-3.95-10.06-5.04-15.22-2.76-5.06,2.17-8.34,7.13-8.36,12.63v1.42c0,9.24-7.49,16.73-16.73,16.73s-16.73-7.49-16.73-16.73v-.75c-.13-5.67-3.71-10.67-9.03-12.63-5.16-2.28-11.19-1.18-15.22,2.76l-.5.5c-6.53,6.54-17.12,6.54-23.66.01,0,0,0,0-.01-.01-6.54-6.53-6.54-17.12-.01-23.66,0,0,0,0,.01-.01l.5-.5c3.95-4.03,5.04-10.06,2.76-15.22-2.17-5.06-7.13-8.34-12.63-8.36h-1.42c-9.24,0-16.73-7.49-16.73-16.73s7.49-16.73,16.73-16.73h.75c5.67-.13,10.67-3.71,12.63-9.03,2.28-5.16,1.18-11.19-2.76-15.22l-.5-.5c-6.54-6.53-6.54-17.12-.01-23.66,0,0,0,0,.01-.01,6.53-6.54,17.12-6.54,23.66-.01,0,0,0,0,.01.01l.5.5c4.03,3.95,10.06,5.04,15.22,2.76h.67c5.06-2.17,8.34-7.13,8.36-12.63v-1.42c0-9.24,7.49-16.73,16.73-16.73s16.73,7.49,16.73,16.73v.75c.02,5.5,3.31,10.46,8.36,12.63,5.16,2.28,11.19,1.18,15.22-2.76l.5-.5c6.53-6.54,17.12-6.54,23.66-.01,0,0,0,0,.01.01,6.54,6.53,6.54,17.12.01,23.66,0,0,0,0-.01.01l-.5.5c-3.95,4.03-5.04,10.06-2.76,15.22v.67c2.17,5.06,7.13,8.34,12.63,8.36h1.42c9.24,0,16.73,7.49,16.73,16.73s-7.49,16.73-16.73,16.73h-.75c-5.5.02-10.46,3.31-12.63,8.36Z">
+                    </path>
+                </svg>
+            </div>
+        </div>
+    </div>
+
+    <div class="tab-content active" id="commands-tab">
+        <div class="card full-height-card">
+            <div class="interactive-header">
+                <div class="header-main-controls single-line-form">
+                    <div class="form-group">
+                        <label>Commande</label>
+                        <input type="text" id="newCommand" placeholder="discord, twitter...">
+                    </div>
+                    <div class="form-group flex-grow">
+                        <label>Réponse</label>
+                        <input type="text" id="commandResponse" placeholder="Message de réponse">
+                    </div>
+                    <button class="btn btn-primary" id="addCommandBtn">Ajouter</button>
+
+                </div>
+            </div>
+            <div class="list-container" id="commandsList"></div>
+        </div>
+    </div>
+
+    <div class="tab-content" id="giveaway-tab">
+        <div class="giveaway-layout">
+            <div class="giveaway-config">
+                <div class="card full-height-card config-card-layout">
+                    <div class="form-group">
+                        <label>Commande</label>
+                        <input type="text" id="giveawayCommand" value="!giveaway">
+                    </div>
+                    <div class="form-group flex-group">
+                        <label>Message de démarrage</label>
+                        <textarea id="giveawayStartMessage" rows="3"></textarea>
+                    </div>
+                    <div class="form-group flex-group">
+                        <label>Message de fermeture</label>
+                        <textarea id="giveawayStopMessage" rows="3"></textarea>
+                    </div>
+                    <div class="form-group flex-group">
+                        <label>Message de victoire ({winner})</label>
+                        <textarea id="giveawayWinMessage" rows="3"></textarea>
+                    </div>
+                    <div class="config-actions">
+                        <button class="btn btn-primary form-button" id="saveGiveawayConfig">Sauvegarder</button>
+
+                    </div>
+                </div>
+            </div>
+            <div class="giveaway-main">
+                <div class="card full-height-card">
+                    <div class="giveaway-controls-wrapper">
+                        <button class="btn btn-success" id="startGiveawayBtn">Démarrer</button>
+                        <button class="btn btn-danger" id="stopGiveawayBtn">Arrêter</button>
+                        <button class="btn btn-primary" id="drawWinnerBtn">Tirer un Gagnant</button>
+                        <div class="controls inline-controls">
+                            <button class="control-button delete-btn" id="clearParticipantsBtn" title="Vider la liste">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path
+                                        d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2">
+                                    </path>
+                                </svg>
+                            </button>
+                            <button id="confirmClearParticipantsBtn" class="control-button confirm-btn"
+                                style="display: none;" title="Confirmer">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="#00b35f" stroke-width="2">
+                                    <polyline points="20 6 9 17 4 12"></polyline>
+                                </svg>
+                            </button>
+                            <button id="cancelClearParticipantsBtn" class="control-button cancel-btn"
+                                style="display: none;" title="Annuler">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="#e91916" stroke-width="2">
+                                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="winner-display" id="winnerDisplay">Prêt pour le tirage</div>
+                    <div class="card-header">
+                        <span class="participant-count" id="participantsCount">0</span>
+                    </div>
+                    <div class="list-container" id="participantsList"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="tab-content" id="moderation-tab">
+        <div class="moderation-layout">
+            <div class="card full-height-card">
+                <div class="interactive-header">
+                    <div class="header-main-controls single-line-form">
+                        <div class="form-group flex-grow">
+                            <label>Mot ou expression à bannir</label>
+                            <input type="text" id="newBannedWord" placeholder="Mot à bannir">
+                        </div>
+                        <button class="btn btn-primary" id="addBannedWordBtn">Ajouter</button>
+
+                        <div class="controls inline-controls">
+                            <button id="clearBannedWordsBtn" class="control-button delete-btn" title="Vider la liste">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path
+                                        d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2">
+                                    </path>
+                                </svg>
+                            </button>
+                            <button id="confirmClearBannedWordsBtn" class="control-button confirm-btn"
+                                style="display: none;" title="Confirmer">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="#00b35f" stroke-width="2">
+                                    <polyline points="20 6 9 17 4 12"></polyline>
+                                </svg>
+                            </button>
+                            <button id="cancelClearBannedWordsBtn" class="control-button cancel-btn"
+                                style="display: none;" title="Annuler">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="#e91916" stroke-width="2">
+                                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                                </svg>
+                            </button>
+                        </div>
+
+                    </div>
+                </div>
+                <div class="list-container" id="bannedWordsList"></div>
+            </div>
+            <div class="moderation-settings-col">
+                <div class="card full-height-card">
+                    <div class="card-header">
+                        <h3 class="card-title">Messages Automatiques</h3>
+                        <button class="btn btn-primary btn-sm" id="addAutoMessageBtn">Ajouter</button>
+                    </div>
+                    <div class="list-container" id="autoMessagesList"></div>
+                </div>
+                <div class="card">
+                    <h3 class="card-title">Commande !clip</h3>
+                    <div class="form-group">
+                        <label>Cooldown de la commande (secondes)</label>
+                        <input type="number" id="clipCooldown" value="60" min="10">
+                    </div>
+                    <div class="config-actions">
+                        <button class="btn btn-primary form-button" id="saveClipConfig">Sauvegarder Clip</button>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <div class="tab-content" id="cast-tab">
+        <div class="card full-height-card">
+            <div class="list-container" id="video-thumbnail-grid"></div>
+            <button class="fab" id="select-cast-folder-btn" title="Choisir un dossier">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <div class="tab-content" id="widgets-tab">
+        <div class="card full-height-card">
+            <div class="widget-list-container">
+                <div class="widget-columns-wrapper">
+                    <div class="widget-col-container">
+                        <div class="widget-row" data-widget="chat">
+                            <div class="widget-col-name">
+                                <strong>Tchat</strong>
+                                <button class="btn btn-sm btn-secondary copy-source-btn" id="btnCopyChatUrl">📄
+                                    Source</button>
+                            </div>
+                            <div class="widget-col-config" id="badgePrefs"></div>
+                            <div class="widget-col-actions">
+                                <button class="btn btn-secondary btn-sm" onclick="editWidgetCss('chat')">Thèmes</button>
+                                <button class="btn btn-primary btn-sm" id="saveBadgePrefs"
+                                    title="Sauvegarder">Sauvegarder</button>
+                            </div>
+                        </div>
+
+                        <div class="widget-row" data-widget="subgoals">
+                            <div class="widget-col-name">
+                                <strong>Subgoals</strong>
+                                <button class="btn btn-sm btn-secondary copy-source-btn" id="btnCopySubgoalsUrl">📄
+                                    Source</button>
+                            </div>
+                            <div class="widget-col-actions">
+                                <button class="btn btn-primary btn-sm" id="configureSubgoalsBtn">Configurer</button>
+                                <button class="btn btn-secondary btn-sm"
+                                    onclick="editWidgetCss('subgoals')">Thèmes</button>
+                            </div>
+                        </div>
+
+                        <div class="widget-row" data-widget="subgoals-list">
+                            <div class="widget-col-name">
+                                <strong>Liste Subgoals</strong>
+                                <button class="btn btn-sm btn-secondary copy-source-btn" id="btnCopySubgoalsListUrl">📄
+                                    Source</button>
+                            </div>
+                            <div class="widget-col-actions">
+                                <button class="btn btn-secondary btn-sm"
+                                    onclick="editWidgetCss('subgoals-list')">Thèmes</button>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <div class="widget-col-container">
+                        <div class="widget-row" data-widget="emote-wall">
+                            <div class="widget-col-name">
+                                <strong>Mur d'Emotes</strong>
+                                <button class="btn btn-sm btn-secondary copy-source-btn" id="btnCopyEmoteWallUrl">📄
+                                    Source</button>
+                            </div>
+                            <div class="widget-col-config">
+                                <div class="config-inline-grid">
+                                    <div class="form-group">
+                                        <label>Taille Min (px)</label>
+                                        <input type="number" id="emoteWallMinSize" value="24" class="inline-input">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Taille Max (px)</label>
+                                        <input type="number" id="emoteWallMaxSize" value="64" class="inline-input">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Intervalle (ms)</label>
+                                        <input type="number" id="emoteWallSpawnInterval" value="100"
+                                            class="inline-input">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Durée (ms)</label>
+                                        <input type="number" id="emoteWallDuration" value="5000" class="inline-input">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="widget-col-actions">
+                                <button class="btn btn-primary btn-sm" id="saveEmoteWallConfig"
+                                    title="Sauvegarder">Sauvegarder</button>
+                            </div>
+                        </div>
+
+                        <div class="widget-row" data-widget="daily-subs">
+                            <div class="widget-col-name">
+                                <strong>Daily Subs</strong>
+                                <button class="btn btn-sm btn-secondary copy-source-btn" id="btnCopyDailySubsUrl">📄
+                                    Source</button>
+                            </div>
+                            <div class="widget-col-config">
+                                <div class="form-group">
+                                    <label>Objectif</label>
+                                    <input type="number" id="dailyGoalCount" class="inline-input" value="10">
+                                </div>
+                                <div class="badge-grid" style="grid-template-columns: repeat(2, 1fr);">
+                                    <label>
+                                        <input type="checkbox" id="countRegularSubs" checked> Subs
+                                    </label>
+                                    <label>
+                                        <input type="checkbox" id="countSubGifts"> Gifts
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="widget-col-actions">
+                                <button class="btn btn-primary btn-sm" id="saveDailySubsBtn">Sauvegarder</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="widget-col-container">
+                        <div class="widget-row" data-widget="spotify">
+                            <div class="widget-col-name">
+                                <strong>Spotify</strong>
+                                <button class="btn btn-sm btn-secondary copy-source-btn" id="btnCopySpotifyUrl">📄
+                                    Source</button>
+                            </div>
+                            <div class="widget-col-config">
+                                <p style="margin-bottom:6px;font-size:12px;color:var(--text-secondary);">
+                                    <code id="spotifyRedirectDisplay">http://127.0.0.1:8090/auth/spotify/callback</code>
+                                </p>
+                                <div id="spotify-device-picker" class="hidden">
+                                    <select id="spotify-devices" class="form-select"></select>
+                                    <button class="btn btn-primary btn-sm" id="confirm-device">Valider</button>
+                                </div>
+                            </div>
+                            <div class="widget-col-actions">
+                                <button class="btn btn-secondary btn-sm"
+                                    onclick="editWidgetCss('spotify')">Thèmes</button>
+                            </div>
+                        </div>
+
+                        <div class="widget-row" data-widget="roulette">
+                            <div class="widget-col-name">
+                                <strong>Roulette</strong>
+                                <button class="btn btn-sm btn-secondary copy-source-btn" id="btnCopyRouletteUrl">📄
+                                    Source</button>
+                            </div>
+                            <div class="widget-col-actions">
+                                <button class="btn btn-primary btn-sm" id="configureRouletteBtn">Configurer</button>
+                                <button class="btn btn-secondary btn-sm"
+                                    onclick="editWidgetCss('roulette')">Thèmes</button>
+                                <button class="btn btn-success btn-sm" id="spinRouletteBtn"
+                                    title="Lancer la roulette">Lancer</button>
+                            </div>
+                        </div>
+
+                        <div class="widget-group-card">
+                            <div class="widget-row compact-widget-row" data-widget="last-sub">
+                                <div class="widget-col-name">
+                                    <strong>Dernier Sub</strong>
+                                    <button class="btn btn-sm btn-secondary copy-source-btn" id="btnCopyLastSubUrl">📄
+                                        Source</button>
+                                </div>
+                            </div>
+
+                            <div class="widget-row compact-widget-row" data-widget="last-follow">
+                                <div class="widget-col-name">
+                                    <strong>Dernier Follow</strong>
+                                    <button class="btn btn-sm btn-secondary copy-source-btn"
+                                        id="btnCopyLastFollowUrl">📄
+                                        Source</button>
+                                </div>
+                            </div>
+
+                            <div class="widget-row compact-widget-row" data-widget="last-donation">
+                                <div class="widget-col-name">
+                                    <strong>Dernier Don</strong>
+                                    <button class="btn btn-sm btn-secondary copy-source-btn"
+                                        id="btnCopyLastDonationUrl">📄
+                                        Source</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="tab-content" id="alerts-tab">
+        <div class="card full-height-card">
+            <div class="alerts-layout">
+                <div class="alerts-sidebar">
+                    <div class="alert-type-btn active" data-type="follow"><span>Follow</span> <input type="checkbox"
+                            id="check-follow"></div>
+                    <div class="alert-type-btn" data-type="sub"><span>Sub</span> <input type="checkbox" id="check-sub">
+                    </div>
+                    <div class="alert-type-btn" data-type="subgift"><span>Subgift</span> <input type="checkbox"
+                            id="check-subgift"></div>
+                    <div class="alert-type-btn" data-type="resub"><span>Re-Sub</span> <input type="checkbox"
+                            id="check-resub"></div>
+                    <div class="alert-type-btn" data-type="donation"><span>Dons</span> <input type="checkbox"
+                            id="check-donation"></div>
+                    <div class="alert-type-btn" data-type="cheer"><span>Bits</span> <input type="checkbox"
+                            id="check-cheer"></div>
+                    <div class="alert-type-btn" data-type="raid"><span>Raid</span> <input type="checkbox"
+                            id="check-raid"></div>
+                    <div class="alert-type-btn" data-type="hypetrain"><span>Hype Train</span> <input type="checkbox"
+                            id="check-hypetrain"></div>
+                    <div class="alert-type-btn" data-type="themes"><span>Thèmes</span></div>
+                </div>
+
+
+                <div class="alerts-config-area" id="alert-config-form">
+
+
+                    <div id="alert-standard-config" class="alert-config-group"
+                        style="display:none; flex-direction:column; height:100%;">
+                        <div class="compact-container">
+                            <div class="widget-url-display">
+                                <span style="color:var(--text-secondary); margin-right:5px;">Source OBS:</span>
+                                <code class="chat-widget-url" id="alert-widget-url">...</code>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Message</label>
+                                <input type="text" id="alert-message-input">
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Image</label>
+                                    <div class="file-picker-container">
+                                        <input type="text" id="alert-image-input" class="interactive-input" readonly
+                                            placeholder="Cliquer pour choisir une image">
+                                        <button class="btn btn-secondary clear-btn" id="alert-image-clear-btn"
+                                            title="Vider">✖</button>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label>Son</label>
+                                    <div class="file-picker-container">
+                                        <input type="text" id="alert-audio-input" class="interactive-input" readonly
+                                            placeholder="Cliquer pour choisir un son">
+                                        <button class="btn btn-secondary clear-btn" id="alert-audio-clear-btn"
+                                            title="Vider">✖</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <div style="display:flex; justify-content:space-between;">
+                                        <label>Volume</label>
+                                        <span id="alert-volume-val">50%</span>
+                                    </div>
+                                    <input type="range" id="alert-volume-input" min="0" max="1" step="0.05"
+                                        style="width:100%">
+                                </div>
+                                <div class="form-group">
+                                    <label>Durée (ms)</label>
+                                    <input type="number" id="alert-duration-input">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <div id="alert-theme-editor" class="alert-config-group">
+                        <textarea id="alert-theme-css" class="css-editor-textarea"></textarea>
+                        <div class="theme-controls" style="display:flex; gap:10px; margin-bottom:10px;">
+                            <button id="alert-theme-reset-btn" class="btn btn-danger" style="flex:1;">Réinitialiser
+                                le thème (Défaut)</button>
+                            <button id="alert-theme-confirm-btn" class="btn btn-danger"
+                                style="flex:1; display:none;">Confirmer ?</button>
+                            <button id="alert-theme-cancel-btn" class="btn btn-secondary"
+                                style="flex:1; display:none;">Annuler</button>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="alerts-preview-col">
+                    <div id="alert-preview-container" class="alert-preview-container">
+                        <div id="alert-wrapper" class="alert-box">
+                            <div id="alert-image-container" class="alert-image"></div>
+                            <div id="alert-text" class="alert-text"></div>
+                            <div id="alert-message" class="alert-message"></div>
+                        </div>
+                        <audio id="alert-audio"></audio>
+                    </div>
+
+                    <button class="btn btn-success" id="testAlertBtn">Tester l'alerte</button>
+                    <button class="btn btn-primary" id="saveAlertsBtn" style="margin-top: auto;">Sauvegarder
+                        Tout</button>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="tab-content" id="points-tab">
+        <div class="card full-height-card">
+            <div class="interactive-header" style="display: flex; align-items: center;">
+                <button class="btn btn-primary" id="addRewardBtn" style="margin-right: 10px;">+ Nouvelle
+                    Récompense</button>
+                <button class="btn btn-secondary" id="createFolderBtn" style="margin-right: 10px;">+ Nouveau
+                    Dossier</button>
+                <button class="btn btn-secondary" id="refreshRewardsBtn">Rafraîchir</button>
+
+            </div>
+
+            <div id="reward-editor-static" class="reward-editor-container hidden">
+                <div class="reward-editor-header">
+                    <h3 id="reward-editor-title">Nouvelle récompense</h3>
+                    <div class="header-actions">
+                        <button class="btn btn-secondary btn-sm" id="cancelRewardEditorBtn">Annuler</button>
+                        <button class="btn btn-primary btn-sm" id="saveRewardEditorBtn">Sauvegarder</button>
+                    </div>
+                </div>
+
+                <div class="reward-form-grid">
+                    <div class="form-group">
+                        <label>Nom</label>
+                        <input type="text" id="rewardNameInput">
+                    </div>
+                    <div class="form-group">
+                        <label>Coût</label>
+                        <input type="number" id="rewardCostInput">
+                    </div>
+                    <div class="form-group">
+                        <label>Couleur</label>
+                        <input type="color" id="rewardColorInput"
+                            style="width:100%; height:38px; padding:0; border:none;">
+                    </div>
+                    <div class="form-group">
+                        <label>Cooldown (sec)</label>
+                        <input type="number" id="rewardCooldownInput">
+                    </div>
+                    <div class="form-group span-2">
+                        <label>Description (Prompt)</label>
+                        <textarea id="rewardPromptInput" rows="2"></textarea>
+                    </div>
+
+                    <div class="form-group span-2">
+                        <label>Action Spéciale</label>
+                        <div class="custom-picker-container" id="rewardFunctionPicker">
+                            <button class="custom-picker-btn" id="rewardFunctionBtn">Aucune</button>
+                            <div class="custom-picker-dropdown" id="rewardFunctionDropdown">
+                                <div class="custom-picker-option" data-value="">Aucune</div>
+                                <div class="custom-picker-option" data-value="emote_rain">Pluie d'emotes</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Son</label>
+                        <div class="file-picker-container">
+                            <input type="text" id="rewardSoundInput" class="interactive-input" readonly
+                                placeholder="Son">
+                            <button class="btn btn-secondary clear-btn" id="rewardSoundClearBtn"
+                                title="Vider">✖</button>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Icône</label>
+                        <div class="file-picker-container">
+                            <input type="text" id="rewardImageInput" class="interactive-input" readonly
+                                placeholder="Image">
+                            <button class="btn btn-secondary clear-btn" id="rewardImageClearBtn"
+                                title="Vider">✖</button>
+                        </div>
+                    </div>
+
+                    <div class="form-row span-2">
+
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="rewardUserInputInput">
+                            <label for="rewardUserInputInput">User Input</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="list-container" id="rewardsList">
+                <div class="loading-spinner">Chargement...</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="tab-content" id="planning-tab">
+        <div class="planning-layout full-height-card">
+
+            <div class="planning-sidebar card">
+
+
+                <div class="form-group">
+                    <input type="text" id="planning-title-input" placeholder="Titre..." value="PLANNING">
+                </div>
+
+                <div class="week-control-row">
+                    <div class="week-selector">
+                        <button id="planning-prev-week" class="btn btn-sm btn-secondary">&lt;</button>
+                        <span id="planning-week-label">Semaine</span>
+                        <button id="planning-next-week" class="btn btn-sm btn-secondary">&gt;</button>
+                    </div>
+                    <div class="sunday-check-wrapper">
+                        <input type="checkbox" id="planning-start-sunday">
+                        <label for="planning-start-sunday">Dim</label>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <div class="file-picker-container compact">
+                        <input type="text" id="planning-bg-input" class="interactive-input" readonly
+                            placeholder="Image de fond...">
+                        <button class="btn btn-secondary clear-btn" id="planning-bg-clear-btn" title="Vider">✖</button>
+                    </div>
+                </div>
+
+                <div class="sidebar-actions">
+                    <button class="btn btn-primary btn-sm" id="planning-save-twitch-btn" title="Sync Twitch">Sync
+                        Twitch</button>
+                    <button class="btn btn-secondary btn-sm" id="planning-load-prev-btn" title="Copier précédent">Copier
+                        précédent</button>
+                    <button class="btn btn-success btn-sm" id="planning-export-btn" title="Exporter planning">Exporter
+                        planning</button>
+                </div>
+
+
+                <div class="sidebar-section list-section unified-editor">
+                    <div class="day-selector">
+                        <div class="day-tab active" data-day="0">Lun</div>
+                        <div class="day-tab" data-day="1">Mar</div>
+                        <div class="day-tab" data-day="2">Mer</div>
+                        <div class="day-tab" data-day="3">Jeu</div>
+                        <div class="day-tab" data-day="4">Ven</div>
+                        <div class="day-tab" data-day="5">Sam</div>
+                        <div class="day-tab" data-day="6">Dim</div>
+                    </div>
+
+                    <div class="day-editor-content">
+                        <div class="day-header-row">
+                            <button class="btn btn-primary btn-block" id="add-segment-btn">+ Stream</button>
+                        </div>
+                        <div id="segments-list" class="segments-list">
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="planning-main-preview card">
+                <div id="planning-preview-card" class="planning-card">
+                    <div class="planning-card-bg"></div>
+                    <div class="planning-card-header">
+                        <h1 id="preview-title">STREAM SCHEDULE</h1>
+                        <div id="preview-dates" class="preview-dates">Dates</div>
+                    </div>
+                    <div class="planning-grid-container">
+                        <div class="time-labels-col">
+                        </div>
+                        <div class="planning-grid" id="planning-grid">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <div class="tab-content" id="config-tab">
+        <div class="config-columns">
+            <div class="config-section">
+                <div class="config-group">
+                    <div class="form-group">
+                        <label>Chaîne</label>
+                        <input type="text" id="config-channel" placeholder="Ex: monsieurmeomeo">
+                    </div>
+                    <div class="form-group">
+                        <label>Compte Bot</label>
+                        <input type="text" id="config-username" placeholder="Ex: meomeobot">
+                    </div>
+                    <div class="form-group">
+                        <label>OAuth Token (Bot)</label>
+                        <input type="password" id="config-token" placeholder="oauth:xxxxxxxxxxxx">
+                    </div>
+
+                    <div class="config-divider"></div>
+
+                    <div class="form-group">
+                        <label>Client ID API</label>
+                        <input type="text" id="config-twitchClientId">
+                    </div>
+                    <div class="form-group">
+                        <label>App Token API</label>
+                        <input type="password" id="config-twitchAppToken">
+                    </div>
+                </div>
+            </div>
+
+            <div class="config-section">
+                <div class="config-group">
+                    <div class="form-group">
+                        <label>Spotify Client ID</label>
+                        <input type="text" id="config-spotifyClientId">
+                    </div>
+                    <div class="form-group">
+                        <label>Spotify Client Secret</label>
+                        <input type="password" id="config-spotifyClientSecret">
+                    </div>
+                    <button class="btn btn-secondary btn-full" id="spotifyAuthBtn" style="margin-bottom: 5px;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                            <path
+                                d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z" />
+                        </svg>
+                        Lier Spotify
+                    </button>
+
+                    <div class="config-divider"></div>
+
+                    <div class="form-group">
+                        <label>Token Streamlabs</label>
+                        <input type="password" id="config-streamlabsSocketToken">
+                    </div>
+                    <div class="form-group">
+                        <label>SteamGridDB Key</label>
+                        <input type="password" id="config-steamGridDbApiKey">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="config-footer">
+            <button class="btn btn-primary" id="saveConfigBtn">Enregistrer tout</button>
+            <button class="btn btn-success" id="connectBtn">Connecter</button>
+            <button class="btn btn-danger" id="disconnectBtn">Déconnecter</button>
+        </div>
+    </div>
+    </div>
+
+
+    <div id="device-picker-overlay" class="confirmation-overlay">
+        <div class="device-picker-box">
+            <h3>Choisir un appareil</h3>
+            <div id="device-discovery-status">Recherche en cours...</div>
+            <div id="device-list" class="device-list"></div>
+            <button id="close-device-picker" class="btn btn-secondary">Annuler</button>
+        </div>
+    </div>
+
+
+
+    <script src="main/logger.js"></script>
+    <script src="renderer/input_customizer.js"></script>
+    <script src="renderer/channel_points.js" type="module"></script>
+    <script src="renderer/alerts.js" type="module"></script>
+    <script src="node_modules/html2canvas/dist/html2canvas.min.js"></script>
+    <script src="renderer/planning.js" type="module"></script>
+    <script src="renderer/app.js" type="module"></script>
+</body>
+
+</html>

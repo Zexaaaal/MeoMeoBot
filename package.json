@@ -1,0 +1,82 @@
+{
+  "name": "meomeobot",
+  "version": "4.0.3",
+  "description": "woo-ah",
+  "main": "main.js",
+  "repository": "github:Zexaaaal/MeoMeoBot",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --dev",
+    "build": "electron-builder",
+    "publish": "node increment-version.js && electron-builder --publish always"
+  },
+  "dependencies": {
+    "bonjour-service": "^1.2.1",
+    "castv2-client": "^1.2.0",
+    "dotenv": "^16.4.5",
+    "electron-store": "^8.2.0",
+    "electron-updater": "^6.1.8",
+    "fluent-ffmpeg": "^2.1.3",
+    "font-list": "^2.0.2",
+    "html2canvas": "^1.4.1",
+    "socket.io-client": "^4.8.1",
+    "tmi.js": "^1.8.5",
+    "ws": "^8.18.3"
+  },
+  "devDependencies": {
+    "@ffmpeg-installer/ffmpeg": "^1.1.0",
+    "@ffprobe-installer/ffprobe": "^2.1.2",
+    "electron": "38.2.2",
+    "electron-builder": "^26.6.0"
+  },
+  "author": "MeoMeoBot",
+  "license": "MIT",
+  "build": {
+    "appId": "com.meomeobot.app",
+    "productName": "MeoMeoBot",
+    "publish": {
+      "provider": "github",
+      "owner": "Zexaaaal",
+      "repo": "MeoMeoBot",
+      "releaseType": "release",
+      "vPrefixedTagName": false
+    },
+    "win": {
+      "target": "nsis",
+      "icon": "assets/icon.png"
+    },
+    "nsis": {
+      "oneClick": true,
+      "createDesktopShortcut": true,
+      "runAfterFinish": true,
+      "uninstallDisplayName": "${productName}"
+    },
+    "files": [
+      "main.js",
+      "main/**/*",
+      "bot.js",
+      "index.html",
+      "package.json",
+      "assets/**/*",
+      "!node_modules/@ffmpeg-installer/**/*",
+      "!node_modules/@ffprobe-installer/**/*",
+      "assets/**/*",
+      "config/**/*",
+      "renderer/**/*",
+      "server/**/*",
+      "widgets/**/*",
+      "css/**/*",
+      "preload.js"
+    ],
+    "extraResources": [
+      {
+        "from": "node_modules/@ffmpeg-installer/win32-x64/ffmpeg.exe",
+        "to": "ffmpeg.exe"
+      },
+      {
+        "from": "node_modules/@ffprobe-installer/win32-x64/ffprobe.exe",
+        "to": "ffprobe.exe"
+      }
+    ]
+  }
+}

@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Editeur CSS Widget</title>
+    <link rel="stylesheet" href="../../css/global.css">
+    <link rel="stylesheet" href="../../css/css-editor.css">
+    <link rel="stylesheet" href="../../css/theme-builder.css">
+</head>
+
+<body class="css-editor-body">
+    <div class="css-editor-shell">
+        <div class="css-editor-titlebar">
+            <h2>Apparence <span id="widgetNameLabel">du tchat</span></h2>
+            <button class="css-editor-close" id="close-btn" title="Fermer">✕</button>
+        </div>
+
+        <div class="css-editor-main">
+            <div class="css-editor-left">
+                <div class="theme-selector-row">
+                    <div class="theme-selector-wrapper">
+
+                        <select id="themeSelector" class="theme-selector-input">
+                            <option value="">Défaut</option>
+                        </select>
+                    </div>
+                    <button id="importThemeBtn" class="btn btn-secondary" title="Importer un thème">📂</button>
+                    <button id="saveAsThemeBtn" class="btn btn-secondary"
+                        title="Sauvegarder comme nouveau thème">💾</button>
+                    <button id="editThemeConfigBtn" class="btn btn-secondary" title="Renommer les thèmes">✏️</button>
+                </div>
+                <div class="css-editor-textarea-wrapper">
+                    <div id="theme-builder-container" class="theme-builder-container"></div>
+                    <textarea id="customCss" class="css-editor-textarea" spellcheck="false"
+                        style="display:none"></textarea>
+                    <div id="maxMessagesRow" class="max-messages-row">
+                        <label for="maxMessages">Nombre max de messages (chat)</label>
+                        <input id="maxMessages" type="number" min="1" value="10" class="max-messages-input">
+                    </div>
+                    <div class="css-editor-actions">
+                        <button class="btn btn-primary" id="save-btn">Appliquer au widget</button>
+                        <button class="btn btn-secondary" id="reset-btn">Remettre par défaut</button>
+                    </div>
+                    <div class="css-editor-status" id="statusBar"></div>
+                </div>
+            </div>
+
+            <div class="css-preview-block">
+                <div id="preview-frame-wrapper">
+                    <iframe id="preview-frame" title="widget preview"></iframe>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="themeConfigModal" class="modal-overlay" style="display: none;">
+        <div class="modal-content modal-content-lg">
+            <h3>Gérer les noms des thèmes</h3>
+            <p class="modal-description">
+                Donnez des noms plus explicites à vos fichiers de thèmes.
+            </p>
+            <div id="themeListContainer" class="theme-list-container"></div>
+            <div class="modal-actions">
+                <button id="closeThemeConfigBtn" class="btn btn-secondary">Fermer</button>
+                <button id="saveThemeConfigBtn" class="btn btn-primary">Enregistrer les noms</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="newThemeModal" class="modal-overlay" style="display: none;">
+        <div class="modal-content modal-content-md">
+            <h3>Nouveau Thème</h3>
+            <p class="modal-description">
+                Entrez le nom de votre nouveau thème.
+            </p>
+            <input type="text" id="newThemeNameInput" placeholder="Nom du thème" class="new-theme-input">
+            <div class="modal-actions">
+                <button id="cancelNewThemeBtn" class="btn btn-secondary">Annuler</button>
+                <button id="confirmNewThemeBtn" class="btn btn-primary">Créer</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="../../main/logger.js"></script>
+    <script src="../../renderer/css_editor_renderer.js" type="module"></script>
+</body>
+
+</html>

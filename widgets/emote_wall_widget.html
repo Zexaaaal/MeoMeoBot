@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>Emote Wall Overlay</title>
+    <style>
+        body {
+            background: transparent;
+            overflow: hidden;
+            margin: 0;
+            padding: 0;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        .emote {
+            position: absolute;
+            will-change: transform, opacity;
+            pointer-events: none;
+        }
+
+        @keyframes fall {
+            0% {
+                transform: translateY(-100px) rotate(0deg);
+                opacity: 0;
+            }
+
+            10% {
+                opacity: 1;
+            }
+
+            90% {
+                opacity: 1;
+            }
+
+            100% {
+                transform: translateY(calc(100vh + 100px)) rotate(360deg);
+                opacity: 0;
+            }
+        }
+
+        .emote-falling {
+            position: absolute;
+            top: -100px;
+            animation: fall linear forwards;
+        }
+    </style>
+    <style id="custom-css">
+
+    </style>
+</head>
+
+<body>
+    <script>
+        const CLIENT_ID = '__TWITCH_CLIENT_ID__';
+        const APP_TOKEN = '__TWITCH_APP_TOKEN__';
+
+        const ANIMATION_DURATION = 5000;
+        const SPAWN_INTERVAL = 100;
+        const MIN_SIZE = 32;
+        const MAX_SIZE = 96;
+
+        let ws;
+
+        function normalizeEmotes(emotes) {
+            if (!emotes || typeof emotes !== 'object') return [];
+            const parts = [];
+            Object.keys(emotes).forEach(id => {
+                emotes[id].forEach(r => {
+                    if (typeof r === 'string') {
+                        const [s, e] = r.split('-').map(n => parseInt(n, 10));
+                        if (!Number.isNaN(s) && !Number.isNaN(e)) parts.push({ id, start: s, end: e });
+                    } else if (r && typeof r === 'object' && Number.isInteger(r.start) && Number.isInteger(r.end)) {
+                        parts.push({ id, start: r.start, end: r.end });
+                    }
+                });
+            });
+            return parts;
+        }
+
+        function spawnEmote(url) {
+            const img = document.createElement('img');
+            img.src = url;
+            img.className = 'emote';
+
+            const startY = Math.random() * (window.innerHeight - 50);
+            const startX = Math.random() * (window.innerWidth - 50);
+
+            const randomFactor = Math.pow(Math.random(), 2);
+            const size = MIN_SIZE + randomFactor * (MAX_SIZE - MIN_SIZE);
+            img.style.width = `${size}px`;
+            img.style.height = `${size}px`;
+
+            img.style.left = `${startX}px`;
+            img.style.top = `${startY}px`;
+
+            const angle = Math.random() * 360;
+            const distance = 200 + Math.random() * 300;
+            const duration = ANIMATION_DURATION * (0.8 + Math.random() * 0.4);
+
+            document.body.appendChild(img);
+
+            const animation = img.animate([
+                { transform: 'scale(0) translate(0, 0)', opacity: 0 },
+                { transform: 'scale(1.2) translate(0, 0)', opacity: 1, offset: 0.1 },
+                { transform: 'scale(1) translate(0, 0)', opacity: 1, offset: 0.8 },
+                { transform: `scale(1) translate(${Math.cos(angle) * distance}px, ${Math.sin(angle) * distance}px)`, opacity: 0 }
+            ], {
+                duration: duration,
+                easing: 'cubic-bezier(0.25, 1, 0.5, 1)'
+            });
+
+            animation.onfinish = () => img.remove();
+        }
+
+        function startEmoteRain(emotes) {
+            if (!emotes || emotes.length === 0) return;
+
+            const rainDuration = 4000;
+            const totalEmotes = 150;
+            const endTime = Date.now() + rainDuration;
+
+            function spawnRainEmote() {
+                if (Date.now() > endTime) return;
+
+                const url = emotes[Math.floor(Math.random() * emotes.length)];
+                const img = document.createElement('img');
+                img.src = url;
+                img.className = 'emote-falling';
+
+                const size = MIN_SIZE + Math.random() * (MAX_SIZE - MIN_SIZE);
+                img.style.width = `${size}px`;
+                img.style.height = `${size}px`;
+
+                img.style.left = `${Math.random() * 100}vw`;
+
+                const duration = 3000 + Math.random() * 4000;
+                img.style.animationDuration = `${duration}ms`;
+
+                document.body.appendChild(img);
+                img.addEventListener('animationend', () => img.remove());
+
+                setTimeout(spawnRainEmote, 50 + Math.random() * 150);
+            }
+
+            spawnRainEmote();
+        }
+
+        function connectWebSocket() {
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            let host = window.location.hostname || '127.0.0.1';
+            if (host === 'localhost') host = '127.0.0.1';
+            const port = 8087;
+            const wsUrl = `${protocol}//${host}:${port}`;
+
+            console.log('[EmoteWall] Connecting to', wsUrl);
+            ws = new WebSocket(wsUrl);
+            ws.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                if ((data.type === 'config' || data.type === 'config-update') && data.widget === 'emote-wall') {
+                    const cfg = data.config || data;
+                    if (cfg.customCSS) {
+                        const style = document.getElementById('custom-css');
+                        if (style) style.textContent = cfg.customCSS;
+                    }
+                } else if (data.type === 'chat' && data.emotes) {
+                    const emoteList = normalizeEmotes(data.emotes);
+                    emoteList.forEach((emote, index) => {
+                        setTimeout(() => {
+                            const url = `https://static-cdn.jtvnw.net/emoticons/v2/${emote.id}/default/dark/3.0`;
+                            spawnEmote(url);
+                        }, index * SPAWN_INTERVAL);
+                    });
+                } else if (data.type === 'emote-rain' && data.emotes) {
+                    startEmoteRain(data.emotes);
+                } else if (data.type === 'reload') {
+                    window.location.reload();
+                }
+            };
+            ws.onclose = () => { setTimeout(connectWebSocket, 5000); };
+            ws.onerror = () => { ws.close(); };
+        }
+
+        connectWebSocket();
+    </script>
+</body>
+
+</html>

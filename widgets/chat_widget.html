@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>Chat Widget</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Mountains+of+Christmas:wght@400;700&display=swap">
+    <style id="base-css">
+        body {
+            background-color: transparent;
+            font-family: 'Inter', "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            overflow: hidden;
+            margin: 0;
+            padding: 0;
+        }
+
+        #chat-container {
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            height: 100vh;
+            width: 100vw;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        #bg-video {
+            display: none;
+            position: absolute;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            z-index: -1;
+        }
+    </style>
+    <script src="themes/pro_gradient.js"></script>
+</head>
+
+<body>
+    <video id="bg-video" loop autoplay muted playsinline></video>
+
+    <div id="chat-container"></div>
+    <style id="custom-css">
+        /* __CUSTOM_CSS__ */
+    </style>
+    <script>
+        const CLIENT_ID = '__TWITCH_CLIENT_ID__';
+        const APP_TOKEN = '__TWITCH_APP_TOKEN__';
+
+        const BADGE_PREFS = {};
+        const globalBadgeMap = {};
+        const channelBadgeCache = {};
+        let globalBadgesLoaded = false;
+        let globalBadgesPending = null;
+
+        let ws, lastUser = null,
+            lastGroup = null;
+        let groupCounter = 0;
+        const messageQueue = [];
+        let MAX_MESSAGES = 10;
+
+        const ALLOWED_BADGES = ['subscriber', 'moderator', 'vip', 'partner', 'staff', 'premium'];
+
+        function sanitizeClass(str) {
+            return String(str || '').toLowerCase().replace(/[^a-z0-9_-]+/g, '-').replace(/^-+|-+$/g, '') || 'user';
+        }
+
+        function computeColors(hexColor) {
+            const fallback = '#6dd4ff';
+            let c = (hexColor || '').trim();
+            if (!/^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(c)) c = fallback;
+            if (c.length === 4) c = '#' + c[1] + c[1] + c[2] + c[2] + c[3] + c[3];
+            const r = parseInt(c.slice(1, 3), 16),
+                g = parseInt(c.slice(3, 5), 16),
+                b = parseInt(c.slice(5, 7), 16);
+            return {
+                solid: c,
+                soft: `rgba(${r}, ${g}, ${b}, 0.15)`
+            };
+        }
+
+        function normalizeEmotes(emotes) {
+            if (!emotes || typeof emotes !== 'object') return [];
+            const parts = [];
+            Object.keys(emotes).forEach(id => {
+                emotes[id].forEach(r => {
+                    if (typeof r === 'string') {
+                        const [s, e] = r.split('-').map(n => parseInt(n, 10));
+                        if (!Number.isNaN(s) && !Number.isNaN(e)) parts.push({
+                            id,
+                            start: s,
+                            end: e
+                        });
+                    } else if (r && typeof r === 'object' && Number.isInteger(r.start) && Number.isInteger(r.end)) {
+                        parts.push({
+                            id,
+                            start: r.start,
+                            end: r.end
+                        });
+                    }
+                });
+            });
+            parts.sort((a, b) => a.start - b.start);
+            return parts;
+        }
+
+        function renderTextWithEmotes(text, emotesMap) {
+            const frag = document.createDocumentFragment();
+            const parts = normalizeEmotes(emotesMap);
+            if (!parts.length) {
+                frag.appendChild(document.createTextNode(text));
+                return frag;
+            }
+            let cursor = 0;
+            for (const part of parts) {
+                if (cursor < part.start) frag.appendChild(document.createTextNode(text.slice(cursor, part.start)));
+                const emoteImg = document.createElement('img');
+                emoteImg.src = `https://static-cdn.jtvnw.net/emoticons/v2/${part.id}/default/dark/1.0`;
+                emoteImg.alt = text.slice(part.start, part.end + 1);
+                emoteImg.style.verticalAlign = 'middle';
+                frag.appendChild(emoteImg);
+                cursor = part.end + 1;
+            }
+            if (cursor < text.length) frag.appendChild(document.createTextNode(text.slice(cursor)));
+            return frag;
+        }
+
+        async function fetchHelixBadges(url) {
+            if (!CLIENT_ID || !APP_TOKEN) throw new Error('Client ID ou App Access Token manquant');
+            const resp = await fetch(url, {
+                headers: {
+                    'Client-ID': CLIENT_ID,
+                    'Authorization': `Bearer ${APP_TOKEN}`
+                }
+            });
+            if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+            return resp.json();
+        }
+
+        async function ensureGlobalBadges() {
+            if (globalBadgesLoaded) return;
+            if (globalBadgesPending) {
+                await globalBadgesPending;
+                return;
+            }
+            globalBadgesPending = fetchHelixBadges('https://api.twitch.tv/helix/chat/badges/global').then(data => {
+                const sets = (data && data.data) || [];
+                sets.forEach(set => {
+                    const setId = set.set_id;
+                    globalBadgeMap[setId] = globalBadgeMap[setId] || {};
+                    (set.versions || []).forEach(v => {
+                        globalBadgeMap[setId][v.id] = v.image_url_1x;
+                    });
+                });
+                globalBadgesLoaded = true;
+            }).catch(err => console.warn('[Badges] Global fetch failed', err)).finally(() => {
+                globalBadgesPending = null;
+            });
+            await globalBadgesPending;
+        }
+
+        const channelBadgePromises = {};
+
+        async function ensureChannelBadges(roomId) {
+            if (!roomId) return;
+            if (channelBadgeCache[roomId]) return;
+            if (!channelBadgePromises[roomId]) {
+                channelBadgePromises[roomId] = fetchHelixBadges(`https://api.twitch.tv/helix/chat/badges?broadcaster_id=${roomId}`)
+                    .then(data => {
+                        const map = {};
+                        const sets = (data && data.data) || [];
+                        sets.forEach(set => {
+                            const setId = set.set_id;
+                            (set.versions || []).forEach(v => {
+                                map[`${setId}/${v.id}`] = v.image_url_1x;
+                            });
+                        });
+                        channelBadgeCache[roomId] = map;
+                    }).catch(err => {
+                        console.warn('[Badges] Channel fetch failed', err);
+                        channelBadgeCache[roomId] = {};
+                    });
+            }
+            await channelBadgePromises[roomId];
+        }
+
+        function parseBadgesRaw(badgesRaw) {
+            if (!badgesRaw) return [];
+            return badgesRaw.split(',').map(entry => entry.trim()).filter(Boolean).map(entry => {
+                const [set, version] = entry.split('/');
+                return set && version ? {
+                    set,
+                    version
+                } : null;
+            }).filter(Boolean).filter(b => ALLOWED_BADGES.includes((b.set || '').toLowerCase()));
+        }
+
+        function parseBadgesObj(badgesObj) {
+            if (!badgesObj || typeof badgesObj !== 'object') return [];
+            return Object.entries(badgesObj).map(([set, version]) => ({
+                set,
+                version
+            })).filter(b => ALLOWED_BADGES.includes((b.set || '').toLowerCase()));
+        }
+
+        function createBadgeNode(entry, roomId) {
+            const set = (entry.set || '').toLowerCase();
+            const version = entry.version || '1';
+            if (BADGE_PREFS && BADGE_PREFS[set] === false) return null;
+            if (set === 'subscriber') {
+                const map = channelBadgeCache[roomId];
+                const url = map && map[`${set}/${version}`];
+                if (url) {
+                    const img = document.createElement('img');
+                    img.className = 'badge-img';
+                    img.alt = set;
+                    img.src = url;
+                    img.onerror = () => img.remove();
+                    return img;
+                }
+                return null;
+            }
+            const versions = globalBadgeMap[set];
+            const url = versions && versions[version];
+            if (url) {
+                const img = document.createElement('img');
+                img.className = 'badge-img';
+                img.alt = set;
+                img.src = url;
+                img.onerror = () => img.remove();
+                return img;
+            }
+            return null;
+        }
+
+        function connectWebSocket() {
+            ws = connectWidget(async (data) => {
+                if (data.type === 'config' || data.type === 'config-update') {
+                    const cfg = data.config || data;
+                    if (bgVideo) {
+                    }
+                    if (cfg.maxMessages) {
+                        MAX_MESSAGES = parseInt(cfg.maxMessages, 10) || 10;
+                    }
+                    if (cfg.customCSS) {
+                        const style = document.getElementById('custom-css');
+                        if (style) style.textContent = cfg.customCSS;
+                    }
+                } else if (data.type === 'chat') {
+                    await addMessage(data);
+                } else if (data.type === 'delete-message') {
+                    const messageId = data.messageId;
+                    const el = document.querySelector(`.msg-line[data-id="${messageId}"]`);
+                    if (el) {
+                        const parent = el.parentElement;
+                        el.remove();
+                        if (parent && parent.children.length === 0) {
+                            const group = parent.parentElement;
+                            if (group) group.remove();
+                            if (group === lastGroup) {
+                                lastGroup = null;
+                                lastUser = null;
+                            }
+                        }
+                        const idx = messageQueue.indexOf(el);
+                        if (idx > -1) messageQueue.splice(idx, 1);
+                    }
+                } else if (data.type === 'clear-chat' || data.type === 'clear') {
+                    const container = document.getElementById('chat-container');
+                    if (container) container.innerHTML = '';
+                    lastUser = null;
+                    lastGroup = null;
+                    messageQueue.length = 0;
+                }
+            });
+        }
+
+        async function addMessage(msg) {
+            const {
+                username,
+                displayName,
+                color,
+                badgesRaw,
+                badges: badgesObj,
+                text,
+                emotes,
+                roomId
+            } = msg;
+            ensureGlobalBadges();
+            if (roomId) ensureChannelBadges(roomId);
+            const colors = computeColors(color);
+            const solid = colors.solid;
+            const soft = colors.soft;
+            const sameUser = (lastUser === username) && lastGroup;
+            let group = lastGroup;
+            const container = document.getElementById('chat-container');
+
+            if (!sameUser) {
+                group = document.createElement('div');
+                const isEven = (groupCounter % 2) === 0;
+                const variant = (groupCounter % 3) + 1;
+                group.className = `msg-group user-${sanitizeClass(username)} group-${isEven ? 'even' : 'odd'} variant-${variant}`;
+                groupCounter++;
+                group.style.setProperty('--user-color', solid);
+                group.style.setProperty('--user-color-soft', soft);
+                const header = document.createElement('div');
+                header.className = 'msg-header';
+                const nameSpan = document.createElement('span');
+                nameSpan.className = 'msg-username';
+                nameSpan.textContent = displayName || username;
+                nameSpan.style.color = solid;
+                const badgesWrap = document.createElement('span');
+                badgesWrap.className = 'msg-badges';
+                const seen = new Set();
+                const badges = parseBadgesRaw(badgesRaw).concat(parseBadgesObj(badgesObj || {}));
+                badges.forEach(entry => {
+                    const key = `${entry.set}/${entry.version}`;
+                    if (seen.has(key)) return;
+                    const node = createBadgeNode(entry, roomId);
+                    if (node) badgesWrap.appendChild(node);
+                    seen.add(key);
+                });
+                header.appendChild(nameSpan);
+                if (badgesWrap.children.length > 0) header.appendChild(badgesWrap);
+                const messagesDiv = document.createElement('div');
+                messagesDiv.className = 'msg-messages';
+                group.appendChild(header);
+                group.appendChild(messagesDiv);
+                container.appendChild(group);
+                lastGroup = group;
+                lastUser = username;
+            }
+
+            const messagesDiv = group.querySelector('.msg-messages');
+            const line = document.createElement('div');
+            line.className = 'msg-line';
+            if (msg.id) line.setAttribute('data-id', msg.id);
+            line.appendChild(renderTextWithEmotes(text, emotes));
+            messagesDiv.appendChild(line);
+            messageQueue.push(line);
+
+            while (messageQueue.length > MAX_MESSAGES) {
+                const old = messageQueue.shift();
+                const parent = old.parentElement;
+                if (parent) {
+                    parent.removeChild(old);
+                    if (parent.children.length === 0) {
+                        const grp = parent.parentElement;
+                        if (grp) grp.remove();
+                        if (grp === lastGroup) {
+                            lastGroup = null;
+                            lastUser = null;
+                        }
+                    }
+                }
+            }
+        }
+
+        let snowEnabled = false;
+
+        function updateSnow() {
+            const enable = getComputedStyle(document.body).getPropertyValue('--enable-snow').trim() === '1';
+
+            if (enable === snowEnabled) return;
+            snowEnabled = enable;
+
+            let containerBg = document.getElementById('snow-container-bg');
+            let containerFg = document.getElementById('snow-container-fg');
+
+            const bgVideo = document.getElementById('bg-video');
+
+            if (enable) {
+                if (bgVideo && !bgVideo.src) {
+                    bgVideo.src = 'assets/pranax.webm';
+                    bgVideo.style.display = 'block';
+                }
+                if (!containerBg) {
+                    containerBg = document.createElement('div');
+                    containerBg.id = 'snow-container-bg';
+                    containerBg.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0';
+                    for (let i = 0; i < 35; i++) {
+                        const d = document.createElement('div');
+                        d.className = 'snow';
+                        containerBg.appendChild(d);
+                    }
+                    document.body.prepend(containerBg);
+
+                    containerFg = document.createElement('div');
+                    containerFg.id = 'snow-container-fg';
+                    containerFg.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:9999';
+                    for (let i = 0; i < 15; i++) {
+                        const d = document.createElement('div');
+                        d.className = 'snow-fg';
+                        containerFg.appendChild(d);
+                    }
+                    document.body.appendChild(containerFg);
+                }
+            } else {
+                if (bgVideo) {
+                    bgVideo.pause();
+                    bgVideo.src = '';
+                    bgVideo.load();
+                    bgVideo.style.display = 'none';
+                }
+                if (containerBg) containerBg.remove();
+                if (containerFg) containerFg.remove();
+            }
+        }
+        let proEnabled = false;
+        let headerGradient = null;
+        let footerGradient = null;
+
+        function updatePro() {
+            const enable = getComputedStyle(document.body).getPropertyValue('--enable-pro').trim() === '1';
+
+            let header = document.getElementById('pro-header');
+            let dots = document.getElementById('pro-header-dots');
+            let footer = document.getElementById('pro-footer');
+            let background = document.getElementById('pro-background');
+
+            if (enable) {
+                if (!header) {
+                    header = document.createElement('div');
+                    header.id = 'pro-header';
+                    header.textContent = 'Soo_Meo';
+                    header.style.cssText = 'position:fixed;top:20px;left:20px;right:20px;font-family:"Road Rage",cursive;font-weight:900;font-size:40px;letter-spacing:8px;color:#f3e720;text-shadow:5px 8px 0 #000;padding:18px 80px 18px 30px;clip-path:polygon(0 0,calc(100% - 40px) 0,100% 25px,100% 100%,0 100%);box-shadow:0 6px 20px rgba(253,241,2,.5),inset 0 3px 0 rgba(255,255,255,.25),inset 0 -3px 0 rgba(0,0,0,.6);border:1px solid rgba(150,90,229,.5);border-left:2px solid rgba(255,255,255,.15);border-top:2px solid rgba(255,255,255,.15);z-index:1000;pointer-events:none;overflow:hidden;';
+
+                    const canvasH = document.createElement('canvas');
+                    canvasH.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;z-index:-1;';
+                    header.appendChild(canvasH);
+
+                    document.body.appendChild(header);
+                    if (window.ProGradient) {
+                        headerGradient = new ProGradient(canvasH, undefined, 0);
+                    }
+
+                    dots = document.createElement('div');
+                    dots.id = 'pro-header-dots';
+                    dots.style.cssText = 'position:fixed;top:40px;right:55px;width:70px;height:10px;background:radial-gradient(circle,#1a1410 40%,transparent 45%) 0 0/16px 10px,radial-gradient(circle,#1a1410 40%,transparent 45%) 24px 0/16px 10px,radial-gradient(circle,#1a1410 40%,transparent 45%) 48px 0/16px 10px;background-repeat:no-repeat;z-index:1001;pointer-events:none';
+                    document.body.appendChild(dots);
+
+                    footer = document.createElement('div');
+                    footer.id = 'pro-footer';
+
+                    footer.style.cssText = 'position:fixed;bottom:20px;left:20px;right:20px;height:150px;clip-path:polygon(0 0,100% 0,100% calc(100% - 25px),calc(100% - 40px) 100%,40px 100%,0 calc(100% - 25px));box-shadow:0 -6px 20px rgba(253,241,2,.5),inset 0 3px 0 rgba(255,255,255,.25),inset 0 -3px 0 rgba(0,0,0,.6);border:1px solid rgba(150,90,229,.5);border-left:2px solid rgba(255,255,255,.15);border-bottom:2px solid rgba(255,255,255,.15);z-index:1000;pointer-events:none;overflow:hidden;';
+
+                    const canvasF = document.createElement('canvas');
+                    canvasF.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;z-index:-1;';
+                    footer.appendChild(canvasF);
+
+                    document.body.appendChild(footer);
+
+                    if (window.ProGradient) {
+                        footerGradient = new ProGradient(canvasF, undefined, 100);
+                    }
+
+                    background = document.createElement('div');
+                    background.id = 'pro-background';
+                    background.style.cssText = 'position:fixed;top:88px;left:20px;right:20px;bottom:168px;background:rgba(221, 219, 220, 0.2);z-index:-1;pointer-events:none;display:block';
+                    document.body.appendChild(background);
+
+                    const chatContainer = document.getElementById('chat-container');
+                    if (chatContainer) {
+                        chatContainer.style.paddingTop = '90px';
+                        chatContainer.style.paddingBottom = '170px';
+                    }
+                }
+                proEnabled = true;
+            } else {
+                if (header) header.remove();
+                if (headerGradient) { headerGradient.stop(); headerGradient = null; }
+
+                if (dots) dots.remove();
+
+                if (footer) footer.remove();
+                if (footerGradient) { footerGradient.stop(); footerGradient = null; }
+
+                if (background) background.remove();
+                const chatContainer = document.getElementById('chat-container');
+                if (chatContainer) {
+                    chatContainer.style.paddingTop = '';
+                    chatContainer.style.paddingBottom = '';
+                }
+                proEnabled = false;
+            }
+        }
+
+
+        const styleObserver = new MutationObserver(() => {
+            requestAnimationFrame(updateSnow);
+            requestAnimationFrame(updatePro);
+        });
+        const customCssEl = document.getElementById('custom-css');
+        if (customCssEl) {
+            styleObserver.observe(customCssEl, { childList: true, characterData: true, subtree: true });
+        }
+
+        connectWebSocket();
+        updateSnow();
+        updatePro();
+    </script>
+</body>
+
+</html>

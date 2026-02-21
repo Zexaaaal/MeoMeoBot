@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Daily Subs Widget</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: 'Montserrat', sans-serif;
+        }
+
+        #widget-container {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .progress-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            height: 40px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 20px;
+            overflow: hidden;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .progress-bar {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            background: linear-gradient(90deg, #ff00cc, #333399);
+            width: 0%;
+            border-radius: 18px;
+            transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 0 10px rgba(255, 0, 204, 0.5);
+            z-index: 1;
+        }
+
+        .progress-value {
+            position: relative;
+            z-index: 10;
+            color: white;
+            font-weight: 800;
+            font-size: 1.3rem;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+            white-space: nowrap;
+            font-family: 'Montserrat', sans-serif;
+        }
+
+        .widget-label {
+            color: white;
+            font-weight: 800;
+            font-size: 1.3rem;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+            font-family: 'Montserrat', sans-serif;
+            text-transform: uppercase;
+        }
+    </style>
+    /* __CUSTOM_CSS__ */
+</head>
+
+<body>
+    <div id="widget-container">
+        <div class="progress-container">
+            <div class="progress-bar" id="progress-bar"></div>
+            <div class="progress-value" id="progress-value">0 / 10</div>
+        </div>
+        <div class="widget-label">DAILY SUBS</div>
+    </div>
+
+    <script>
+        let currentConfig = {
+            dailyStartCount: 0,
+            dailyGoalCount: 10,
+            dailyCurrentCount: 0
+        };
+
+        function connectWebSocket() {
+            connectWidget((data) => {
+                if (data.type === 'config' || data.type === 'config-update') {
+                    if (data.widget && data.widget !== 'daily-subs' && data.widget !== 'subgoals') return;
+
+                    if (data.config) {
+                        currentConfig = { ...currentConfig, ...data.config };
+                        if (typeof data.config.customCSS === 'string') {
+                            let style = document.getElementById('custom-css');
+                            if (!style) {
+                                style = document.createElement('style');
+                                style.id = 'custom-css';
+                                document.head.appendChild(style);
+                            }
+                            style.textContent = data.config.customCSS;
+                        }
+                        render();
+                    }
+                }
+            });
+        }
+
+        function render() {
+            let { dailyStartCount, dailyGoalCount, dailyCurrentCount } = currentConfig;
+
+            dailyStartCount = parseFloat(dailyStartCount) || 0;
+            dailyGoalCount = parseFloat(dailyGoalCount) || 10;
+            dailyCurrentCount = parseFloat(dailyCurrentCount) || 0;
+
+            const totalRange = dailyGoalCount - dailyStartCount;
+            const progress = dailyCurrentCount - dailyStartCount;
+
+            let percentage = 0;
+            if (totalRange > 0) {
+                percentage = (progress / totalRange) * 100;
+            }
+
+            if (percentage < 0) percentage = 0;
+            if (percentage > 100) percentage = 100;
+
+            const bar = document.getElementById('progress-bar');
+            bar.style.width = `${percentage}%`;
+
+            const text = document.getElementById('progress-value');
+            text.textContent = `${dailyCurrentCount} / ${dailyGoalCount}`;
+        }
+
+        connectWebSocket();
+    </script>
+</body>
+
+</html>

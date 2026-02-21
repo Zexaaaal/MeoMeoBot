@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Configuration Subgoals</title>
+    <link rel="stylesheet" href="../../css/global.css">
+    <link rel="stylesheet" href="../../css/css-editor.css">
+    <style>
+        .css-editor-left {
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .subgoals-config-group {
+            margin-bottom: 10px;
+            background: var(--bg-tertiary);
+            padding: 10px 15px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            flex-shrink: 0;
+        }
+
+        .subgoals-config-group.steps-group {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+            margin-bottom: 5px;
+        }
+
+        .subgoals-config-group h3 {
+            margin-top: 0;
+            margin-bottom: 10px;
+            font-size: 13px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-shrink: 0;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .form-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .form-row label {
+            min-width: 100px;
+            color: var(--text-primary);
+            font-size: 14px;
+        }
+
+        .form-input {
+            flex: 1;
+            padding: 8px 10px;
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .form-input:focus {
+            border-color: var(--accent);
+            outline: none;
+        }
+
+        .steps-list {
+            flex: 1;
+            overflow-y: auto;
+            margin-bottom: 15px;
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            max-height: none;
+
+        }
+
+        .step-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 10px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .step-item:last-child {
+            border-bottom: none;
+        }
+
+        .step-info {
+            font-size: 13px;
+        }
+
+        .step-count {
+            font-weight: bold;
+            color: var(--accent);
+            margin-right: 5px;
+        }
+
+        .delete-step-btn {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 4px;
+        }
+
+        .delete-step-btn:hover {
+            color: var(--danger);
+            background: rgba(255, 0, 0, 0.1);
+        }
+
+        .css-editor-actions {
+            margin-top: 0;
+            padding-top: 10px;
+            flex-shrink: 0;
+        }
+    </style>
+</head>
+
+<body class="css-editor-body">
+    <div class="css-editor-shell">
+        <div class="css-editor-titlebar">
+            <h2>Configuration Subgoals</h2>
+            <button class="css-editor-close" id="close-btn" title="Fermer">✕</button>
+        </div>
+
+        <div class="css-editor-main">
+            <div class="css-editor-left">
+
+
+
+                <div class="subgoals-config-group">
+                    <h3>Paramètres Généraux</h3>
+                    <div class="form-row">
+                        <label>Départ (Subs)</label>
+                        <input type="number" id="startCount" class="form-input" value="0">
+                        <button id="fetchCurrentBtn" class="btn btn-secondary"
+                            title="Récupérer le nombre actuel">🔄</button>
+                    </div>
+                    <div class="form-row">
+                        <label>Objectif (Subs)</label>
+                        <input type="number" id="goalCount" class="form-input" value="100">
+                    </div>
+                </div>
+
+                <div class="subgoals-config-group steps-group">
+                    <h3>Paliers (Steps)</h3>
+                    <div class="steps-list" id="stepsList">
+
+                    </div>
+
+                    <div class="form-row">
+                        <input type="number" id="newStepCount" class="form-input" placeholder="Ajout (+50)">
+                        <input type="text" id="newStepLabel" class="form-input" placeholder="Label">
+                        <button id="addStepBtn" class="btn btn-primary">Ajouter</button>
+                    </div>
+                </div>
+
+                <div class="css-editor-actions" style="justify-content: space-between;">
+                    <button id="resetBtn" class="btn btn-danger">Réinitialiser</button>
+                    <button id="saveBtn" class="btn btn-primary">Sauvegarder</button>
+                </div>
+                <div class="css-editor-status" id="statusBar"></div>
+            </div>
+
+            <div class="css-preview-block">
+
+                <div id="preview-frame-wrapper">
+                    <iframe id="preview-frame" title="widget preview"></iframe>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="notification-container"></div>
+    <script src="../../main/logger.js"></script>
+    <script src="../../renderer/input_customizer.js" type="module"></script>
+    <script src="../../renderer/subgoals_config_renderer.js" type="module"></script>
+</body>
+
+</html>

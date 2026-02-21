@@ -1,0 +1,56 @@
+body {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    height: 100vh;
+    overflow: hidden;
+    background: transparent;
+    padding-left: 20px;
+}
+
+#wheel-container {
+    display: none;
+}
+
+#list-container {
+    display: block;
+    position: relative;
+    width: 600px;
+    height: 400px;
+    overflow: hidden;
+    overflow: hidden;
+    background: transparent;
+}
+
+.list-scroll-view {
+    position: relative;
+    width: 100%;
+}
+
+.list-item {
+    height: 40px;
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    font-size: 20px;
+    color: #161616 !important;
+    background: #f0f0f0;
+    border-radius: 0 12px 12px 0;
+    font-weight: 400;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding-left: 20px;
+    padding-right: 20px;
+    transform-origin: left center;
+    margin-bottom: 2px;
+    width: fit-content;
+    min-width: 180px;
+}
+
+.list-center-marker {
+    display: none;
+}
+
+#winner-display {
+    display: none;
+}

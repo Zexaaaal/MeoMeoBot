@@ -1,0 +1,247 @@
+.reward-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    padding: 10px 15px;
+    margin-bottom: 8px;
+    border-radius: 4px;
+    transition: transform 0.2s;
+}
+
+
+
+.reward-details {
+    flex: 1;
+}
+
+.reward-title {
+    font-weight: 500;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.cost-badge {
+    background: #9147ff;
+    color: white;
+    padding: 2px 6px;
+    border-radius: 10px;
+    font-size: 10px;
+}
+
+.reward-sub {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-top: 4px;
+}
+
+.reward-actions {
+    display: flex;
+    gap: 5px;
+}
+
+.reward-editor-container {
+    background: var(--bg-secondary);
+    padding: 15px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    border: 1px solid var(--border);
+    overflow: hidden;
+}
+
+.reward-editor-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.reward-editor-header h3 {
+    font-size: 14px;
+    margin: 0;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    letter-spacing: 0.5px;
+}
+
+.reward-form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px 20px;
+}
+
+.reward-form-grid .span-2 {
+    grid-column: span 2;
+}
+
+.form-row {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+    padding: 5px 0;
+}
+
+.checkbox-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    user-select: none;
+}
+
+.checkbox-group input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    margin: 0;
+    cursor: pointer;
+}
+
+.checkbox-group label {
+    margin: 0;
+    font-size: 13px;
+    color: var(--text-primary);
+    cursor: pointer;
+}
+
+.reward-folder {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    margin-bottom: 8px;
+    border-radius: 4px;
+    overflow: hidden;
+    transition: background 0.2s, border-color 0.2s;
+}
+
+.reward-folder.drag-over {
+    border-color: var(--primary);
+    background: rgba(145, 70, 255, 0.1);
+}
+
+.folder-header {
+    display: flex;
+    align-items: center;
+    padding: 10px 15px;
+    gap: 15px;
+    background: transparent;
+}
+
+.folder-name-input {
+    background: transparent;
+    border: 1px solid transparent;
+    color: var(--text-primary);
+    font-size: 14px;
+    font-weight: 600;
+    padding: 4px 8px;
+    border-radius: 4px;
+    width: 200px;
+    transition: border-color 0.2s, background 0.2s;
+    outline: none;
+}
+
+.folder-name-input:focus,
+.folder-name-input:hover {
+    border-color: var(--border);
+    background: var(--bg-primary);
+}
+
+.folder-content {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+    min-height: 32px;
+}
+
+.reward-chip {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-left-width: 3px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    cursor: grab;
+    user-select: none;
+    transition: transform 0.1s, box-shadow 0.1s;
+}
+
+.reward-chip:active {
+    cursor: grabbing;
+}
+
+.reward-chip .chip-cost {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 1px 4px;
+    border-radius: 4px;
+    font-size: 10px;
+    color: var(--text-secondary);
+}
+
+.folder-toggle-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.toggle-switch {
+    position: relative;
+    width: 36px;
+    height: 20px;
+    display: inline-block;
+}
+
+.toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #3a3a3a;
+    transition: .4s;
+    border-radius: 20px;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 14px;
+    width: 14px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: .4s;
+    border-radius: 50%;
+}
+
+input:checked+.slider {
+    background-color: var(--accent);
+}
+
+input:checked+.slider:before {
+    transform: translateX(16px);
+}
+
+.folder-empty-placeholder {
+    font-size: 11px;
+    color: var(--text-secondary);
+    font-style: italic;
+    pointer-events: none;
+    opacity: 0.5;
+}

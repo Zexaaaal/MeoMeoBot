@@ -1,0 +1,34 @@
+# Dépendances
+/node_modules
+
+# Fichiers de build
+/dist
+
+# Fichiers de log et de cache
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Fichiers de cache des miniatures
+/thumbnail_cache/
+
+# Fichiers système
+.DS_Store
+Thumbs.db
+
+# Fichiers de configuration locaux
+.env
+DOCUMENTATION.md
+
+# Cmd
+publish.bat
+publish.ps1
+
+# Json
+package-lock.json
+
+#Md & stuff
+release-notes.temp.md
+increment-version.js
+dev_options.js

@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+
+<head>
+    <meta charset="UTF-8">
+    <title>Roulette Widget</title>
+    <style>
+        /* __CUSTOM_CSS__ */
+    </style>
+</head>
+
+<body>
+    <div id="wheel-container">
+        <div id="pointer"></div>
+        <canvas id="wheel" width="1000" height="1000"></canvas>
+        <div id="hub" onclick="spin()">SPIN</div>
+    </div>
+
+    <div id="list-container">
+        <div class="list-center-marker"></div>
+        <div id="list-scroll-view" class="list-scroll-view">
+        </div>
+    </div>
+
+    <div id="winner-display"></div>
+
+    <script>
+        const INITIAL_CHOICES = [];
+        let choices = INITIAL_CHOICES.length > 0 ? INITIAL_CHOICES : ["Rouge", "Bleu", "Jaune", "Noir", "Blanc"];
+
+        const COLORS = [
+            { bg: '#ecf0f1', text: '#2c3e50' },
+            { bg: '#2c3e50', text: '#ecf0f1' },
+            { bg: '#3498db', text: '#ffffff' },
+            { bg: '#f1c40f', text: '#2c3e50' },
+            { bg: '#e74c3c', text: '#ffffff' }
+        ];
+
+        const canvas = document.getElementById('wheel');
+        const ctx = canvas.getContext('2d');
+        const hub = document.getElementById('hub');
+        const wheelContainer = document.getElementById('wheel-container');
+
+        const listContainer = document.getElementById('list-container');
+        const listScrollView = document.getElementById('list-scroll-view');
+
+        const winnerDisplay = document.getElementById('winner-display');
+
+        let startAngle = 0;
+        let arc = Math.PI * 2 / (choices.length || 1);
+        let spinTimeout = null;
+        let spinAngleStart = 10;
+        let spinTime = 0;
+        let spinTimeTotal = 0;
+        let isSpinning = false;
+
+        let listScrollInterval = null;
+        let listCurrentScroll = 0;
+        let listItemHeight = 42;
+
+        function isListMode() {
+            const wheelStyle = window.getComputedStyle(wheelContainer);
+            const listStyle = window.getComputedStyle(listContainer);
+            return listStyle.display !== 'none' && wheelStyle.display === 'none';
+        }
+
+        let listVisualsRunning = false;
+
+        function updateListVisuals() {
+            if (!isListMode()) {
+                listVisualsRunning = false;
+                return;
+            }
+            listVisualsRunning = true;
+
+            try {
+                if (listContainer.offsetParent === null) {
+                    requestAnimationFrame(updateListVisuals);
+                    return;
+                }
+
+                const containerCenter = listContainer.clientHeight / 2;
+                if (!containerCenter) {
+                    requestAnimationFrame(updateListVisuals);
+                    return;
+                }
+
+                const style = window.getComputedStyle(listScrollView);
+                let matrix;
+                try {
+                    matrix = new DOMMatrix(style.transform);
+                } catch (e) {
+                    matrix = new DOMMatrix();
+                }
+                const currentTranslateY = matrix.m42;
+
+                const items = listScrollView.children;
+                const totalItems = items.length;
+
+                for (let i = 0; i < totalItems; i++) {
+                    const item = items[i];
+                    const itemTop = (i * listItemHeight) + currentTranslateY;
+                    const itemCenter = itemTop + (listItemHeight / 2);
+                    const signedDist = itemCenter - containerCenter;
+                    const dist = Math.abs(signedDist);
+
+                    let scale = 0.8;
+                    let opacity = 1;
+                    let fontWeight = '400';
+                    let translateY = 0;
+
+                    if (dist < 28) {
+                        scale = 1.6;
+                        fontWeight = '800';
+                        translateY = 0;
+                    } else if (dist < 60) {
+                        scale = 1.25;
+                        fontWeight = '600';
+                        translateY = signedDist > 0 ? 18 : -18;
+                    } else if (dist < 100) {
+                        scale = 0.95;
+                        fontWeight = '400';
+                        translateY = signedDist > 0 ? 32 : -32;
+                    } else {
+                        scale = 0.7;
+                        translateY = signedDist > 0 ? 48 : -48;
+                    }
+
+                    item.style.transform = `scale(${scale}) translateY(${translateY}px)`;
+                    item.style.opacity = opacity;
+                    item.style.fontWeight = fontWeight;
+                }
+            } catch (error) {
+                console.error(error);
+            }
+
+            requestAnimationFrame(updateListVisuals);
+        }
+
+        function startListVisualsIfNeeded() {
+            if (isListMode() && !listVisualsRunning) {
+                updateListVisuals();
+            }
+        }
+
+        function drawRouletteWheel() {
+            if (choices.length === 0) return;
+            arc = Math.PI * 2 / choices.length;
+
+            ctx.clearRect(0, 0, 1000, 1000);
+
+            ctx.save();
+            ctx.translate(500, 500);
+            ctx.rotate(startAngle);
+            ctx.translate(-500, -500);
+
+            const outsideRadius = 480;
+            const textRadius = 360;
+            const insideRadius = 0;
+
+            for (let i = 0; i < choices.length; i++) {
+                const angle = i * arc;
+                const colorIndex = i % COLORS.length;
+                const style = COLORS[colorIndex];
+
+                ctx.fillStyle = style.bg;
+                ctx.beginPath();
+                ctx.arc(500, 500, outsideRadius, angle, angle + arc, false);
+                ctx.arc(500, 500, insideRadius, angle + arc, angle, true);
+                ctx.stroke();
+                ctx.fill();
+
+                ctx.save();
+                ctx.fillStyle = style.text;
+                ctx.translate(500 + Math.cos(angle + arc / 2) * textRadius,
+                    500 + Math.sin(angle + arc / 2) * textRadius);
+                ctx.rotate(angle + arc / 2 + Math.PI);
+                const text = choices[i];
+                ctx.font = 'bold 40px Inter';
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+                ctx.fillText(text, 0, 0);
+                ctx.restore();
+            }
+
+            ctx.restore();
+
+            ctx.lineWidth = 10;
+            ctx.strokeStyle = '#fff';
+            ctx.beginPath();
+            ctx.arc(500, 500, outsideRadius, 0, Math.PI * 2);
+            ctx.stroke();
+        }
+
+        function rotateWheel() {
+            spinTime += 30;
+            if (spinTime >= spinTimeTotal) {
+                stopRotateWheel();
+                return;
+            }
+            const spinAngle = spinAngleStart - easeOut(spinTime, 0, spinAngleStart, spinTimeTotal);
+            startAngle += (spinAngle * Math.PI / 180);
+            drawRouletteWheel();
+            spinTimeout = requestAnimationFrame(rotateWheel);
+        }
+
+        function stopRotateWheel() {
+            clearTimeout(spinTimeout);
+            isSpinning = false;
+
+            const degrees = startAngle * 180 / Math.PI + 90;
+            const arcd = arc * 180 / Math.PI;
+            const index = Math.floor((360 - degrees % 360) / arcd);
+
+            const winner = choices[index];
+            showWinner(winner);
+        }
+
+        function renderList() {
+            if (!listScrollView) return;
+            listScrollView.innerHTML = '';
+
+            const copies = 100;
+            for (let c = 0; c < copies; c++) {
+                choices.forEach((choice, idx) => {
+                    const div = document.createElement('div');
+                    div.className = 'list-item';
+                    div.textContent = choice;
+                    const style = COLORS[idx % COLORS.length];
+                    div.style.color = style.text;
+                    listScrollView.appendChild(div);
+                });
+            }
+
+            setTimeout(() => {
+                const middleSet = Math.floor(copies / 2);
+                const itemIndex = middleSet * choices.length;
+                const containerCenter = listContainer.clientHeight / 2;
+                const itemY = itemIndex * listItemHeight;
+                const initialScroll = -(itemY - containerCenter + (listItemHeight / 2));
+
+                listScrollView.style.transition = 'none';
+                listScrollView.style.transform = `translateY(${initialScroll}px)`;
+            }, 0);
+        }
+
+        function spinList() {
+            const winnerIndex = Math.floor(Math.random() * choices.length);
+            const winnerText = choices[winnerIndex];
+
+            const style = window.getComputedStyle(listScrollView);
+            let matrix;
+            try {
+                matrix = new DOMMatrix(style.transform);
+            } catch (e) {
+                matrix = new DOMMatrix();
+            }
+            const currentY = matrix.m42;
+            const currentIndexApprox = (-currentY + (listContainer.clientHeight / 2)) / listItemHeight;
+
+            const setsToScroll = 8;
+            const currentSet = Math.floor(currentIndexApprox / choices.length);
+            const targetSet = currentSet + setsToScroll;
+            const targetIndex = (targetSet * choices.length) + winnerIndex;
+
+            const containerCenter = listContainer.clientHeight / 2;
+            const targetItemY = targetIndex * listItemHeight;
+            const targetScrollY = -(targetItemY - containerCenter + (listItemHeight / 2));
+
+            listScrollView.style.transition = `transform ${spinTimeTotal}ms cubic-bezier(0.1, 0.7, 0.1, 1)`;
+            listScrollView.style.transform = `translateY(${targetScrollY}px)`;
+
+            setTimeout(() => {
+                isSpinning = false;
+                showWinner(winnerText);
+
+                const copies = 100;
+                const middleSet = Math.floor(copies / 2);
+                const resetSet = middleSet;
+                const resetIndex = (resetSet * choices.length) + winnerIndex;
+                const resetItemY = resetIndex * listItemHeight;
+                const resetScrollY = -(resetItemY - containerCenter + (listItemHeight / 2));
+
+                listScrollView.style.transition = 'none';
+                listScrollView.style.transform = `translateY(${resetScrollY}px)`;
+            }, spinTimeTotal);
+        }
+
+
+        function showWinner(text) {
+            if (!isListMode()) {
+                winnerDisplay.textContent = text;
+                winnerDisplay.classList.add('visible');
+            }
+        }
+
+        function easeOut(t, b, c, d) {
+            const ts = (t /= d) * t;
+            const tc = ts * t;
+            return b + c * (tc + -3 * ts + 3 * t);
+        }
+
+        function spin() {
+            if (isSpinning) return;
+            isSpinning = true;
+            winnerDisplay.classList.remove('visible');
+
+            spinTime = 0;
+            spinTimeTotal = Math.random() * 3000 + 4000;
+
+            if (isListMode()) {
+                spinList();
+            } else {
+                spinAngleStart = Math.random() * 10 + 10;
+                rotateWheel();
+            }
+        }
+
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const host = window.location.host;
+        let ws;
+
+        function connectWs() {
+            ws = connectWidget((data) => {
+                if (data.type === 'config-update' && data.widget === 'roulette') {
+                    if (data.config.choices) {
+                        choices = data.config.choices;
+                        drawRouletteWheel();
+                        renderList();
+                    }
+                    if (data.config.customCSS) {
+                        setTimeout(() => {
+                            if (isListMode()) {
+                                renderList();
+                                startListVisualsIfNeeded();
+                            } else {
+                                drawRouletteWheel();
+                            }
+                        }, 100);
+                    }
+                } else if (data.type === 'spin') {
+                    spin();
+                }
+            });
+        }
+
+        drawRouletteWheel();
+        renderList();
+        startListVisualsIfNeeded();
+        connectWs();
+
+    </script>
+</body>
+
+</html>

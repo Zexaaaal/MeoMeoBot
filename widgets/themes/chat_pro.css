@@ -1,0 +1,121 @@
+@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700&display=swap');
+
+body {
+    font-family: 'Rajdhani', sans-serif;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    --enable-pro: 1;
+}
+
+#chat-container {
+    position: relative;
+    padding: 30px 25px;
+    box-sizing: border-box;
+    display: flex;
+    gap: 14px;
+    z-index: 100;
+}
+
+.msg-group {
+    padding-left: 30px;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    flex-direction: column;
+    margin-bottom: 13px;
+    --user-color: #c77dff;
+    animation: slideIn 0.5s ease-out forwards;
+    position: relative;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateX(-30px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.msg-icon {
+    width: 28px;
+    height: 28px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.3));
+    font-size: 20px;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.msg-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.msg-header {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 12px 3px 12px;
+    background: rgba(255, 255, 255, 0.2);
+    border: 2px solid;
+    border-color: var(--user-color);
+    border-radius: 50px;
+    align-self: flex-start;
+    position: relative;
+    box-shadow: 0 0 8px rgba(255, 255, 255, 0.6);
+}
+
+.msg-header::before {
+    content: "✦";
+    position: absolute;
+    left: -24px;
+    color: var(--user-color);
+    font-size: 16px;
+    filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.9));
+}
+
+.msg-username {
+    color: var(--user-color);
+    font-weight: 700;
+    font-size: 16px;
+    letter-spacing: 0.5px;
+    text-shadow: 0 0 3px rgba(211, 211, 211, 0.8);
+}
+
+.msg-messages {
+    color: #e4e4e7;
+    font-size: 20px;
+    line-height: 1.2;
+    text-shadow: 0 0 12px rgba(255, 255, 255, 0.4);
+    padding-left: 4px;
+}
+
+.msg-line {
+    margin-bottom: 4px;
+    font-weight: 600;
+}
+
+.msg-line:last-child {
+    margin-bottom: 0;
+}
+
+.msg-messages img,
+.msg-line img {
+    vertical-align: middle;
+    height: 32px;
+    width: auto;
+    filter: drop-shadow(0 0 4px rgba(255, 239, 239, 0.3));
+}
+
+.msg-badges .badge-img {
+    display: none;
+}

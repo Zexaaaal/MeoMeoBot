@@ -1,0 +1,164 @@
+@import url('https://fonts.googleapis.com/css2?family=Exo+2:wght@500;700;800&display=swap');
+
+body {
+    background-color: transparent;
+    font-family: 'Exo 2', "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    overflow: hidden;
+    margin: 0;
+    padding: 0;
+}
+
+#hud-overlay {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    width: calc(100% - 40px);
+    height: calc(100% - 40px);
+    z-index: -10;
+    pointer-events: none;
+}
+
+#hud-overlay path {
+    fill: none;
+    stroke: rgba(255, 255, 255, 0.05);
+    stroke-width: 1px;
+    stroke-dasharray: 2 4;
+}
+
+#chat-container {
+    padding-left: 20px;
+    position: absolute;
+    top: 40px;
+    left: 40px;
+    right: 40px;
+    bottom: 120px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    gap: 16px;
+}
+
+.msg-group {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    --user-color: #ffffff;
+    padding-left: 8px;
+    animation: slideInLeft 0.3s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+
+.msg-group::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    pointer-events: none;
+    z-index: 10;
+
+    background: var(--user-color);
+
+    clip-path: polygon(0 6px, 6px 0,
+            8px 0,
+            8px calc(100% - 4px),
+            140px calc(100% - 4px),
+            146px 100%,
+            6px 100%, 0 calc(100% - 6px));
+
+    filter: drop-shadow(0 0 2px var(--user-color));
+}
+
+.msg-header {
+    position: relative;
+    height: 16px;
+    margin-top: 0;
+    margin-left: 0;
+    padding-top: 4px;
+    padding-right: 20px;
+    padding-left: 10px;
+    z-index: 5;
+    background: #09090b;
+    display: flex;
+    align-items: center;
+    clip-path: polygon(0 0,
+            calc(100% - 10px) 0,
+            100% 100%,
+            0 100%);
+}
+
+.msg-header::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background: var(--user-color);
+    z-index: 11;
+    clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 100%, 0 100%);
+}
+
+.msg-username {
+    color: #fff !important;
+    font-weight: 800;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding-top: 2px;
+}
+
+.msg-messages {
+    position: relative;
+    background: #09090b;
+    padding: 10px 16px;
+    color: #fff;
+    min-width: 250px;
+    z-index: 4;
+    clip-path: polygon(0 0,
+            calc(100% - 10px) 0,
+            100% 10px,
+            100% calc(100% - 10px),
+            calc(100% - 10px) 100%,
+            0 100%);
+
+    box-shadow: inset 1px 1px 0 0 rgba(255, 255, 255, 0.1), inset -1px -1px 0 0 rgba(0, 0, 0, 0.5);
+}
+
+.msg-messages::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 20;
+    background: linear-gradient(225deg, transparent 6px, rgba(255, 255, 255, 0.4) 6px, rgba(255, 255, 255, 0.4) 8px, transparent 8px) no-repeat top right;
+    background-size: 20px 20px;
+}
+
+.msg-line {
+    font-size: 14px;
+    line-height: 1.4;
+    color: #e4e4e7;
+}
+
+@keyframes slideInLeft {
+    from {
+        opacity: 0;
+        transform: translateX(-30px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+::-webkit-scrollbar {
+    width: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #444;
+    border-radius: 2px;
+}

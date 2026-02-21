@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Alerts Widget</title>
+    <style>
+        .alert-box {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            width: 100%;
+            height: 100%;
+            box-sizing: border-box;
+            padding: 15px;
+            overflow: hidden;
+            opacity: 0;
+            transition: opacity 0.5s;
+        }
+    </style>
+    <style>
+        /* __CUSTOM_CSS__ */
+    </style>
+</head>
+
+<body>
+
+    <div id="connection-status"
+        style="position: fixed; top: 10px; right: 10px; width: 10px; height: 10px; background: red; border-radius: 50%; opacity: 0; transition: opacity 0.3s;">
+    </div>
+
+    <div class="alert-box" id="alert-container">
+        <div class="alert-image" id="alert-image"></div>
+        <div id="alert-text-wrapper">
+            <div class="alert-text" id="alert-text"></div>
+            <div class="alert-message" id="alert-message"></div>
+        </div>
+    </div>
+
+    <audio id="alert-audio"></audio>
+
+    <script>
+        const container = document.getElementById('alert-container');
+        const imgContainer = document.getElementById('alert-image');
+        const textContainer = document.getElementById('alert-text');
+        const msgContainer = document.getElementById('alert-message');
+        const audio = document.getElementById('alert-audio');
+        const statusDot = document.getElementById('connection-status');
+
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const host = window.location.host;
+        let ws;
+
+        function log(msg, err) {
+            console.log(`[AlertsWidget] ${msg}`, err || '');
+            if (err) console.error(err);
+        }
+        function transformLocalPath(path) {
+            if (!path) return path;
+            if (path.startsWith('http')) return path;
+
+            try {
+                let rawPath = path;
+                if (rawPath.startsWith('file://')) {
+                    rawPath = rawPath.replace(/^file:\/\/+/, '');
+                }
+
+                try { rawPath = decodeURIComponent(rawPath); } catch (e) { log('Decode error', e); }
+
+                if (navigator.platform.toUpperCase().indexOf('WIN') >= 0 || rawPath.match(/^\/[a-zA-Z]:/)) {
+                    if (rawPath.startsWith('/')) rawPath = rawPath.substring(1);
+                }
+
+                return `${window.location.protocol}//${host}/local-file?path=${encodeURIComponent(rawPath)}`;
+            } catch (e) {
+                log('Path transform error', e);
+                return path;
+            }
+        }
+
+        function connectWs() {
+            log(`Connecting to ${protocol}//${host}`);
+            ws = connectWidget((data) => {
+                log('Received data:', data);
+                if (data.type === 'alert') {
+                    const alert = data.alert;
+                    if (alert.image) alert.image = transformLocalPath(alert.image);
+                    if (alert.audio) alert.audio = transformLocalPath(alert.audio);
+                    playAlert(alert);
+                } else if (data.type === 'skip') {
+                    stopAlert();
+                }
+            });
+        }
+
+        audio.onerror = (e) => {
+            log('Audio error:', audio.error);
+        };
+
+        let currentUtterance = null; // Prevent GC
+
+        async function playAlert(alert) {
+            try {
+                log('Playing alert:', alert);
+                imgContainer.innerHTML = '';
+                textContainer.innerHTML = alert.text || '';
+                if (alert.type === 'donation') {
+                    msgContainer.innerHTML = '';
+                    msgContainer.style.display = 'none';
+                } else {
+                    msgContainer.innerHTML = alert.message || '';
+                    msgContainer.style.display = 'block';
+                }
+
+                if (alert.audio) {
+                    audio.src = alert.audio;
+                    audio.volume = alert.volume !== undefined ? alert.volume : 0.5;
+                } else {
+                    audio.removeAttribute('src');
+                }
+
+                const hasVisuals = alert.image || alert.text || alert.message;
+
+                if (hasVisuals) {
+                    container.className = 'alert-box';
+                    container.style.opacity = '0';
+
+                    if (alert.image) {
+                        const img = document.createElement('img');
+                        img.src = alert.image;
+                        img.onerror = (e) => log('Image load error', e);
+                        imgContainer.appendChild(img);
+                    }
+
+                    container.classList.remove('animate-out');
+                    void container.offsetWidth;
+                    container.classList.add('animate-in');
+                    container.style.opacity = '1';
+                }
+
+                const duration = (alert.duration || 5000);
+                if (alert.type === 'donation' && alert.message) {
+                    if (alert.audio) {
+                        try {
+                            await new Promise((resolve) => {
+                                audio.onended = resolve;
+                                audio.onerror = resolve;
+                                audio.play().catch(e => { log('Audio fail', e); resolve(); });
+                            });
+                        } catch (e) { log('Audio promise error', e); }
+                    }
+                    const ttsStart = Date.now();
+                    await speakMessage(alert.message);
+                    const ttsElapsed = Date.now() - ttsStart;
+                    if (ttsElapsed < 500) {
+                        log('TTS too fast/failed, falling back to standard duration');
+                        await new Promise(resolve => setTimeout(resolve, duration));
+                    }
+
+                } else {
+                    if (alert.audio) {
+                        audio.play().catch(e => log('Audio playback failed', e));
+                    }
+                    await new Promise(resolve => setTimeout(resolve, duration));
+                }
+
+                if (hasVisuals) stopAlert();
+                else ws.send(JSON.stringify({ type: 'alert-finished' }));
+
+            } catch (err) {
+                log('Error in playAlert', err);
+                ws.send(JSON.stringify({ type: 'alert-finished' }));
+            }
+        }
+        function speakMessage(text) {
+            return new Promise((resolve) => {
+                log('Playing TTS via Local Proxy for OBS compatibility');
+                const ttsUrl = `/tts?text=${encodeURIComponent(text)}`;
+
+                audio.src = ttsUrl;
+                audio.volume = 1.0;
+
+                audio.onended = () => {
+                    log('TTS Finished playing');
+                    resolve();
+                };
+
+                audio.onerror = (e) => {
+                    log('TTS Audio load error', e);
+                    setTimeout(resolve, 3000);
+                };
+
+                audio.play().catch(e => {
+                    log('TTS Audio playback failed', e);
+                    setTimeout(resolve, 3000);
+                });
+            });
+        }
+
+        function stopAlert() {
+            log('Stopping alert');
+            container.classList.remove('animate-in');
+            container.classList.add('animate-out');
+
+            let fadeOut = setInterval(() => {
+                if (audio.volume > 0.05) {
+                    audio.volume -= 0.05;
+                } else {
+                    clearInterval(fadeOut);
+                    audio.pause();
+                    audio.currentTime = 0;
+                }
+            }, 50);
+
+            setTimeout(() => {
+                container.style.opacity = '0';
+                ws.send(JSON.stringify({ type: 'alert-finished' }));
+            }, 600);
+        }
+
+        connectWs();
+    </script>
+</body>
+
+</html>

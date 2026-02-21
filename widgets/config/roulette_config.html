@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Configuration Roulette</title>
+    <link rel="stylesheet" href="../../css/global.css">
+    <link rel="stylesheet" href="../../css/css-editor.css">
+    <style>
+        .css-editor-left {
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            background: var(--bg-tertiary);
+        }
+
+        .config-group {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            margin-bottom: 10px;
+            padding: 10px;
+        }
+
+        .config-group h3 {
+            margin-top: 0;
+            margin-bottom: 15px;
+            font-size: 14px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+        }
+
+        .choices-list {
+            flex: 1;
+            overflow-y: auto;
+            margin-bottom: 15px;
+            background: var(--bg-tertiary);
+            border-radius: 4px;
+            padding: 5px;
+        }
+
+        .choice-item {
+            display: flex;
+            align-items: center;
+            padding: 8px;
+            background: var(--bg-secondary);
+            margin-bottom: 5px;
+            border-radius: 4px;
+            gap: 10px;
+        }
+
+        .choice-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .choice-input {
+            flex: 1;
+            background: transparent;
+            border: 1px solid transparent;
+            color: var(--text-primary);
+            padding: 4px;
+        }
+
+        .choice-input:focus {
+            border-color: var(--accent);
+            outline: none;
+            background: var(--bg-primary);
+        }
+
+        .delete-btn {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: 4px;
+        }
+
+        .delete-btn:hover {
+            color: var(--danger);
+        }
+
+        .add-form {
+            display: flex;
+            gap: 10px;
+            margin-top: auto;
+        }
+
+        .form-input {
+            flex: 1;
+            padding: 8px;
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            border-radius: 4px;
+        }
+    </style>
+</head>
+
+<body class="css-editor-body">
+    <div class="css-editor-shell">
+        <div class="css-editor-titlebar">
+            <h2>Configuration Roulette</h2>
+            <button class="css-editor-close" id="close-btn">✕</button>
+        </div>
+
+        <div class="css-editor-main">
+            <div class="css-editor-left">
+                <div class="config-group">
+                    <div class="choices-list" id="choicesList"></div>
+
+                    <div class="add-form">
+                        <input type="text" id="newChoiceInput" class="form-input" placeholder="Nouveau choix...">
+                        <button id="addChoiceBtn" class="btn btn-primary">Ajouter</button>
+                    </div>
+                </div>
+
+                <div class="css-editor-actions" style="justify-content: space-between;">
+                    <button id="saveBtn" class="btn btn-primary" style="width: 100%;">Sauvegarder</button>
+                </div>
+            </div>
+
+            <div class="css-preview-block">
+                <div id="preview-frame-wrapper">
+                    <iframe id="preview-frame" title="widget preview"></iframe>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="notification-container"></div>
+    <script src="../../main/logger.js"></script>
+    <script src="../../renderer/roulette_config_renderer.js" type="module"></script>
+</body>
+
+</html>

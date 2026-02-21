@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Subgoals List Widget</title>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
+
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            font-family: 'Inter', sans-serif;
+            background: transparent;
+            color: white;
+        }
+
+        #widget-container {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: flex-start;
+
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .subgoals-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .subgoal-item {
+            font-size: 1.2rem;
+            font-weight: 600;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .subgoal-count {
+            font-weight: 800;
+            color: #ff00cc;
+
+        }
+
+        .subgoal-label {
+            color: white;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="widget-container">
+        <ul class="subgoals-list" id="subgoals-list">
+
+        </ul>
+    </div>
+
+    <script>
+        let currentConfig = {
+            steps: []
+        };
+
+        function connectWebSocket() {
+            const host = window.location.hostname || 'localhost';
+            const port = new URL(document.URL).port || '8091';
+            const wsUrl = `ws://${host}:${port}`;
+            const ws = new WebSocket(wsUrl);
+
+            ws.onopen = () => {
+                console.log('Connected to Subgoals List Widget Server');
+            };
+
+            ws.onmessage = (event) => {
+                try {
+                    const data = JSON.parse(event.data);
+                    if (data.type === 'config' || data.type === 'config-update') {
+
+                        if (data.widget === 'subgoals') {
+                            if (data.config && data.config.steps) {
+                                currentConfig.steps = data.config.steps;
+                                render();
+                            }
+                        } else if (data.widget === 'subgoals-list') {
+                            if (data.config) {
+                                if (data.config.customCSS) {
+                                    let styleInfo = document.getElementById('custom-css');
+                                    if (!styleInfo) {
+                                        styleInfo = document.createElement('style');
+                                        styleInfo.id = 'custom-css';
+                                        document.head.appendChild(styleInfo);
+                                    }
+                                    styleInfo.textContent = data.config.customCSS;
+                                }
+                            }
+                        }
+                    } else if (data.type === 'reload') {
+                        window.location.reload();
+                    } else if (data.type === 'visibility') {
+                        console.log('[Widget] Visibility event:', data.visible);
+                        document.body.style.display = data.visible ? '' : 'none';
+                    }
+                } catch (e) {
+                    console.error('Error parsing WS message', e);
+                }
+            };
+
+            ws.onclose = () => {
+                console.log('Disconnected. Reconnecting in 5s...');
+                setTimeout(connectWebSocket, 5000);
+            };
+
+            ws.onerror = (err) => {
+                console.error('WebSocket error', err);
+                ws.close();
+            };
+        }
+
+        function render() {
+            const list = document.getElementById('subgoals-list');
+            list.innerHTML = '';
+
+            const { steps } = currentConfig;
+
+            if (steps && Array.isArray(steps)) {
+
+                const sortedSteps = [...steps].sort((a, b) => parseFloat(a.count) - parseFloat(b.count));
+
+                sortedSteps.forEach(step => {
+                    const li = document.createElement('li');
+                    li.className = 'subgoal-item';
+
+                    const countSpan = document.createElement('span');
+                    countSpan.className = 'subgoal-count';
+                    countSpan.textContent = `+${step.count}`;
+
+                    const labelSpan = document.createElement('span');
+                    labelSpan.className = 'subgoal-label';
+                    labelSpan.textContent = `: ${step.label}`;
+
+                    li.appendChild(countSpan);
+                    li.appendChild(labelSpan);
+                    list.appendChild(li);
+                });
+            }
+        }
+
+        connectWebSocket();
+    </script>
+</body>
+
+</html>

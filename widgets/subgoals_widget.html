@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Subgoals Widget</title>
+    <style>
+        #widget-container {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .progress-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            height: 40px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 20px;
+            overflow: visible;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+
+
+        .markers-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border-radius: 18px;
+
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #ff00cc, #333399);
+            width: 0%;
+            border-radius: 18px;
+            transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            box-shadow: 0 0 10px rgba(255, 0, 204, 0.5);
+            z-index: 1;
+        }
+
+        .progress-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-weight: 800;
+            font-size: 1.2rem;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+            z-index: 10;
+            white-space: nowrap;
+        }
+
+        .step-marker {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: rgba(255, 255, 255, 0.8);
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            overflow: visible;
+        }
+
+        .step-label {
+            position: absolute;
+            top: -35px;
+            background: rgba(0, 0, 0, 0.8);
+            color: #fff;
+            padding: 6px 10px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            white-space: nowrap;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            display: none;
+
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            pointer-events: auto;
+            left: 50%;
+            transform: translateX(-50%);
+            --arrow-pos: 50%;
+        }
+
+        .step-label.visible {
+            display: block;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+
+        .step-label::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: var(--arrow-pos);
+            transform: translateX(-50%);
+            border-width: 5px 5px 0;
+            border-style: solid;
+            border-color: rgba(0, 0, 0, 0.8) transparent transparent transparent;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(5px) translateX(var(--tx));
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0) translateX(var(--tx));
+            }
+        }
+    </style>
+    /* __CUSTOM_CSS__ */
+</head>
+
+<body>
+    <div id="widget-container">
+        <div class="progress-container">
+            <div class="markers-container" id="markers-container"></div>
+            <div class="progress-bar" id="progress-bar"></div>
+            <div class="progress-text" id="progress-text">Loading...</div>
+        </div>
+    </div>
+
+    <script>
+        let currentConfig = {
+            startCount: 0,
+            goalCount: 100,
+            currentCount: 0,
+            steps: []
+        };
+
+        function connectWebSocket() {
+            connectWidget((data) => {
+                if (data.type === 'config' || data.type === 'config-update') {
+                    if (data.widget && data.widget !== 'subgoals') return;
+                    if (data.config) {
+                        currentConfig = { ...currentConfig, ...data.config };
+                        if (typeof data.config.customCSS === 'string') {
+                            let style = document.getElementById('custom-css');
+                            if (!style) {
+                                style = document.createElement('style');
+                                style.id = 'custom-css';
+                                document.head.appendChild(style);
+                            }
+                            style.textContent = data.config.customCSS;
+                        }
+                        render();
+                    }
+                } else if (data.type === 'sub-update') {
+                    updateProgress(data.count);
+                }
+            });
+        }
+
+        function updateProgress(count) {
+            currentConfig.currentCount = count;
+            render();
+        }
+
+        function render() {
+            let { startCount, goalCount, currentCount, steps } = currentConfig;
+
+            startCount = parseFloat(startCount) || 0;
+            goalCount = parseFloat(goalCount) || 100;
+            currentCount = parseFloat(currentCount) || 0;
+
+            const totalRange = goalCount - startCount;
+            const progress = currentCount - startCount;
+
+            let percentage = 0;
+            if (totalRange > 0) {
+                percentage = (progress / totalRange) * 100;
+            }
+
+            if (percentage < 0) percentage = 0;
+            if (percentage > 100) percentage = 100;
+
+            const bar = document.getElementById('progress-bar');
+            bar.style.width = `${percentage}%`;
+
+            const text = document.getElementById('progress-text');
+            text.textContent = `${currentCount} / ${goalCount} Subs`;
+
+            const markersContainer = document.getElementById('markers-container');
+
+            if (steps && Array.isArray(steps)) {
+                const calculateShift = (percentage) => {
+                    if (percentage < 20) return (percentage / 20) * 50;
+                    if (percentage > 80) return 50 + ((percentage - 80) / 20) * 50;
+                    return 50;
+                };
+
+                const getAbsoluteStep = (step) => {
+                    let val = parseFloat(step.count);
+                    if (isNaN(val)) return startCount;
+                    return startCount + val;
+                };
+
+                const sortedSteps = [...steps].sort((a, b) => getAbsoluteStep(a) - getAbsoluteStep(b));
+
+                const viewState = JSON.stringify({
+                    s: sortedSteps.map(s => ({ c: getAbsoluteStep(s), l: s.label })),
+                    sc: startCount,
+                    gc: goalCount,
+                    cc: currentCount,
+                    tr: totalRange
+                });
+
+                if (markersContainer.dataset.viewState === viewState && markersContainer.hasChildNodes()) {
+                    return;
+                }
+                markersContainer.dataset.viewState = viewState;
+                markersContainer.innerHTML = '';
+
+                let nextGoalFound = false;
+
+                sortedSteps.forEach(step => {
+                    const stepAbsolute = getAbsoluteStep(step);
+
+                    if (!isNaN(stepAbsolute)) {
+                        let stepPercentage = 0;
+                        if (totalRange > 0) {
+                            stepPercentage = ((stepAbsolute - startCount) / totalRange) * 100;
+                        }
+
+                        if (stepPercentage < 0) stepPercentage = 0;
+                        if (stepPercentage > 100) stepPercentage = 100;
+
+                        const marker = document.createElement('div');
+                        marker.className = 'step-marker';
+                        marker.style.left = `${stepPercentage}%`;
+
+                        markersContainer.appendChild(marker);
+
+                        let isNextGoal = false;
+                        if (!nextGoalFound && stepAbsolute > currentCount) {
+                            isNextGoal = true;
+                            nextGoalFound = true;
+                        }
+
+                        if (isNextGoal) {
+                            const label = document.createElement('div');
+                            label.className = 'step-label visible';
+                            label.textContent = `${step.label}`;
+
+                            const shift = calculateShift(stepPercentage);
+
+                            label.style.transform = `translateX(-${shift}%)`;
+                            label.style.setProperty('--tx', `-${shift}%`);
+                            label.style.setProperty('--arrow-pos', `${shift}%`);
+
+                            marker.appendChild(label);
+                        }
+                    }
+                });
+            } else {
+                markersContainer.innerHTML = '';
+            }
+        }
+
+        connectWebSocket();
+    </script>
+</body>
+
+</html>

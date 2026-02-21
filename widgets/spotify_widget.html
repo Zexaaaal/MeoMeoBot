@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>Spotify Now Playing</title>
+    <meta http-equiv="Content-Security-Policy"
+        content="default-src * 'unsafe-inline' 'unsafe-eval' data: blob:; img-src * 'self' data: blob: https: http:; media-src * 'self' data: blob: https: http:; script-src * 'unsafe-inline' 'unsafe-eval'; style-src * 'unsafe-inline';">
+    <style>
+        :root {
+            --spotify-bg: rgba(0, 0, 0, 0.35);
+            --spotify-border: rgba(255, 255, 255, 0.08);
+            --spotify-shadow: rgba(0, 0, 0, 0.45);
+            --text-primary: #f5f7fb;
+            --text-secondary: #cdd7e5;
+            --text-tertiary: #9fb4d1;
+            --pill-bg: rgba(255, 255, 255, 0.08);
+            --pill-text: #d3deef;
+        }
+
+        body {
+            color: var(--text-primary);
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        #spotify-wrapper {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100vw;
+            height: 100vh;
+            transition: opacity 0.35s ease;
+        }
+
+        #spotify-wrapper.is-hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .spotify-card {
+            display: grid;
+            grid-template-columns: 140px 1fr;
+            gap: 12px;
+            padding: 14px;
+            border-radius: 16px;
+            background: var(--spotify-bg);
+            border: 1px solid var(--spotify-border);
+            box-shadow: 0 15px 40px var(--spotify-shadow);
+            backdrop-filter: blur(8px);
+            color: var(--text-primary);
+            max-width: 520px;
+            box-sizing: border-box;
+        }
+
+        .spotify-cover {
+            width: 140px;
+            height: 140px;
+            border-radius: 12px;
+            object-fit: cover;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+            background: #111;
+        }
+
+        .spotify-infos {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            justify-content: center;
+        }
+
+        .spotify-title {
+            font-size: 20px;
+            font-weight: 700;
+            line-height: 1.2;
+        }
+
+        .spotify-artist {
+            font-size: 16px;
+            color: var(--text-secondary);
+        }
+
+        .spotify-album {
+            font-size: 14px;
+            color: var(--text-tertiary);
+        }
+
+        .pill {
+            align-self: flex-start;
+            padding: 4px 10px;
+            border-radius: 999px;
+            background: var(--pill-bg);
+            font-size: 12px;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            color: var(--pill-text);
+            margin-bottom: 4px;
+        }
+    </style>
+    <style id="custom-css">
+        /* __CUSTOM_CSS__ */
+    </style>
+</head>
+
+<body>
+    <div id="spotify-wrapper">
+        <div class="spotify-card">
+            <img id="spotifyCover" class="spotify-cover" alt="Cover"
+                onerror="console.error('Img Load Error', this.src)">
+            <div class="spotify-infos">
+                <div class="pill">En lecture</div>
+                <div id="spotifyTitle" class="spotify-title">Titre du morceau</div>
+                <div id="spotifyArtist" class="spotify-artist">Artiste</div>
+                <div id="spotifyAlbum" class="spotify-album">Album</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const INITIAL_CONFIG = {};
+
+        const FALLBACK_COVER = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxNDAgMTQwIj48cmVjdCB3aWR0aD0iMTQwIiBoZWlnaHQ9IjE0MCIgZmlsbD0iIzIyMiIvPjx0ZXh0IHg9IjcwIiB5PSI3NSIgZm9udC1zaXplPSI1MCIgdGV4dC1hbmNob3I9Im1lkZGxlIiBmaWxsPSIjNDQ0Ij7wn461PC90ZXh0Pjwvc3ZnPg==';
+
+        let ws = null;
+        let currentConfig = INITIAL_CONFIG || {};
+
+        function applyConfig(cfg) {
+            const safe = cfg || {};
+            const cover = document.getElementById('spotifyCover');
+            const title = document.getElementById('spotifyTitle');
+            const artist = document.getElementById('spotifyArtist');
+            const album = document.getElementById('spotifyAlbum');
+            const wrapper = document.getElementById('spotify-wrapper');
+            const customCssStyle = document.getElementById('custom-css');
+
+            if (cover) cover.src = safe.coverUrl || FALLBACK_COVER;
+            if (title) title.textContent = safe.trackTitle || 'Titre du morceau';
+            if (artist) artist.textContent = safe.trackArtist || 'Artiste';
+            if (album) album.textContent = safe.trackAlbum || 'Album';
+
+            if (safe.customCSS !== undefined && customCssStyle) {
+                customCssStyle.textContent = safe.customCSS;
+            }
+
+            const isPlaying = safe.isPlaying !== false && !!(safe.trackTitle || safe.trackArtist || safe.coverUrl);
+            if (wrapper) {
+                wrapper.classList.toggle('is-hidden', !isPlaying);
+            }
+        }
+
+        function connectWebSocket() {
+            const host = window.location.hostname || 'localhost';
+            const port = new URL(document.URL).port || '8090';
+            const wsUrl = `ws://${host}:${port}`;
+            ws = new WebSocket(wsUrl);
+
+            ws.onopen = () => {
+                if (currentConfig) applyConfig(currentConfig);
+            };
+
+            ws.onmessage = (event) => {
+                try {
+                    const data = JSON.parse(event.data);
+                    if (data.type === 'config-update' && data.widget === 'spotify') {
+                        currentConfig = { ...currentConfig, ...data.config };
+                        applyConfig(currentConfig);
+                    } else if (data.type === 'reload') {
+                        const url = new URL(window.location.href);
+                        url.searchParams.set('t', Date.now());
+                        window.location.href = url.toString();
+                    } else if (data.type === 'visibility') {
+                        document.body.style.display = data.visible ? '' : 'none';
+                    }
+                } catch (err) {
+                    console.warn('Spotify widget message parse error', err);
+                }
+            };
+
+            ws.onclose = () => setTimeout(connectWebSocket, 4000);
+            ws.onerror = () => { try { ws.close(); } catch (e) { } };
+        }
+
+        applyConfig(currentConfig);
+        connectWebSocket();
+    </script>
+</body>
+
+</html>

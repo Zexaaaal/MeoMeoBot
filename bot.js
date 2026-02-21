@@ -501,9 +501,9 @@ class TwitchBot extends EventEmitter {
     }
     isDevMockEnabled() { return this.rewardsManager.isDevMockEnabled(); }
     async getCustomRewards() { return this.rewardsManager.getCustomRewards(); }
-    async createCustomReward(data) { return this.rewardsManager.createCustomReward(data); }
-    async updateCustomReward(id, data) { return this.rewardsManager.updateCustomReward(id, data); }
-    async deleteCustomReward(id) { return this.rewardsManager.deleteCustomReward(id); }
+    async createCustomReward(data) { return this.rewardsManager.createReward(data); }
+    async updateCustomReward(id, data) { return this.rewardsManager.updateReward(id, data); }
+    async deleteCustomReward(id) { return this.rewardsManager.deleteReward(id); }
     handleRedemption(rewardId, tags, message) { this.rewardsManager.handleRedemption(rewardId, tags, message); }
 
     async banUser(broadcasterId, userId, duration, reason) {

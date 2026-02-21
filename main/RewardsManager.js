@@ -57,7 +57,7 @@ class RewardsManager {
     async getCustomRewards() {
         if (process.argv.includes('--dev')) {
             log.info('REWARDS_MOCK_RET');
-            return Array.from(this.mockRewards.values());
+            return this.bot.mockRewards || [];
         }
 
         if (!this.bot.userId || !this.bot.clientId) return [];
@@ -81,9 +81,9 @@ class RewardsManager {
             }
 
             const data = await response.json();
-            return [];
+            return data.data || [];
         } catch (error) {
-            // log.error('REWARDS_FETCH_ERR', error);
+            log.error('REWARDS_FETCH_ERR', error);
             throw error;
         }
     }
@@ -106,7 +106,7 @@ class RewardsManager {
                     global_cooldown_seconds: data.global_cooldown_seconds || 0
                 }
             };
-            this.mockRewards.set(id, newReward);
+            this.bot.mockRewards.push(newReward);
             return newReward;
         }
 
@@ -147,7 +147,8 @@ class RewardsManager {
     async updateReward(id, data) {
         if (process.argv.includes('--dev')) {
             log.info('REWARDS_MOCK_UPD', id, data);
-            const r = this.mockRewards.get(id);
+            const rewards = this.bot.mockRewards || [];
+            const r = rewards.find(r => r.id === id);
             if (r) {
                 const updatedReward = { ...r, ...data };
                 if (data.is_global_cooldown_enabled !== undefined || data.global_cooldown_seconds !== undefined) {
@@ -156,7 +157,8 @@ class RewardsManager {
                         global_cooldown_seconds: data.global_cooldown_seconds !== undefined ? data.global_cooldown_seconds : (updatedReward.global_cooldown_setting?.global_cooldown_seconds || 0)
                     };
                 }
-                this.mockRewards.set(id, updatedReward);
+                const idx = this.bot.mockRewards.findIndex(r => r.id === id);
+                if (idx !== -1) this.bot.mockRewards[idx] = updatedReward;
                 return updatedReward;
             }
             throw new Error('Reward not found in mock store');
@@ -199,7 +201,7 @@ class RewardsManager {
     async deleteReward(id) {
         if (process.argv.includes('--dev')) {
             log.info('REWARDS_MOCK_DEL', id);
-            this.mockRewards.delete(id);
+            this.bot.mockRewards = (this.bot.mockRewards || []).filter(r => r.id !== id);
             return true;
         }
 
@@ -267,24 +269,10 @@ class RewardsManager {
     }
 
     triggerEmoteRain(rewardId) {
-        if (process.argv.includes('--dev')) {
-            log.info('REWARDS_MOCK_RAIN');
-            this.bot.twitchAPI.fetchChannelEmotes().then(emotes => {
-                const wsServer = this.bot.servers.baseWidgets['chat'];
-                if (wsServer && wsServer.wss) {
-                    wsServer.broadcast({ type: 'rain', emotes, count: 50 });
-                }
-            }).catch(err => log.error('REWARDS_MOCK_RAIN_ERR', err));
-            return;
-        }
-
         log.info('REWARDS_RAIN', { id: rewardId });
         this.bot.twitchAPI.fetchChannelEmotes().then(emotes => {
             log.info('REWARDS_RAIN_EMOTES', { count: emotes.length });
-            const wsServer = this.bot.servers.baseWidgets['chat'];
-            if (wsServer && wsServer.wss) {
-                wsServer.broadcast({ type: 'rain', emotes, count: 50 });
-            }
+            this.bot.emit('emote-rain', emotes);
         }).catch(err => log.error('REWARDS_RAIN_ERR', err));
     }
 }

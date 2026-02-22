@@ -83,6 +83,10 @@ class RewardsManager {
             const data = await response.json();
             return data.data || [];
         } catch (error) {
+            if (error.message.includes('403')) {
+                log.warn('REWARDS_FETCH_FORBIDDEN', { reason: 'Broadcaster does not have partner or affiliate status.' });
+                return [];
+            }
             log.error('REWARDS_FETCH_ERR', error);
             throw error;
         }

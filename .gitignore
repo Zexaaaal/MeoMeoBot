@@ -30,5 +30,8 @@ package-lock.json
 
 #Md & stuff
 release-notes.temp.md
+
+# Scripts & Tooling
 increment-version.js
 dev_options.js
+publish.js

@@ -24,8 +24,9 @@ const LOG_MESSAGES = {
     BOT_DEBUG_CONFIG_VALUES: "[DEBUG] Config Values - ID: {idStatus}, Token: {tokenStatus}",
     BOT_BADGES_DISABLED: "Badges désactivés : fournissez TWITCH_CLIENT_ID/TWITCH_CLIENT_SECRET dans .env ou twitchClientId/twitchAppToken dans la config.",
     BOT_NEW_APP_TOKEN: "Génération d'un nouveau App Access Token Twitch...",
-    BOT_NEW_STREAM_DETECTED: "New stream detected (started at {startedAt}). Resetting daily subs.",
-    BOT_STREAM_ALREADY_TRACKED: "Stream is live, but daily subs already tracked for this session.",
+    BOT_NEW_STREAM_DETECTED: "Nouveau stream détecté (commencé à {startedAt}). Reset des subs quotidiens.",
+    BOT_STREAM_ALREADY_TRACKED: "Stream en cours, subs quotidiens déjà suivis pour cette session.",
+    REWARDS_FETCH_FORBIDDEN: "Rewards ignorées: le créateur n'est pas Affilié ou Partenaire.",
 
     // IPC
     IPC_GET_CONFIG_CALLED: "get-config called",

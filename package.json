@@ -1,6 +1,6 @@
 {
   "name": "meomeobot",
-  "version": "4.0.11",
+  "version": "4.1.0",
   "description": "woo-ah",
   "main": "main.js",
   "repository": "github:Zexaaaal/MeoMeoBot",
@@ -8,7 +8,7 @@
     "start": "electron .",
     "dev": "electron . --dev",
     "build": "electron-builder",
-    "publish": "node increment-version.js && electron-builder --publish always"
+    "publish": "node publish.js"
   },
   "dependencies": {
     "bonjour-service": "^1.2.1",

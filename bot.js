@@ -296,8 +296,11 @@ class TwitchBot extends EventEmitter {
     }
 
     containsBannedWords(message) {
-        const lowerMessage = message.toLowerCase();
-        return this.getBannedWords().some(word => lowerMessage.includes(word.toLowerCase()));
+        return this.getBannedWords().some(word => {
+            const escapedWord = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const regex = new RegExp(`(^|[^\\p{L}\\p{Nd}])${escapedWord}(?:s|x)?([^\\p{L}\\p{Nd}]|$)`, 'iu');
+            return regex.test(message);
+        });
     }
 
     getBannedWords() {

@@ -39,6 +39,14 @@ async function initializeApp() {
     setupSubgoalsConfig();
     loadDailySubsConfig();
     setupRouletteConfig();
+
+    try {
+        const version = await window.api.invoke('get-app-version');
+        const versionTag = document.getElementById('app-version-tag');
+        if (versionTag) versionTag.textContent = `v${version}`;
+    } catch (err) {
+        console.error('Could not fetch app version:', err);
+    }
 }
 
 async function loadAllData() {

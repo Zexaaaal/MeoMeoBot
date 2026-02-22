@@ -27,7 +27,7 @@ class EventSubHandler {
         }
 
         const url = this.reconnectUrl || 'wss://eventsub.wss.twitch.tv/ws';
-        // log.info(`[EventSub] Connexion à ${url}...`);
+        // log.info('EVENTSUB_CONNECTING', { url });
 
         this.ws = new WebSocket(url);
 
@@ -41,7 +41,7 @@ class EventSubHandler {
         });
 
         this.ws.on('close', (code, reason) => {
-            // log.info(`[EventSub] Déconnecté (code: ${code}). Reconnexion dans 5s...`);
+            // log.info('EVENTSUB_DISCONNECTED', { code });
             this.sessionId = null;
             this.reconnectUrl = null;
             setTimeout(() => this.connect(), 5000);
@@ -58,16 +58,16 @@ class EventSubHandler {
 
         if (messageType === 'session_welcome') {
             this.sessionId = payload.session.id;
-            // log.info(`[EventSub] Session accueillie : ${this.sessionId}`);
+            // log.info('EVENTSUB_SESSION_WELCOME', { sessionId: this.sessionId });
             this.subscribeToAllEvents();
         } else if (messageType === 'session_keepalive') {
 
         } else if (messageType === 'notification') {
-            // log.info(`[EventSub] NOTIFICATION reçue type: ${payload.subscription.type}`);
+            // log.info('EVENTSUB_NOTIFICATION_RECEIVED', { type: payload.subscription.type });
             this.handleNotification(payload);
         } else if (messageType === 'session_reconnect') {
             this.reconnectUrl = payload.session.reconnect_url;
-            // log.info(`[EventSub] Reconnexion demandée vers ${this.reconnectUrl}`);
+            // log.info('EVENTSUB_RECONNECT_REQUESTED', { url: this.reconnectUrl });
             this.connect();
         } else if (messageType === 'revocation') {
             log.warn('[EventSub] Souscription révoquée:', payload.subscription.type);
@@ -94,7 +94,7 @@ class EventSubHandler {
         for (const event of events) {
             try {
                 await this.subscribeToEvent(event.type, event.version, event.condition);
-                // log.info(`[EventSub] Souscription envoyée : ${event.type}`);
+                // log.info('EVENTSUB_SUBSCRIPTION_SENT', { type: event.type });
             } catch (e) {
                 log.error(`[EventSub] Échec souscription ${event.type} :`, e.message);
             }
@@ -134,7 +134,7 @@ class EventSubHandler {
         const { subscription, event } = payload;
         const type = subscription.type;
 
-        // log.info(`[EventSub] Notification reçue : ${type}`);
+        // log.info('EVENTSUB_NOTIFICATION_RECEIVED', { type });
 
         switch (type) {
             case 'channel.channel_points_custom_reward_redemption.add':
@@ -234,6 +234,9 @@ class EventSubHandler {
 
             case 'stream.online':
                 this.bot.resetDailySubCount();
+                if (event.started_at) {
+                    this.bot.saveWidgetConfig('subgoals', { lastStreamStart: event.started_at });
+                }
                 break;
         }
     }

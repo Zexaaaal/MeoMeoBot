@@ -168,8 +168,10 @@ class TwitchBot extends EventEmitter {
         const isCommand = message.startsWith('!');
         const autoMessages = config.autoMessages || [];
         const isAutoMessage = autoMessages.some(am => message === am.message);
+        const urlRegex = /(https?:\/\/[^\s]+|www\.[^\s]+|[a-zA-Z0-9-]+\.(com|org|net|fr|be|ch|ca|eu|tv|gg|me|io|co|info|biz)\b)/i;
+        const containsLink = urlRegex.test(message);
 
-        if (!isCommand && !isAutoMessage) {
+        if (!isCommand && !isAutoMessage && !containsLink) {
             this.emit('chat-message', messageData);
         }
 
@@ -330,19 +332,19 @@ class TwitchBot extends EventEmitter {
         const clientSecret = process.env.TWITCH_CLIENT_SECRET;
 
         if (!clientId || !clientSecret) {
-            log.info(`[DEBUG] Config Check - ClientID: ${!!clientId}, AppToken: ${!!configAppToken}, Secret: ${!!clientSecret}`);
-            log.info(`[DEBUG] Config Values - ID: ${configClientId ? 'OK' : 'MISSING'}, Token: ${configAppToken ? 'OK' : 'MISSING'}`);
+            log.info('BOT_DEBUG_CONFIG_CHECK', { clientId: !!clientId, configAppToken: !!configAppToken, clientSecret: !!clientSecret });
+            log.info('BOT_DEBUG_CONFIG_VALUES', { idStatus: configClientId ? 'OK' : 'MISSING', tokenStatus: configAppToken ? 'OK' : 'MISSING' });
         }
 
         if (!clientId || !clientSecret) {
             if (!this.badgesWarningLogged) {
-                log.warn("Badges désactivés : fournissez TWITCH_CLIENT_ID/TWITCH_CLIENT_SECRET dans .env ou twitchClientId/twitchAppToken dans la config.");
+                log.warn('BOT_BADGES_DISABLED');
                 this.badgesWarningLogged = true;
             }
             return;
         }
 
-        log.info("Génération d'un nouveau App Access Token Twitch...");
+        log.info('BOT_NEW_APP_TOKEN');
         const response = await fetch(`https://id.twitch.tv/oauth2/token?client_id=${clientId}&client_secret=${clientSecret}&grant_type=client_credentials`, {
             method: 'POST'
         });
@@ -415,12 +417,23 @@ class TwitchBot extends EventEmitter {
                 const startedAt = streamInfo.started_at;
                 const lastKnownStart = this.getWidgetConfig('subgoals')?.lastStreamStart;
 
-                if (startedAt !== lastKnownStart) {
-                    log.info(`[BOT] New stream detected (started at ${startedAt}). Resetting daily subs.`);
+                let isNewStream = startedAt !== lastKnownStart;
+
+                if (startedAt && lastKnownStart && isNewStream) {
+                    const time1 = new Date(startedAt).getTime();
+                    const time2 = new Date(lastKnownStart).getTime();
+                    if (!isNaN(time1) && !isNaN(time2) && Math.abs(time1 - time2) < 10000) {
+                        isNewStream = false;
+                        this.saveWidgetConfig('subgoals', { lastStreamStart: startedAt });
+                    }
+                }
+
+                if (isNewStream) {
+                    log.info('BOT_NEW_STREAM_DETECTED', { startedAt });
                     this.resetDailySubCount();
                     this.saveWidgetConfig('subgoals', { lastStreamStart: startedAt });
                 } else {
-                    log.info(`[BOT] Stream is live, but daily subs already tracked for this session.`);
+                    log.info('BOT_STREAM_ALREADY_TRACKED');
                 }
             }
         } catch (e) {

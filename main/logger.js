@@ -20,6 +20,25 @@ const LOG_MESSAGES = {
     BOT_OON_DEL_ERROR: "Erreur suppression commande !oon : {error}",
     BOT_STREAM_STATUS_ERROR: "Erreur vérification statut stream : {error}",
 
+    BOT_DEBUG_CONFIG_CHECK: "[DEBUG] Config Check - ClientID: {clientId}, AppToken: {configAppToken}, Secret: {clientSecret}",
+    BOT_DEBUG_CONFIG_VALUES: "[DEBUG] Config Values - ID: {idStatus}, Token: {tokenStatus}",
+    BOT_BADGES_DISABLED: "Badges désactivés : fournissez TWITCH_CLIENT_ID/TWITCH_CLIENT_SECRET dans .env ou twitchClientId/twitchAppToken dans la config.",
+    BOT_NEW_APP_TOKEN: "Génération d'un nouveau App Access Token Twitch...",
+    BOT_NEW_STREAM_DETECTED: "New stream detected (started at {startedAt}). Resetting daily subs.",
+    BOT_STREAM_ALREADY_TRACKED: "Stream is live, but daily subs already tracked for this session.",
+
+    // IPC
+    IPC_GET_CONFIG_CALLED: "get-config called",
+    IPC_RETURNING_CONFIG_KEYS: "returning config keys: {keys}",
+
+    // EVENTSUB
+    EVENTSUB_CONNECTING: "Connexion à {url}...",
+    EVENTSUB_DISCONNECTED: "Déconnecté (code: {code}). Reconnexion dans 5s...",
+    EVENTSUB_SESSION_WELCOME: "Session {sessionId}",
+    EVENTSUB_NOTIFICATION_RECEIVED: "Notification : {type}",
+    EVENTSUB_RECONNECT_REQUESTED: "Reconnexion demandée vers {url}",
+    EVENTSUB_SUBSCRIPTION_SENT: "Souscription envoyée : {type}",
+
     // MAIN APP
     MAIN_MSG_DELETED: "Message supprimé : {messageId}",
     MAIN_CHAT_CLEARED: "Tchat nettoyé",

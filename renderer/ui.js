@@ -23,12 +23,15 @@ export function setupWindowControls() {
     document.getElementById('close-btn').addEventListener('click', () => window.api.send('window-control', 'close'));
 }
 
+let updateStatusTimeout;
+
 export function updateUpdaterStatus(status) {
     const statusEl = document.getElementById('updateStatus');
     if (!statusEl) return;
 
     statusEl.className = 'status';
     statusEl.classList.add(status);
+    statusEl.style.display = '';
 
     const textEl = statusEl.querySelector('.update-text-label');
     if (status === 'checking') textEl.textContent = 'Recherche...';
@@ -37,6 +40,13 @@ export function updateUpdaterStatus(status) {
     if (status === 'downloading') textEl.textContent = 'Téléchargement...';
     if (status === 'downloaded') textEl.textContent = 'Prêt à installer';
     if (status === 'error') textEl.textContent = 'Erreur maj';
+
+    clearTimeout(updateStatusTimeout);
+    if (status === 'up-to-date' || status === 'error') {
+        updateStatusTimeout = setTimeout(() => {
+            statusEl.style.display = 'none';
+        }, 5000);
+    }
 }
 
 export const NOTIFICATIONS = {

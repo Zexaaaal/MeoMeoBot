@@ -2,7 +2,7 @@ const { contextBridge, ipcRenderer } = require('electron');
 
 const ALLOWED_INVOKE_CHANNELS = [
     'get-config', 'save-config', 'open-file-dialog', 'connect-bot', 'disconnect-bot',
-    'get-bot-status', 'get-banned-words', 'add-banned-word', 'remove-banned-word',
+    'get-app-version', 'get-bot-status', 'get-banned-words', 'add-banned-word', 'remove-banned-word',
     'clear-banned-words', 'trigger-alert-test', 'get-participants', 'is-giveaway-active',
     'start-giveaway', 'stop-giveaway', 'draw-winner', 'clear-participants', 'get-commands',
     'add-command', 'remove-command', 'get-widget-config', 'save-widget-config',

@@ -11,6 +11,8 @@ function registerHandlers(deps) {
         mediaServer
     } = deps;
 
+    ipcMain.handle('get-app-version', () => app.getVersion());
+
     ipcMain.handle('connect-bot', async () => {
         try { await bot.connect(); return { success: true }; }
         catch (error) { return { success: false, error: error.message }; }
@@ -22,9 +24,9 @@ function registerHandlers(deps) {
     });
 
     ipcMain.handle('get-config', () => {
-        // log.info('[IPC] get-config called');
+        // log.info('IPC_GET_CONFIG_CALLED');
         const config = bot.getConfig();
-        // log.info('[IPC] returning config keys:', Object.keys(config || {}));
+        // log.info('IPC_RETURNING_CONFIG_KEYS', { keys: Object.keys(config || {}).join(', ') });
         return config;
     });
     ipcMain.handle('get-bot-status', () => ({

@@ -1,9 +1,17 @@
 const Store = require('electron-store');
+const { app } = require('electron');
+const path = require('path');
 const defaults = require('./defaults');
+
+const isDev = !app.isPackaged;
 
 class ConfigManager {
     constructor() {
-        this.store = new Store({ defaults });
+        const storeOptions = { defaults };
+        if (isDev) {
+            storeOptions.cwd = path.join(__dirname, '..');
+        }
+        this.store = new Store(storeOptions);
     }
 
     get(key, defaultValue) {

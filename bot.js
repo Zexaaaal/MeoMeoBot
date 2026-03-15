@@ -260,6 +260,17 @@ class TwitchBot extends EventEmitter {
             return;
         }
 
+        if (command === '!naporaoult') {
+            if (this.isAuthorized(tags)) {
+                if (this.userId && this.clientId && tags['room-id'] && tags.id) {
+                    this.twitchAPI.deleteMessage(tags['room-id'], tags.id).catch(err =>
+                        log.error('BOT_NAPORAOULT_DEL_ERROR', { error: err.message || err }));
+                }
+                this.emit('naporaoult');
+            }
+            return;
+        }
+
         if (command === '!clip') {
             if (this.isConnected && !this.onCooldown && tags['room-id']) {
                 this.twitchAPI.createClip(tags['room-id'])

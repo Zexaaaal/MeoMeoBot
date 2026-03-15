@@ -45,6 +45,76 @@
             top: -100px;
             animation: fall linear forwards;
         }
+
+        .naporaoult-wrapper {
+            position: absolute;
+            right: 20px;
+            top: 50px;
+            width: 350px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transform-origin: top;
+            pointer-events: none;
+            z-index: 1000;
+            perspective: 1000px;
+        }
+
+        .naporaoult-scroll-area {
+            width: 100%;
+            overflow: hidden;
+            clip-path: inset(0 0 100% 0);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            opacity: 0;
+        }
+
+        .naporaoult-img {
+            width: 100%;
+            height: auto;
+            display: block;
+            background: #f4e4bc;
+        }
+
+        @keyframes parchment-scroll {
+            0% {
+                clip-path: inset(0 0 100% 0);
+                transform: translateY(-20px) rotateX(-15deg);
+                opacity: 0;
+            }
+
+            20% {
+                opacity: 1;
+            }
+
+            100% {
+                clip-path: inset(0 0 0 0);
+                transform: translateY(0) rotateX(0deg);
+                opacity: 1;
+            }
+        }
+
+        @keyframes textile-wave {
+            0%, 100% { transform: rotateY(0deg) translateZ(0); }
+            50% { transform: rotateY(3deg) translateZ(5px); }
+        }
+
+        @keyframes smoke-disappear {
+            0% { transform: scale(1); filter: blur(0) brightness(1); opacity: 1; }
+            30% { transform: scale(1.1); filter: blur(10px) brightness(1.5); opacity: 0.8; }
+            100% { transform: scale(1.6); filter: blur(60px) brightness(4); opacity: 0; }
+        }
+
+        .animate-scroll .naporaoult-scroll-area {
+            animation: parchment-scroll 2.5s cubic-bezier(0.1, 0.9, 0.2, 1) forwards;
+        }
+
+        .animate-scroll {
+            animation: textile-wave 5s ease-in-out infinite 2.5s;
+        }
+
+        .animate-smoke {
+            animation: smoke-disappear 1.5s ease-out forwards !important;
+        }
     </style>
     <style id="custom-css">
 
@@ -174,12 +244,44 @@
                     });
                 } else if (data.type === 'emote-rain' && data.emotes) {
                     startEmoteRain(data.emotes);
+                } else if (data.type === 'naporaoult') {
+                    showNaporaoult();
                 } else if (data.type === 'reload') {
                     window.location.reload();
                 }
             };
             ws.onclose = () => { setTimeout(connectWebSocket, 5000); };
             ws.onerror = () => { ws.close(); };
+        }
+
+        function showNaporaoult() {
+            console.log('[Naporaoult] Starting effect...');
+            const wrapper = document.createElement('div');
+            wrapper.className = 'naporaoult-wrapper animate-scroll';
+
+            const scrollArea = document.createElement('div');
+            scrollArea.className = 'naporaoult-scroll-area';
+
+            const img = document.createElement('img');
+            const assetPath = "e:\\01 - NE PAS SUPPRIMER\\Projets\\meomeobot\\assets\\naporaoult.jpg";
+            img.src = `/local-file?path=${encodeURIComponent(assetPath)}`;
+            img.className = 'naporaoult-img';
+            img.onload = () => console.log('[Naporaoult] Image loaded successfully:', img.src);
+            img.onerror = (e) => console.error('[Naporaoult] Failed to load image:', img.src, e);
+
+            scrollArea.appendChild(img);
+            wrapper.appendChild(scrollArea);
+            document.body.appendChild(wrapper);
+
+            setTimeout(() => {
+                console.log('[Naporaoult] Starting smoke effect...');
+                wrapper.classList.remove('animate-scroll');
+                wrapper.classList.add('animate-smoke');
+                wrapper.addEventListener('animationend', () => {
+                    wrapper.remove();
+                    console.log('[Naporaoult] Element removed');
+                }, { once: true });
+            }, 7500);
         }
 
         connectWebSocket();

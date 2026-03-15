@@ -21,7 +21,8 @@ const ALLOWED_INVOKE_CHANNELS = [
     'get-reward-folders', 'save-reward-folders',
     'twitch-get-steamgriddb-image', 'twitch-get-schedule', 'twitch-create-schedule-segment',
     'twitch-update-schedule-segment', 'twitch-delete-schedule-segment', 'save-planning-base64',
-    'is-dev', 'trigger-mock-redemption', 'update-config', 'get-system-fonts'
+    'is-dev', 'trigger-mock-redemption', 'update-config', 'get-system-fonts',
+    'sync-planning-discord', 'read-file-base64'
 ];
 
 const ALLOWED_SEND_CHANNELS = [

@@ -4,7 +4,9 @@ import { showNotification, ICONS } from './ui.js';
 let currentState = {
     weekStart: new Date(),
     startSunday: false,
+    compactMode: false,
     bgImage: null,
+    bgImagePath: null,
     title: "PLANNING",
     events: {}
 };
@@ -14,7 +16,7 @@ const els = {
     nextWeekBtn: document.getElementById('planning-next-week'),
     weekLabel: document.getElementById('planning-week-label'),
     titleInput: document.getElementById('planning-title-input'),
-    startSundayCheck: document.getElementById('planning-start-sunday'),
+    compactModeCheck: document.getElementById('planning-compact-mode'),
     bgInput: document.getElementById('planning-bg-input'),
     bgClearBtn: document.getElementById('planning-bg-clear-btn'),
     saveTwitchBtn: document.getElementById('planning-save-twitch-btn'),
@@ -86,8 +88,11 @@ function setupEventListeners() {
         renderHeader();
     });
 
-    els.startSundayCheck.addEventListener('change', (e) => {
-        currentState.startSunday = e.target.checked;
+    els.compactModeCheck.addEventListener('change', (e) => {
+        currentState.compactMode = e.target.checked;
+        if (els.previewCard) {
+            els.previewCard.classList.toggle('compact-mode', currentState.compactMode);
+        }
         saveState();
         renderAll();
     });
@@ -98,15 +103,20 @@ function setupEventListeners() {
     els.bgInput.addEventListener('click', async () => {
         const path = await api.invoke('open-file-dialog', [{ name: 'Images', extensions: ['png', 'jpg', 'jpeg', 'webp'] }]);
         if (path) {
-            currentState.bgImage = path;
-            els.bgInput.value = stripPrefix(path);
-            saveState();
-            renderHeader();
+            const dataUrl = await api.invoke('read-file-base64', path);
+            if (dataUrl) {
+                currentState.bgImage = dataUrl;
+                currentState.bgImagePath = path;
+                els.bgInput.value = stripPrefix(path);
+                saveState();
+                renderHeader();
+            }
         }
     });
 
     els.bgClearBtn.addEventListener('click', () => {
         currentState.bgImage = null;
+        currentState.bgImagePath = null;
         els.bgInput.value = '';
         saveState();
         renderHeader();
@@ -194,7 +204,7 @@ function setupEventListeners() {
         }
     });
 
-    els.saveTwitchBtn.addEventListener('click', syncToTwitch);
+    els.saveTwitchBtn.addEventListener('click', syncPlanning);
 
     if (els.loadPrevBtn) {
         els.loadPrevBtn.addEventListener('click', () => {
@@ -229,7 +239,9 @@ function setupEventListeners() {
 function saveState() {
     localStorage.setItem('planning_state', JSON.stringify({
         startSunday: currentState.startSunday,
+        compactMode: currentState.compactMode,
         bgImage: currentState.bgImage,
+        bgImagePath: currentState.bgImagePath,
         title: currentState.title,
         events: currentState.events
     }));
@@ -241,10 +253,25 @@ function loadState(loadEvents = false) {
         try {
             const parsed = JSON.parse(saved);
             if (parsed.startSunday !== undefined) currentState.startSunday = parsed.startSunday;
+            if (parsed.compactMode !== undefined) currentState.compactMode = parsed.compactMode;
             if (parsed.bgImage) {
                 currentState.bgImage = parsed.bgImage;
-                const stripPrefix = (path) => path ? path.replace(/^file:\/\/+/, '') : path;
-                els.bgInput.value = stripPrefix(parsed.bgImage);
+                if (parsed.bgImagePath) {
+                    currentState.bgImagePath = parsed.bgImagePath;
+                    els.bgInput.value = stripPrefix(parsed.bgImagePath);
+                } else if (parsed.bgImage.startsWith('data:')) {
+                    els.bgInput.value = '(image chargée)';
+                } else {
+                    const sp = (p) => p ? p.replace(/^file:\/\/+/, '') : p;
+                    els.bgInput.value = sp(parsed.bgImage);
+                    api.invoke('read-file-base64', sp(parsed.bgImage)).then(dataUrl => {
+                        if (dataUrl) {
+                            currentState.bgImage = dataUrl;
+                            saveState();
+                            renderHeader();
+                        }
+                    });
+                }
             }
             if (parsed.title !== undefined) {
                 currentState.title = parsed.title;
@@ -257,7 +284,10 @@ function loadState(loadEvents = false) {
             console.error("Error loading state", e);
         }
     }
-    els.startSundayCheck.checked = currentState.startSunday;
+    els.compactModeCheck.checked = currentState.compactMode;
+    if (els.previewCard) {
+        els.previewCard.classList.toggle('compact-mode', currentState.compactMode);
+    }
 }
 
 function importPreviousState() {
@@ -273,12 +303,32 @@ function importPreviousState() {
 
         if (parsed.startSunday !== undefined) {
             currentState.startSunday = parsed.startSunday;
-            els.startSundayCheck.checked = currentState.startSunday;
+        }
+        if (parsed.compactMode !== undefined) {
+            currentState.compactMode = parsed.compactMode;
+            els.compactModeCheck.checked = currentState.compactMode;
+            if (els.previewCard) {
+                els.previewCard.classList.toggle('compact-mode', currentState.compactMode);
+            }
         }
         if (parsed.bgImage) {
             currentState.bgImage = parsed.bgImage;
-            const stripPrefix = (path) => path ? path.replace(/^file:\/\/+/, '') : path;
-            els.bgInput.value = stripPrefix(parsed.bgImage);
+            if (parsed.bgImagePath) {
+                currentState.bgImagePath = parsed.bgImagePath;
+                els.bgInput.value = stripPrefix(parsed.bgImagePath);
+            } else if (parsed.bgImage.startsWith('data:')) {
+                els.bgInput.value = '(image chargée)';
+            } else {
+                const sp = (p) => p ? p.replace(/^file:\/\/+/, '') : p;
+                els.bgInput.value = sp(parsed.bgImage);
+                api.invoke('read-file-base64', sp(parsed.bgImage)).then(dataUrl => {
+                    if (dataUrl) {
+                        currentState.bgImage = dataUrl;
+                        saveState();
+                        renderHeader();
+                    }
+                });
+            }
         }
         if (parsed.title !== undefined) {
             currentState.title = parsed.title;
@@ -402,7 +452,7 @@ async function loadTwitchSchedule() {
     } catch (e) {
         console.error("Failed to load schedule", e);
     } finally {
-        els.saveTwitchBtn.textContent = 'Sync Twitch';
+        els.saveTwitchBtn.textContent = 'Sync';
         renderAll();
     }
 }
@@ -442,7 +492,11 @@ function renderHeader() {
     els.previewTitle.textContent = currentState.title;
 
     if (currentState.bgImage) {
-        els.previewBg.style.backgroundImage = `url('file://${currentState.bgImage.replace(/\\/g, '/')}')`;
+        if (currentState.bgImage.startsWith('data:')) {
+            els.previewBg.style.backgroundImage = `url('${currentState.bgImage}')`;
+        } else {
+            els.previewBg.style.backgroundImage = `url('file://${currentState.bgImage.replace(/\\/g, '/')}')`;
+        }
     } else {
         els.previewBg.style.backgroundImage = 'none';
         els.previewBg.style.background = 'linear-gradient(45deg, #1a1a1a, #2a2a2a)';
@@ -763,6 +817,14 @@ function renderEditor() {
 
                 resultsBox.innerHTML = '';
                 if (results && results.length > 0) {
+                    const queryTokens = query.toLowerCase().split(/\s+/);
+                    results.sort((a, b) => {
+                        const aWords = a.name.toLowerCase().split(/\s+/);
+                        const bWords = b.name.toLowerCase().split(/\s+/);
+                        const aScore = queryTokens.filter(t => aWords.includes(t)).length;
+                        const bScore = queryTokens.filter(t => bWords.includes(t)).length;
+                        return bScore - aScore;
+                    });
                     results.forEach(game => {
                         const r = document.createElement('div');
                         r.className = 'game-result-item';
@@ -808,30 +870,8 @@ function renderEditor() {
 }
 
 
-async function syncToTwitch() {
+async function syncPlanning() {
     const btn = els.saveTwitchBtn;
-
-    if (btn.dataset.confirming !== 'true') {
-        btn.dataset.confirming = 'true';
-        btn.textContent = 'Sûr ?';
-        btn.classList.add('btn-danger');
-        btn.classList.remove('btn-primary');
-
-        setTimeout(() => {
-            if (btn.dataset.confirming === 'true') {
-                btn.dataset.confirming = 'false';
-                btn.textContent = 'Sync Twitch';
-                btn.classList.remove('btn-danger');
-                btn.classList.add('btn-primary');
-            }
-        }, 3000);
-        return;
-    }
-
-    btn.dataset.confirming = 'false';
-    btn.classList.remove('btn-danger');
-    btn.classList.remove('btn-secondary');
-    btn.classList.add('btn-primary');
 
     btn.disabled = true;
     btn.textContent = 'Sync...';
@@ -902,10 +942,75 @@ async function syncToTwitch() {
 
         loadTwitchSchedule();
     } catch (e) {
-        console.error("Sync failed", e);
-        showNotification(window.logger.format(window.logger.MESSAGES.NOTIF_SYNC_ERROR, { error: e.message }), 'error');
+        console.error("Twitch sync failed", e);
+    }
+
+    try {
+        await syncDiscord();
+    } catch (e) {
+        console.error("Discord sync failed", e);
+        showNotification(`Discord: ${e.message}`, 'error');
+    }
+
+    btn.disabled = false;
+    btn.innerHTML = 'Sync';
+}
+
+async function syncDiscord() {
+    const card = els.previewCard;
+    const clone = card.cloneNode(true);
+
+    clone.style.width = '1800px';
+    clone.style.height = '940px';
+    clone.style.transform = 'none';
+    clone.style.position = 'absolute';
+    clone.style.top = '0';
+    clone.style.left = '-9999px';
+    clone.style.zIndex = '-1';
+
+    document.body.appendChild(clone);
+
+    try {
+        const images = Array.from(clone.querySelectorAll('img'));
+        await Promise.all(images.map(img => {
+            if (img.complete) return Promise.resolve();
+            return new Promise(resolve => {
+                img.onload = resolve;
+                img.onerror = resolve;
+            });
+        }));
+
+        await new Promise(r => setTimeout(r, 200));
+
+        const canvas = await html2canvas(clone, {
+            backgroundColor: null,
+            scale: 1,
+            width: 1800,
+            height: 940,
+            useCORS: true,
+            allowTaint: true
+        });
+
+        const dataURL = canvas.toDataURL('image/jpeg', 0.85);
+
+        const start = new Date(currentState.weekStart);
+        if (currentState.startSunday) start.setDate(start.getDate() - 1);
+        const end = new Date(start);
+        end.setDate(end.getDate() + 6);
+        const fmt = (d) => `${d.getDate().toString().padStart(2, '0')}.${(d.getMonth() + 1).toString().padStart(2, '0')}`;
+        const discordTitle = `# ${currentState.title} du ${fmt(start)} au ${fmt(end)}`;
+
+        const res = await api.invoke('sync-planning-discord', dataURL, discordTitle);
+
+        if (res.success) {
+            showNotification('Discord sync OK', 'success');
+        } else if (res.error) {
+            showNotification(`Discord: ${res.error}`, 'error');
+        }
+    } catch (err) {
+        console.error('Discord sync error', err);
+        showNotification(`Discord sync error: ${err.message}`, 'error');
     } finally {
-        els.saveTwitchBtn.disabled = false;
-        els.saveTwitchBtn.innerHTML = 'Sync Twitch';
+        document.body.removeChild(clone);
     }
 }

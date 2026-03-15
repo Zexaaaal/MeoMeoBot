@@ -194,6 +194,7 @@ async function saveConfig() {
         spotifyClientSecret: document.getElementById('config-spotifyClientSecret').value,
         streamlabsSocketToken: document.getElementById('config-streamlabsSocketToken').value,
         steamGridDbApiKey: document.getElementById('config-steamGridDbApiKey').value,
+        discordWebhookUrl: document.getElementById('config-discordWebhookUrl').value,
         giveawayCommand: document.getElementById('giveawayCommand').value,
         giveawayStartMessage: document.getElementById('giveawayStartMessage').value,
         giveawayStopMessage: document.getElementById('giveawayStopMessage').value,
@@ -219,6 +220,7 @@ function updateConfigForm(config) {
     document.getElementById('config-spotifyClientSecret').value = config.spotifyClientSecret || '';
     document.getElementById('config-streamlabsSocketToken').value = config.streamlabsSocketToken || '';
     document.getElementById('config-steamGridDbApiKey').value = config.steamGridDbApiKey || '';
+    document.getElementById('config-discordWebhookUrl').value = config.discordWebhookUrl || '';
 
     document.getElementById('giveawayCommand').value = config.giveawayCommand || '!giveaway';
     document.getElementById('giveawayStartMessage').value = config.giveawayStartMessage !== undefined ? config.giveawayStartMessage : 'Le giveaway commence ! Tape !giveaway pour participer.';

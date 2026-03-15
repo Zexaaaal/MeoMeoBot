@@ -151,6 +151,13 @@ const LOG_MESSAGES = {
     ALERTS_ADDED_QUEUE: "Ajouté à la file d'attente : {type}",
     ALERTS_SAFETY_TIMEOUT: "Safety timeout triggered - forcing next alert",
 
+    // DISCORD
+    DISCORD_SYNC_FAILED: "Erreur sync Discord : {error}",
+    DISCORD_MESSAGE_CREATED: "Message Discord créé : {messageId}",
+    DISCORD_MESSAGE_UPDATED: "Message Discord mis à jour : {messageId}",
+    DISCORD_EDIT_FAILED_CREATING_NEW: "Édition échouée ({error}), création d'un nouveau message...",
+    READ_FILE_BASE64_FAILED: "Erreur lecture fichier base64 : {error}",
+
     // CONFIG
     CONFIG_STORE_PATH: "Chemin de stockage : {path}",
 

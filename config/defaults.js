@@ -20,7 +20,9 @@ module.exports = {
         spotifyClientSecret: "",
         spotifyAccessToken: "",
         spotifyRefreshToken: "",
-        spotifyTokenExpiry: 0
+        spotifyTokenExpiry: 0,
+        discordWebhookUrl: "",
+        discordPlanningMessageId: ""
     },
     widgets: {
         chat: {

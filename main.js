@@ -222,6 +222,10 @@ function setupBotEvents() {
         if (chatServer) chatServer.broadcast({ type: 'emote-rain', emotes });
     });
 
+    bot.on('naporaoult', () => {
+        if (chatServer) chatServer.broadcast({ type: 'naporaoult' });
+    });
+
     bot.on('alert', (alert) => {
         if (alertsWidgetServer) alertsWidgetServer.addToQueue(alert);
     });

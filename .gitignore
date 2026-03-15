@@ -35,3 +35,6 @@ release-notes.temp.md
 increment-version.js
 dev_options.js
 publish.js
+
+# Dev config (electron-store)
+config.json

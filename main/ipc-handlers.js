@@ -2,6 +2,7 @@ const { ipcMain, BrowserWindow, dialog, shell, app } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const log = require('./logger').tagged('IPC');
+const { sendPlanningToDiscord } = require('./DiscordSync');
 
 function registerHandlers(deps) {
     const {
@@ -334,6 +335,42 @@ function registerHandlers(deps) {
             return { success: true, filePath };
         } catch (e) {
             log.error('Error saving planning image:', e);
+            return { success: false, error: e.message };
+        }
+    });
+
+    ipcMain.handle('read-file-base64', async (event, filePath) => {
+        try {
+            const ext = path.extname(filePath).toLowerCase().replace('.', '');
+            const mime = { png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', webp: 'image/webp', gif: 'image/gif' }[ext] || 'image/png';
+            const data = await fs.promises.readFile(filePath);
+            return `data:${mime};base64,${data.toString('base64')}`;
+        } catch (e) {
+            log.error('READ_FILE_BASE64_FAILED', { error: e.message });
+            return null;
+        }
+    });
+
+    ipcMain.handle('sync-planning-discord', async (event, imageBase64, title) => {
+        const config = bot.getConfig();
+        const webhookUrl = config.discordWebhookUrl;
+        if (!webhookUrl) return { success: false, error: 'Aucun webhook Discord configuré' };
+
+        try {
+            const result = await sendPlanningToDiscord(
+                webhookUrl,
+                imageBase64,
+                title,
+                config.discordPlanningMessageId || null
+            );
+
+            if (result.success && result.messageId) {
+                bot.updateConfig({ discordPlanningMessageId: result.messageId });
+            }
+
+            return result;
+        } catch (e) {
+            log.error('DISCORD_SYNC_FAILED', { error: e.message });
             return { success: false, error: e.message };
         }
     });

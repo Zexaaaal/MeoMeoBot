@@ -94,14 +94,35 @@
         }
 
         @keyframes textile-wave {
-            0%, 100% { transform: rotateY(0deg) translateZ(0); }
-            50% { transform: rotateY(3deg) translateZ(5px); }
+
+            0%,
+            100% {
+                transform: rotateY(0deg) translateZ(0);
+            }
+
+            50% {
+                transform: rotateY(3deg) translateZ(5px);
+            }
         }
 
         @keyframes smoke-disappear {
-            0% { transform: scale(1); filter: blur(0) brightness(1); opacity: 1; }
-            30% { transform: scale(1.1); filter: blur(10px) brightness(1.5); opacity: 0.8; }
-            100% { transform: scale(1.6); filter: blur(60px) brightness(4); opacity: 0; }
+            0% {
+                transform: scale(1);
+                filter: blur(0) brightness(1);
+                opacity: 1;
+            }
+
+            30% {
+                transform: scale(1.1);
+                filter: blur(10px) brightness(1.5);
+                opacity: 0.8;
+            }
+
+            100% {
+                transform: scale(1.6);
+                filter: blur(60px) brightness(4);
+                opacity: 0;
+            }
         }
 
         .animate-scroll .naporaoult-scroll-area {
@@ -263,8 +284,7 @@
             scrollArea.className = 'naporaoult-scroll-area';
 
             const img = document.createElement('img');
-            const assetPath = "e:\\01 - NE PAS SUPPRIMER\\Projets\\meomeobot\\assets\\naporaoult.jpg";
-            img.src = `/local-file?path=${encodeURIComponent(assetPath)}`;
+            img.src = `/widget/assets/naporaoult.jpg`;
             img.className = 'naporaoult-img';
             img.onload = () => console.log('[Naporaoult] Image loaded successfully:', img.src);
             img.onerror = (e) => console.error('[Naporaoult] Failed to load image:', img.src, e);

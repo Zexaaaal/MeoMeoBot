@@ -39,7 +39,7 @@ const DAYS_FR = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'D
 export function initPlanning() {
     setupEventListeners();
     initWeek();
-    loadState();
+    loadState(true);
     renderAll();
     loadTwitchSchedule();
     fitPreview();
@@ -382,9 +382,6 @@ function changeWeek(days) {
     const newDate = new Date(currentState.weekStart);
     newDate.setDate(newDate.getDate() + days);
     currentState.weekStart = newDate;
-
-    currentState.events = {};
-
     renderAll();
     loadTwitchSchedule();
 }
@@ -407,8 +404,7 @@ async function loadTwitchSchedule() {
     els.saveTwitchBtn.textContent = "⏳ Sync...";
     try {
         const schedule = await api.invoke('twitch-get-schedule');
-
-        if (schedule && schedule.segments) {
+        if (schedule && schedule.segments && schedule.segments.length > 0) {
             for (let i = 0; i < 7; i++) {
                 currentState.events[getDateKeyForDayIndex(i)] = [];
             }
@@ -423,7 +419,6 @@ async function loadTwitchSchedule() {
                 if (currentState.events[dateKey]) {
                     const h = d.getHours().toString().padStart(2, '0');
                     const m = d.getMinutes().toString().padStart(2, '0');
-
 
                     let endTime = null;
                     if (seg.end_time) {
@@ -448,9 +443,12 @@ async function loadTwitchSchedule() {
                     });
                 }
             });
+            saveState();
+        } else {
+            console.log("[Planning] No schedule segments found on Twitch, keeping local segments.");
         }
     } catch (e) {
-        console.error("Failed to load schedule", e);
+        console.error("Failed to load schedule from Twitch:", e);
     } finally {
         els.saveTwitchBtn.textContent = 'Sync';
         renderAll();

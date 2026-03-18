@@ -69,6 +69,16 @@ const LOG_MESSAGES = {
     SERVER_STOPPING: "Arrêt du serveur.",
     SERVER_CLOSE_ERR: "Erreur arrêt serveur :",
 
+    // AUTO UPDATER
+    AUTO_UPDATER_CHECKING: "[AUTO-UPDATER] Checking for update...",
+    AUTO_UPDATER_AVAILABLE: "[AUTO-UPDATER] Update available: {version}",
+    AUTO_UPDATER_NOT_AVAILABLE: "[AUTO-UPDATER] Update not available. Current version is latest.",
+    AUTO_UPDATER_DOWNLOADED: "[AUTO-UPDATER] Update downloaded, ready to install.",
+    AUTO_UPDATER_ERROR: "[AUTO-UPDATER ERROR] Erreur de mise à jour: {error}",
+    AUTO_UPDATER_DEV_CHECK: "[AUTO-UPDATER] Dev mode: check-for-updates triggered (simulated)",
+    AUTO_UPDATER_MANUAL_CHECK: "[AUTO-UPDATER] Manual update check triggered",
+    AUTO_UPDATER_PERIODIC_CHECK: "[AUTO-UPDATER] Vérification des mises à jour (15 min)...",
+
     WIDGET_CONNECTED: "Connecté au serveur",
     WIDGET_DISCONNECTED: "Déconnecté. Reconnexion dans 3s...",
     WIDGET_WS_ERROR: "Erreur WS : {error}",

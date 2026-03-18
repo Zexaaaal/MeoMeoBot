@@ -12,28 +12,28 @@ autoUpdater.verifyUpdateCodeSignature = false;
 
 function init(mainWindow) {
     autoUpdater.on('checking-for-update', () => {
-        log.info('[AUTO-UPDATER] Checking for update...');
+        log.info('AUTO_UPDATER_CHECKING');
         mainWindow.webContents.send('update-status-check', { status: 'checking' });
     });
 
     autoUpdater.on('update-available', (info) => {
-        log.info(`[AUTO-UPDATER] Update available: ${info.version}`);
+        log.info('AUTO_UPDATER_AVAILABLE', { version: info.version });
         mainWindow.webContents.send('update-available');
         if (updateCheckTimer) clearInterval(updateCheckTimer);
     });
 
     autoUpdater.on('update-not-available', (info) => {
-        log.info(`[AUTO-UPDATER] Update not available. Current version is latest.`);
+        log.info('AUTO_UPDATER_NOT_AVAILABLE');
         mainWindow.webContents.send('update-status-check', { status: 'up-to-date' });
     });
 
     autoUpdater.on('update-downloaded', () => {
-        log.info('[AUTO-UPDATER] Update downloaded, ready to install.');
+        log.info('AUTO_UPDATER_DOWNLOADED');
         mainWindow.webContents.send('update-downloaded');
     });
 
     autoUpdater.on('error', (err) => {
-        log.error(`[AUTO-UPDATER ERROR] Erreur de mise à jour: ${err}`);
+        log.error('AUTO_UPDATER_ERROR', { error: err.message || err });
         mainWindow.webContents.send('update-status-check', { status: 'error' });
     });
 
@@ -48,7 +48,7 @@ function init(mainWindow) {
 
     ipcMain.on('check-for-updates', () => {
         if (!app.isPackaged) {
-            log.info('[AUTO-UPDATER] Dev mode: check-for-updates triggered (simulated)');
+            log.info('AUTO_UPDATER_DEV_CHECK');
             mainWindow.webContents.send('update-status-check', { status: 'checking' });
             setTimeout(() => {
                 mainWindow.webContents.send('update-status-check', { status: 'up-to-date' });
@@ -56,7 +56,7 @@ function init(mainWindow) {
             return;
         }
 
-        log.info('[AUTO-UPDATER] Manual update check triggered');
+        log.info('AUTO_UPDATER_MANUAL_CHECK');
         checkNow();
         mainWindow.webContents.send('update-status-check', { status: 'checking' });
     });
@@ -66,7 +66,7 @@ function startCheckLoop() {
     if (updateCheckTimer) clearInterval(updateCheckTimer);
     updateCheckTimer = setInterval(() => {
         if (app.isPackaged) {
-            log.info('[AUTO-UPDATER] Vérification des mises à jour (15 min)...');
+            log.info('AUTO_UPDATER_PERIODIC_CHECK');
             autoUpdater.checkForUpdates();
         }
     }, UPDATE_CHECK_INTERVAL);

@@ -159,22 +159,39 @@ class BaseWidgetServer {
             res.end(data);
         });
     }
-
     serveAsset(req, res) {
         const cleanUrl = req.url.split('?')[0];
         const assetName = cleanUrl.replace('/widget/assets/', '');
         const safeName = path.normalize(assetName).replace(/^(\.\.[\/\\])+/, '');
-        const assetPath = path.join(__dirname, '..', 'widgets', 'assets', safeName);
+        const pathsToTry = [
+            path.join(__dirname, '..', 'widgets', 'assets', safeName),
+            path.join(__dirname, '..', 'assets', safeName)
+        ];
 
-        fs.readFile(assetPath, (err, data) => {
+        let foundPath = null;
+        for (const p of pathsToTry) {
+            if (fs.existsSync(p)) {
+                foundPath = p;
+                break;
+            }
+        }
+
+        if (!foundPath) {
+            log.error('SERVER_ASSET_NOT_FOUND', { name: safeName, tried: pathsToTry });
+            res.statusCode = 404;
+            return res.end('Asset Not Found');
+        }
+
+        fs.readFile(foundPath, (err, data) => {
             if (err) {
-                res.statusCode = 404;
-                return res.end('Asset Not Found');
+                res.statusCode = 500;
+                return res.end('Internal Server Error');
             }
 
-            const ext = path.extname(assetPath).toLowerCase();
+            const ext = path.extname(foundPath).toLowerCase();
             res.statusCode = 200;
             res.setHeader('Content-Type', MIME_TYPES[ext] || 'application/octet-stream');
+            res.setHeader('Access-Control-Allow-Origin', '*');
             res.end(data);
         });
     }

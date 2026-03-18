@@ -276,7 +276,6 @@
         }
 
         function showNaporaoult() {
-            console.log('[Naporaoult] Starting effect...');
             const wrapper = document.createElement('div');
             wrapper.className = 'naporaoult-wrapper animate-scroll';
 
@@ -284,7 +283,7 @@
             scrollArea.className = 'naporaoult-scroll-area';
 
             const img = document.createElement('img');
-            img.src = `/widget/assets/naporaoult.jpg`;
+            img.src = `/widget/assets/naporaoult.jpg?t=${Date.now()}`;
             img.className = 'naporaoult-img';
             img.onload = () => console.log('[Naporaoult] Image loaded successfully:', img.src);
             img.onerror = (e) => console.error('[Naporaoult] Failed to load image:', img.src, e);
@@ -294,12 +293,10 @@
             document.body.appendChild(wrapper);
 
             setTimeout(() => {
-                console.log('[Naporaoult] Starting smoke effect...');
                 wrapper.classList.remove('animate-scroll');
                 wrapper.classList.add('animate-smoke');
                 wrapper.addEventListener('animationend', () => {
                     wrapper.remove();
-                    console.log('[Naporaoult] Element removed');
                 }, { once: true });
             }, 7500);
         }

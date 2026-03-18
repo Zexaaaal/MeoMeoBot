@@ -34,12 +34,10 @@
   "build": {
     "appId": "com.meomeobot.app",
     "productName": "MeoMeoBot",
+    "artifactName": "${productName}-Setup-${version}.${ext}",
     "publish": {
-      "provider": "github",
-      "owner": "Zexaaaal",
-      "repo": "MeoMeoBot",
-      "releaseType": "release",
-      "vPrefixedTagName": false
+      "provider": "generic",
+      "url": "https://github.com/Zexaaaal/MeoMeoBot/releases/download/release"
     },
     "win": {
       "target": "nsis",

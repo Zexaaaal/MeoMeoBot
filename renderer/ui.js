@@ -31,7 +31,6 @@ export function updateUpdaterStatus(status) {
 
     statusEl.className = 'status';
     statusEl.classList.add(status);
-    statusEl.style.display = '';
 
     const textEl = statusEl.querySelector('.update-text-label');
     if (status === 'checking') textEl.textContent = 'Recherche...';
@@ -41,10 +40,13 @@ export function updateUpdaterStatus(status) {
     if (status === 'downloaded') textEl.textContent = 'Prêt à installer';
     if (status === 'error') textEl.textContent = 'Erreur maj';
 
+    // Reveal the tag with transition
+    statusEl.classList.add('status-visible');
+
     clearTimeout(updateStatusTimeout);
     if (status === 'up-to-date' || status === 'error') {
         updateStatusTimeout = setTimeout(() => {
-            statusEl.style.display = 'none';
+            statusEl.classList.remove('status-visible');
         }, 5000);
     }
 }

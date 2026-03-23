@@ -40,14 +40,15 @@
       "url": "https://github.com/Zexaaaal/MeoMeoBot/releases/download/release"
     },
     "win": {
-      "target": "nsis",
+      "target": "nsis-web",
       "icon": "assets/icon.png"
     },
-    "nsis": {
+    "nsisWeb": {
       "oneClick": true,
       "createDesktopShortcut": true,
       "runAfterFinish": true,
-      "uninstallDisplayName": "${productName}"
+      "uninstallDisplayName": "${productName}",
+      "artifactName": "${productName}-WebSetup-${version}.${ext}"
     },
     "files": [
       "main.js",

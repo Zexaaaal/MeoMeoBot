@@ -1,0 +1,122 @@
+name: Build & Publish
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  publish:
+    runs-on: windows-latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GH_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Increment version
+        run: node increment-version.js
+
+      - name: Read version
+        id: version
+        shell: pwsh
+        run: |
+          $v = (Get-Content package.json | ConvertFrom-Json).version
+          echo "VERSION=$v" >> $env:GITHUB_OUTPUT
+          Write-Host "Building version $v"
+
+      - name: Build nsis-web
+        run: npx electron-builder --win
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+
+      - name: Upload to GitHub Release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          VERSION: ${{ steps.version.outputs.VERSION }}
+        run: |
+          $distDir = "dist"
+          $repo = "${{ github.repository }}"
+          $tag = "release"
+          $headers = @{
+            Authorization = "token $env:GH_TOKEN"
+            Accept = "application/vnd.github.v3+json"
+          }
+
+          # Get or create the release
+          try {
+            $release = Invoke-RestMethod -Uri "https://api.github.com/repos/$repo/releases/tags/$tag" -Headers $headers
+            Write-Host "Found existing release (ID: $($release.id))"
+          } catch {
+            Write-Host "Release not found, creating..."
+            $body = @{
+              tag_name = $tag
+              name = "Latest"
+              body = "meow meow meow meow"
+              draft = $false
+              prerelease = $false
+            } | ConvertTo-Json
+            $release = Invoke-RestMethod -Uri "https://api.github.com/repos/$repo/releases" -Method Post -Headers $headers -Body $body -ContentType "application/json"
+            Write-Host "Created release (ID: $($release.id))"
+          }
+
+          # Delete old assets
+          foreach ($asset in $release.assets) {
+            Write-Host "Deleting $($asset.name)..."
+            Invoke-RestMethod -Uri "https://api.github.com/repos/$repo/releases/assets/$($asset.id)" -Method Delete -Headers $headers
+          }
+
+          # Upload new assets
+          $files = @(
+            "MeoMeoBot-WebSetup-$env:VERSION.exe",
+            "MeoMeoBot-$env:VERSION-x64.nsis.7z",
+            "MeoMeoBot-$env:VERSION-x64.nsis.7z.blockmap",
+            "latest.yml"
+          )
+
+          $uploadBase = $release.upload_url -replace '\{\?name,label\}', ''
+
+          foreach ($fileName in $files) {
+            $filePath = Join-Path $distDir $fileName
+            if (Test-Path $filePath) {
+              $size = (Get-Item $filePath).Length
+              $sizeMB = [math]::Round($size / 1MB, 1)
+              Write-Host "Uploading $fileName ($sizeMB MB)..."
+              
+              $uploadUrl = "${uploadBase}?name=$([uri]::EscapeDataString($fileName))"
+              $bytes = [System.IO.File]::ReadAllBytes((Resolve-Path $filePath))
+              
+              Invoke-RestMethod -Uri $uploadUrl -Method Post -Headers @{
+                Authorization = "token $env:GH_TOKEN"
+                Accept = "application/vnd.github.v3+json"
+                "Content-Type" = "application/octet-stream"
+              } -Body $bytes | Out-Null
+              
+              Write-Host "Uploaded $fileName"
+            } else {
+              Write-Warning "File not found: $filePath"
+            }
+          }
+
+          # Update git tag
+          try {
+            git tag -d $tag 2>$null
+            git tag $tag
+            git push origin $tag --force
+            Write-Host "Git tag '$tag' updated"
+          } catch {
+            Write-Warning "Failed to update git tag: $_"
+          }
+
+          Write-Host "Publish completed!"

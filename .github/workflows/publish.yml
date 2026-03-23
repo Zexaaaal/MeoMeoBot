@@ -66,7 +66,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
           VERSION: ${{ steps.version.outputs.VERSION }}
         run: |
-          $distDir = "dist"
+          $distDir = "dist/nsis-web"
           $repo = "${{ github.repository }}"
           $tag = "release"
           $headers = @{
@@ -100,8 +100,7 @@ jobs:
           # Upload new assets
           $files = @(
             "MeoMeoBot-WebSetup-$env:VERSION.exe",
-            "MeoMeoBot-$env:VERSION-x64.nsis.7z",
-            "MeoMeoBot-$env:VERSION-x64.nsis.7z.blockmap",
+            "meomeobot-$env:VERSION-x64.nsis.7z",
             "latest.yml"
           )
 

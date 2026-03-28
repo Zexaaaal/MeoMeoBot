@@ -250,8 +250,6 @@ class RewardsManager {
         log.info('REWARDS_BINDINGS', { bindings: JSON.stringify(rewardFunctions) });
         log.info('REWARDS_FUNC', { func: boundFunction || 'NONE' });
 
-        if (!boundFunction) return;
-
         const sound = config.rewardSounds ? config.rewardSounds[rewardId] : null;
         let volume = config.pointsGlobalVolume !== undefined ? config.pointsGlobalVolume : 0.5;
 
@@ -266,6 +264,8 @@ class RewardsManager {
             };
             this.bot.emit('alert', alertPayload);
         }
+
+        if (!boundFunction) return;
 
         if (boundFunction === 'emote_rain') {
             this.triggerEmoteRain(rewardId);

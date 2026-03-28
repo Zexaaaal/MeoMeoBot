@@ -67,7 +67,7 @@ function startCheckLoop() {
     updateCheckTimer = setInterval(() => {
         if (app.isPackaged) {
             log.info('AUTO_UPDATER_PERIODIC_CHECK');
-            autoUpdater.checkForUpdates();
+            autoUpdater.checkForUpdates().catch(err => log.error('AUTO_UPDATER_PROMISE_ERR', { error: err.message || err }));
         }
     }, UPDATE_CHECK_INTERVAL);
 }
@@ -81,7 +81,7 @@ function stopCheckLoop() {
 
 function checkNow() {
     if (app.isPackaged) {
-        autoUpdater.checkForUpdates();
+        autoUpdater.checkForUpdates().catch(err => log.error('AUTO_UPDATER_PROMISE_ERR', { error: err.message || err }));
     }
 }
 

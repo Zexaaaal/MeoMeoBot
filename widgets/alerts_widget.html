@@ -57,6 +57,16 @@
         const host = window.location.host;
         let ws;
 
+        const urlParams = new URLSearchParams(window.location.search);
+        // 'main' (Master): plays visuals for ALL alerts, plays audio ONLY for NOT isVod. Sends 'alert-finished'.
+        // 'vod-audio' (Slave): plays NO visuals, plays audio ONLY for isVod. NEVER sends 'alert-finished'.
+        // null/default: Legacy. Plays everything and sends 'alert-finished'.
+        const mode = urlParams.get('mode'); 
+
+        if (mode === 'vod-audio') {
+            document.body.style.display = 'none'; // Ensure no visuals on slave source
+        }
+
         function log(msg, err) {
             console.log(`[AlertsWidget] ${msg}`, err || '');
             if (err) console.error(err);
@@ -107,9 +117,39 @@
 
         async function playAlert(alert) {
             try {
+                const isVodAlert = !!alert.isVod;
+
+                // ==================== VOD-AUDIO SLAVE MODE ====================
+                if (mode === 'vod-audio') {
+                    if (!isVodAlert) return; // Do nothing for non-VOD alerts
+                    
+                    if (alert.audio) {
+                        audio.src = alert.audio;
+                        audio.volume = alert.volume !== undefined ? alert.volume : 0.5;
+                        try {
+                            if (alert.type === 'donation' && alert.message) {
+                                await new Promise((resolve) => {
+                                    audio.onended = resolve;
+                                    audio.onerror = resolve;
+                                    audio.play().catch(e => { log('Audio fail', e); resolve(); });
+                                });
+                            } else {
+                                audio.play().catch(e => log('Audio fail', e));
+                            }
+                        } catch (e) {}
+                    }
+                    
+                    if (alert.type === 'donation' && alert.message) {
+                        await speakMessage(alert.message);
+                    }
+                    return; // SLAVE MUST NEVER SEND alert-finished! (Master handles the queue)
+                }
+
+                // ==================== MASTER OR LEGACY MODE ====================
                 log('Playing alert:', alert);
                 imgContainer.innerHTML = '';
                 textContainer.innerHTML = alert.text || '';
+                
                 if (alert.type === 'donation') {
                     msgContainer.innerHTML = '';
                     msgContainer.style.display = 'none';
@@ -118,11 +158,16 @@
                     msgContainer.style.display = 'block';
                 }
 
-                if (alert.audio) {
+                // If we are in explicit 'main' mode, do NOT play audio if it's a VOD alert 
+                // (it will be handled by the 'vod-audio' slave).
+                // If we are legacy (no mode specified), play audio normally.
+                const playAudioHere = (mode === 'main') ? !isVodAlert : true;
+
+                if (alert.audio && playAudioHere) {
                     audio.src = alert.audio;
                     audio.volume = alert.volume !== undefined ? alert.volume : 0.5;
                 } else {
-                    audio.removeAttribute('src');
+                    audio.removeAttribute('src'); // Do not play
                 }
 
                 const hasVisuals = alert.image || alert.text || alert.message;
@@ -145,26 +190,38 @@
                 }
 
                 const duration = (alert.duration || 5000);
+                
                 if (alert.type === 'donation' && alert.message) {
                     if (alert.audio) {
-                        try {
-                            await new Promise((resolve) => {
-                                audio.onended = resolve;
-                                audio.onerror = resolve;
-                                audio.play().catch(e => { log('Audio fail', e); resolve(); });
-                            });
-                        } catch (e) { log('Audio promise error', e); }
+                        if (playAudioHere) {
+                            try {
+                                await new Promise((resolve) => {
+                                    audio.onended = resolve;
+                                    audio.onerror = resolve;
+                                    audio.play().catch(e => { log('Audio fail', e); resolve(); });
+                                });
+                            } catch (e) { log('Audio promise error', e); }
+                        } else {
+                            // If VOD audio is handled by slave, we wait briefly as an approximation
+                            await new Promise(resolve => setTimeout(resolve, 2000));
+                        }
                     }
-                    const ttsStart = Date.now();
-                    await speakMessage(alert.message);
-                    const ttsElapsed = Date.now() - ttsStart;
-                    if (ttsElapsed < 500) {
-                        log('TTS too fast/failed, falling back to standard duration');
+                    
+                    if (playAudioHere) {
+                        const ttsStart = Date.now();
+                        await speakMessage(alert.message);
+                        const ttsElapsed = Date.now() - ttsStart;
+                        if (ttsElapsed < 500) {
+                            log('TTS too fast/failed, falling back to standard duration');
+                            await new Promise(resolve => setTimeout(resolve, duration));
+                        }
+                    } else {
+                        // VOD TTS handled by slave, wait duration
                         await new Promise(resolve => setTimeout(resolve, duration));
                     }
 
                 } else {
-                    if (alert.audio) {
+                    if (alert.audio && playAudioHere) {
                         audio.play().catch(e => log('Audio playback failed', e));
                     }
                     await new Promise(resolve => setTimeout(resolve, duration));
@@ -175,9 +232,12 @@
 
             } catch (err) {
                 log('Error in playAlert', err);
-                ws.send(JSON.stringify({ type: 'alert-finished' }));
+                if (mode !== 'vod-audio') {
+                    ws.send(JSON.stringify({ type: 'alert-finished' }));
+                }
             }
         }
+
         function speakMessage(text) {
             return new Promise((resolve) => {
                 log('Playing TTS via Local Proxy for OBS compatibility');
@@ -204,12 +264,14 @@
         }
 
         function stopAlert() {
+            if (mode === 'vod-audio') return; // Slave never handles stops/visuals visually
+            
             log('Stopping alert');
             container.classList.remove('animate-in');
             container.classList.add('animate-out');
 
             let fadeOut = setInterval(() => {
-                if (audio.volume > 0.05) {
+                if (audio.src && audio.volume > 0.05) {
                     audio.volume -= 0.05;
                 } else {
                     clearInterval(fadeOut);

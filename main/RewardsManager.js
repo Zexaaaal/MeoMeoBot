@@ -253,6 +253,8 @@ class RewardsManager {
         const sound = config.rewardSounds ? config.rewardSounds[rewardId] : null;
         let volume = config.pointsGlobalVolume !== undefined ? config.pointsGlobalVolume : 0.5;
 
+        const rewardVodFlags = config.rewardVodFlags || {};
+
         if (sound) {
             const alertPayload = {
                 type: 'reward-redemption',
@@ -260,7 +262,8 @@ class RewardsManager {
                 text: null,
                 image: null,
                 audio: sound,
-                volume: volume
+                volume: volume,
+                isVod: !!rewardVodFlags[rewardId]
             };
             this.bot.emit('alert', alertPayload);
         }

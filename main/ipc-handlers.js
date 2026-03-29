@@ -228,9 +228,10 @@ function registerHandlers(deps) {
         return { success: true };
     });
 
-    ipcMain.handle('get-reward-images', () => {
+
+    ipcMain.handle('get-reward-vod-flags', () => {
         const config = bot.getConfig();
-        return config.rewardImages || {};
+        return config.rewardVodFlags || {};
     });
 
     ipcMain.handle('save-reward-sounds', (event, soundsMap) => {
@@ -239,9 +240,9 @@ function registerHandlers(deps) {
         return { success: true };
     });
 
-    ipcMain.handle('save-reward-images', (event, imagesMap) => {
-        if (!imagesMap || typeof imagesMap !== 'object') throw new Error('Invalid arguments');
-        bot.updateConfig({ rewardImages: imagesMap });
+    ipcMain.handle('save-reward-vod-flags', (event, flagsMap) => {
+        if (!flagsMap || typeof flagsMap !== 'object') throw new Error('Invalid arguments');
+        bot.updateConfig({ rewardVodFlags: flagsMap });
         return { success: true };
     });
 

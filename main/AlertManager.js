@@ -37,7 +37,8 @@ class AlertManager {
             audio: typeConfig?.audio,
             volume: typeConfig?.volume,
             duration: typeConfig?.duration,
-            layout: typeConfig?.layout
+            layout: typeConfig?.layout,
+            isVod: !!typeConfig?.isVod
         };
 
         if (['sub', 'resub', 'subgift'].includes(type)) {

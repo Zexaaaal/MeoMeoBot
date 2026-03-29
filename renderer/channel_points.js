@@ -9,8 +9,8 @@ let isEditing = false;
 let editingId = null;
 let currentRewards = [];
 let savedRewardSounds = {};
-let savedRewardImages = {};
 let savedRewardFunctions = {};
+let savedRewardVodFlags = {};
 let rewardFolders = [];
 let isDevMode = false;
 
@@ -41,7 +41,6 @@ async function init() {
     const stripPrefix = (path) => path ? path.replace(/^file:\/\/+/, '') : path;
 
     const soundInput = document.getElementById('rewardSoundInput');
-    const imageInput = document.getElementById('rewardImageInput');
 
     soundInput.style.cursor = 'pointer';
     soundInput.addEventListener('click', async () => {
@@ -59,24 +58,6 @@ async function init() {
         soundInput.value = '';
         soundInput.dataset.path = '';
     });
-
-    imageInput.style.cursor = 'pointer';
-    imageInput.addEventListener('click', async () => {
-        try {
-            const path = await API.openFileDialog([{ name: 'Images', extensions: ['jpg', 'png', 'gif'] }]);
-            if (path) {
-                const val = `file://${path.replace(/\\/g, '/')}`;
-                imageInput.value = stripPrefix(val);
-                imageInput.dataset.path = val;
-            }
-        } catch (e) { console.error(e); }
-    });
-
-    document.getElementById('rewardImageClearBtn').addEventListener('click', () => {
-        imageInput.value = '';
-        imageInput.dataset.path = '';
-    });
-
 
     const pointsTab = document.querySelector('.tab[data-tab="points"]');
     if (pointsTab) {
@@ -196,8 +177,8 @@ async function loadGlobalVolume() {
 async function loadRewardSounds() {
     try {
         savedRewardSounds = await window.api.invoke('get-reward-sounds') || {};
-        savedRewardImages = await window.api.invoke('get-reward-images') || {};
         savedRewardFunctions = await window.api.invoke('get-reward-functions') || {};
+        savedRewardVodFlags = await window.api.invoke('get-reward-vod-flags') || {};
         rewardFolders = await window.api.invoke('get-reward-folders') || [];
     } catch (e) {
         console.error('Error loading reward assets:', e);
@@ -359,6 +340,11 @@ function renderRewardCard(reward) {
             await window.api.invoke('save-reward-sounds', newSounds);
             savedRewardSounds = newSounds;
 
+            const newVodFlags = { ...savedRewardVodFlags };
+            delete newVodFlags[reward.id];
+            await window.api.invoke('save-reward-vod-flags', newVodFlags);
+            savedRewardVodFlags = newVodFlags;
+
             showNotification('Récompense supprimée', 'success');
             loadRewards();
         } catch (e) {
@@ -403,19 +389,15 @@ function openEditor(reward = null) {
     const hasCooldown = reward && reward.global_cooldown_setting && reward.global_cooldown_setting.is_enabled;
     document.getElementById('rewardCooldownInput').value = hasCooldown ? reward.global_cooldown_setting.global_cooldown_seconds : 0;
     document.getElementById('rewardUserInputInput').checked = (reward && reward.is_user_input_required);
+    document.getElementById('rewardIsVodInput').checked = (reward && savedRewardVodFlags[reward.id]);
 
     const stripPrefix = (path) => path ? path.replace(/^file:\/\/+/, '') : path;
     const soundVal = (reward && savedRewardSounds[reward.id]) ? savedRewardSounds[reward.id] : '';
-    const imageVal = (reward && savedRewardImages[reward.id]) ? savedRewardImages[reward.id] : '';
 
     const soundInput = document.getElementById('rewardSoundInput');
-    const imageInput = document.getElementById('rewardImageInput');
 
     soundInput.value = stripPrefix(soundVal);
     soundInput.dataset.path = soundVal;
-
-    imageInput.value = stripPrefix(imageVal);
-    imageInput.dataset.path = imageVal;
 
     const functionVal = (reward && savedRewardFunctions[reward.id]) ? savedRewardFunctions[reward.id] : '';
     const funcBtn = document.getElementById('rewardFunctionBtn');
@@ -455,15 +437,12 @@ async function saveReward() {
     const color = document.getElementById('rewardColorInput').value;
     const cooldown = parseInt(document.getElementById('rewardCooldownInput').value, 10);
     const userInput = document.getElementById('rewardUserInputInput').checked;
-
+    const isVodCheck = document.getElementById('rewardIsVodInput').checked;
 
     const promptText = document.getElementById('rewardPromptInput').value.trim();
 
     const soundInput = document.getElementById('rewardSoundInput');
     const soundPath = soundInput ? (soundInput.dataset.path || '') : '';
-
-    const imageInput = document.getElementById('rewardImageInput');
-    const imagePath = imageInput ? (imageInput.dataset.path || '') : '';
 
     if (!title || cost < 1) {
         showNotification('Nom et coût (>0) requis', 'error');
@@ -547,14 +526,6 @@ async function saveReward() {
             await window.api.invoke('save-reward-sounds', newSounds);
             savedRewardSounds = newSounds;
 
-            const newImages = { ...savedRewardImages };
-            if (imagePath) {
-                newImages[finalId] = imagePath;
-            } else {
-                delete newImages[finalId];
-            }
-            await window.api.invoke('save-reward-images', newImages);
-            savedRewardImages = newImages;
 
             const newFunctions = { ...savedRewardFunctions };
             const funcValue = document.getElementById('rewardFunctionBtn').dataset.value;
@@ -566,7 +537,14 @@ async function saveReward() {
             await window.api.invoke('save-reward-functions', newFunctions);
             savedRewardFunctions = newFunctions;
 
-
+            const newVodFlags = { ...savedRewardVodFlags };
+            if (isVodCheck) {
+                newVodFlags[finalId] = true;
+            } else {
+                delete newVodFlags[finalId];
+            }
+            await window.api.invoke('save-reward-vod-flags', newVodFlags);
+            savedRewardVodFlags = newVodFlags;
         }
 
 

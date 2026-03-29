@@ -59,6 +59,7 @@ async function init() {
     els.volumeInput = document.getElementById('alert-volume-input');
     els.volumeVal = document.getElementById('alert-volume-val');
     els.durationInput = document.getElementById('alert-duration-input');
+    els.isVodInput = document.getElementById('alert-isvod-input');
 
     els.themeCss = document.getElementById('alert-theme-css');
     els.themeResetBtn = document.getElementById('alert-theme-reset-btn');
@@ -168,6 +169,10 @@ function setupEventListeners() {
         updateConfigValue(currentType, 'duration', parseInt(e.target.value));
     });
 
+    els.isVodInput.addEventListener('change', (e) => {
+        updateConfigValue(currentType, 'isVod', e.target.checked);
+    });
+
 
 
     let debounceTimer;
@@ -227,7 +232,7 @@ function updateUI() {
         const meta = EVENT_TYPES[currentType];
 
 
-        els.widgetUrl.textContent = `http://127.0.0.1:${widgetPort}/widget/alerts`;
+        els.widgetUrl.innerHTML = `http://127.0.0.1:${widgetPort}/widget/alerts?mode=main<br>http://127.0.0.1:${widgetPort}/widget/alerts?mode=vod-audio`;
 
 
         const stripPrefix = (path) => path ? path.replace(/^file:\/\/+/, '') : path;
@@ -241,6 +246,7 @@ function updateUI() {
         els.volumeVal.textContent = `${Math.round(vol * 100)}%`;
 
         els.durationInput.value = typeConfig.duration || 5000;
+        els.isVodInput.checked = !!typeConfig.isVod;
     }
 }
 
@@ -434,7 +440,8 @@ async function triggerTest() {
             audio: config.audio,
             volume: config.volume,
             duration: config.duration,
-            layout: config.layout
+            layout: config.layout,
+            isVod: !!config.isVod
         };
 
         await API.alerts.triggerTest(dummyData);

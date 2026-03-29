@@ -14,7 +14,7 @@ const ALLOWED_INVOKE_CHANNELS = [
     'play-on-device', 'stop-casting', 'start-spotify-auth', 'get-badge-prefs',
     'save-badge-prefs', 'get-widget-url',
     'get-participants-count', 'open-external-url', 'get-sub-count', 'simulate-sub',
-    'get-reward-sounds', 'save-reward-sounds', 'get-reward-images', 'save-reward-images',
+    'get-reward-sounds', 'save-reward-sounds', 'get-reward-vod-flags', 'save-reward-vod-flags',
     'get-mock-rewards',
     'get-reward-functions', 'save-reward-functions',
     'get-points-global-volume', 'save-points-global-volume', 'twitch-search-categories',

@@ -420,6 +420,10 @@ class TwitchBot extends EventEmitter {
         return this.currentSubCount;
     }
 
+    async fetchFollowerCount() {
+        return await this.twitchAPI.fetchFollowerCount();
+    }
+
     async checkStreamStatusAndResetDaily() {
         if (!this.userId) return;
         try {

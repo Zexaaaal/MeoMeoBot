@@ -230,6 +230,7 @@ class EventSubHandler {
             case 'channel.follow':
                 this.bot.updateLastFollow(event.user_name);
                 this.bot.triggerAlert('follow', { username: event.user_name });
+                this.bot.emit('new-follow');
                 break;
 
             case 'stream.online':

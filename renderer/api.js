@@ -51,6 +51,8 @@ export const API = {
         resizeCssEditor: (delta) => window.api.invoke('resize-css-editor', delta),
         openSubgoalsConfig: () => window.api.invoke('open-subgoals-config'),
         openRouletteConfig: () => window.api.invoke('open-roulette-config'),
+        openGoalsConfig: () => window.api.invoke('open-goals-config'),
+        getGoalWidgetUrl: (goalId) => window.api.invoke('get-goal-widget-url', goalId),
         triggerRouletteSpin: () => window.api.invoke('trigger-roulette-spin'),
 
 

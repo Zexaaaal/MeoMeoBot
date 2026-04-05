@@ -130,6 +130,17 @@ class TwitchAPI {
         return 0;
     }
 
+    async fetchFollowerCount() {
+        if (!this.bot.userId || !this.bot.clientId) return 0;
+        try {
+            const data = await this.helixRequest(`channels/followers?broadcaster_id=${this.bot.userId}`, 'GET', null, { addBroadcasterId: false });
+            return data ? data.total : 0;
+        } catch (e) {
+            log.error('TWITCH_FOLLOWER_COUNT_ERR', e);
+        }
+        return 0;
+    }
+
     async fetchChannelEmotes(retryCount = 0) {
         try {
             if (!this.bot.userId) {

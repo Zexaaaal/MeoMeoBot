@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Configuration Goals</title>
+    <link rel="stylesheet" href="../../css/global.css">
+    <link rel="stylesheet" href="../../css/css-editor.css">
+    <style>
+        .css-editor-left {
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .goals-config-group {
+            margin-bottom: 10px;
+            background: var(--bg-tertiary);
+            padding: 10px 15px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            flex-shrink: 0;
+        }
+
+        .goals-config-group.goals-list-group {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+            margin-bottom: 5px;
+        }
+
+        .goals-config-group h3 {
+            margin-top: 0;
+            margin-bottom: 10px;
+            font-size: 13px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-shrink: 0;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .form-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .form-row label {
+            min-width: 80px;
+            color: var(--text-primary);
+            font-size: 14px;
+        }
+
+        .form-input {
+            flex: 1;
+            padding: 8px 10px;
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .form-input:focus {
+            border-color: var(--accent);
+            outline: none;
+        }
+
+        .form-select {
+            flex: 1;
+            padding: 8px 10px;
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            border-radius: 4px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .form-select:focus {
+            border-color: var(--accent);
+            outline: none;
+        }
+
+        .goals-list {
+            flex: 1;
+            overflow-y: auto;
+            margin-bottom: 15px;
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            max-height: none;
+        }
+
+        .goal-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 12px;
+            border-bottom: 1px solid var(--border);
+            transition: background 0.15s ease;
+        }
+
+        .goal-item:hover {
+            background: var(--bg-tertiary);
+        }
+
+        .goal-item:last-child {
+            border-bottom: none;
+        }
+
+        .goal-info {
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex: 1;
+            min-width: 0;
+        }
+
+        .goal-label-text {
+            font-weight: 600;
+            color: var(--text-primary);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .goal-target {
+            font-weight: bold;
+            color: var(--accent);
+            flex-shrink: 0;
+        }
+
+        .goal-source-badge {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            background: rgba(255, 255, 255, 0.08);
+            color: var(--text-secondary);
+            border: 1px solid var(--border);
+            flex-shrink: 0;
+        }
+
+        .goal-actions {
+            display: flex;
+            gap: 4px;
+            flex-shrink: 0;
+            margin-left: 8px;
+        }
+
+        .goal-action-btn {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+        }
+
+        .goal-action-btn:hover {
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .goal-action-btn.delete-btn:hover {
+            color: var(--danger);
+            background: rgba(255, 0, 0, 0.1);
+        }
+
+        .goal-action-btn.copy-btn:hover {
+            color: var(--accent);
+        }
+
+        .css-editor-actions {
+            margin-top: 0;
+            padding-top: 10px;
+            flex-shrink: 0;
+        }
+
+        .goal-url-display {
+            font-family: 'JetBrains Mono', monospace;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 10px;
+            color: var(--accent);
+            word-break: break-all;
+            user-select: text;
+            display: inline-block;
+            margin-top: 4px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 30px;
+            color: var(--text-secondary);
+            font-size: 13px;
+        }
+
+        .preview-placeholder {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: var(--text-secondary);
+            font-size: 13px;
+        }
+    </style>
+</head>
+
+<body class="css-editor-body">
+    <div class="css-editor-shell">
+        <div class="css-editor-titlebar">
+            <h2>Configuration Goals</h2>
+            <button class="css-editor-close" id="close-btn" title="Fermer">✕</button>
+        </div>
+
+        <div class="css-editor-main">
+            <div class="css-editor-left">
+
+                <div class="goals-config-group">
+                    <h3>Nouveau Goal</h3>
+                    <div class="form-row">
+                        <label>Label</label>
+                        <input type="text" id="newGoalLabel" class="form-input" placeholder="Ex: 500 Subs!">
+                    </div>
+                    <div class="form-row">
+                        <label>Objectif</label>
+                        <input type="number" id="newGoalTarget" class="form-input" placeholder="500">
+                    </div>
+                    <div class="form-row">
+                        <label>Source</label>
+                        <select id="newGoalSource" class="form-select">
+                            <option value="subs">Subscribers (Total)</option>
+                            <option value="followers">Followers (Total)</option>
+                        </select>
+                    </div>
+                    <div class="form-row" style="justify-content: flex-end;">
+                        <button id="addGoalBtn" class="btn btn-primary">Ajouter</button>
+                    </div>
+                </div>
+
+                <div class="goals-config-group goals-list-group">
+                    <h3>Goals</h3>
+                    <div class="goals-list" id="goalsList">
+                        <div class="empty-state">Aucun goal configuré</div>
+                    </div>
+                </div>
+
+                <div class="css-editor-actions" style="justify-content: flex-end;">
+                    <button id="saveBtn" class="btn btn-primary">Sauvegarder</button>
+                </div>
+                <div class="css-editor-status" id="statusBar"></div>
+            </div>
+
+            <div class="css-preview-block">
+                <div id="preview-frame-wrapper">
+                    <iframe id="preview-frame" title="widget preview"></iframe>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="notification-container"></div>
+    <script src="../../main/logger.js"></script>
+    <script src="../../renderer/input_customizer.js" type="module"></script>
+    <script src="../../renderer/goals_config_renderer.js" type="module"></script>
+</body>
+
+</html>

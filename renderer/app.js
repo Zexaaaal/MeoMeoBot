@@ -39,6 +39,7 @@ async function initializeApp() {
     setupSubgoalsConfig();
     loadDailySubsConfig();
     setupRouletteConfig();
+    setupGoalsConfig();
 
     try {
         const version = await window.api.invoke('get-app-version');
@@ -263,6 +264,7 @@ async function loadWidgetUrls() {
         setBtnUrl('btnCopyLastFollowUrl', urls.lastFollow);
         setBtnUrl('btnCopyLastDonationUrl', urls.lastDonation);
         setBtnUrl('btnCopyRouletteUrl', urls.roulette);
+        setBtnUrl('btnCopyGoalsUrl', urls.goals);
 
     } catch (e) { console.error('Erreur URLs widgets', e); }
 }
@@ -377,6 +379,15 @@ function setupRouletteConfig() {
             } catch (e) {
                 showNotification('Erreur lancement roulette: ' + e, 'error');
             }
+        });
+    }
+}
+
+function setupGoalsConfig() {
+    const configureBtn = document.getElementById('configureGoalsBtn');
+    if (configureBtn) {
+        configureBtn.addEventListener('click', async () => {
+            API.widgets.openGoalsConfig();
         });
     }
 }

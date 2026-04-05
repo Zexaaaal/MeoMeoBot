@@ -112,6 +112,9 @@ function registerHandlers(deps) {
             servers.chatServer.broadcastConfig(config, widgetName);
         } else if (widgetName === 'alerts' && servers.alertsWidgetServer) {
             servers.alertsWidgetServer.refresh();
+        } else if (widgetName === 'goals' && servers.goalsServer) {
+            servers.goalsServer.broadcastConfig(config);
+            servers.goalsServer.broadcastCurrentCounts();
         }
         return { success: true };
     });
@@ -142,6 +145,7 @@ function registerHandlers(deps) {
         else if (widgetName === 'spotify' && servers.spotifyServer) servers.spotifyServer.broadcastConfig(configToSend);
         else if (widgetName === 'subgoals' && servers.subgoalsServer) servers.subgoalsServer.broadcastConfig(configToSend);
         else if (widgetName === 'roulette' && servers.rouletteServer) servers.rouletteServer.broadcastConfig(configToSend);
+        else if (widgetName === 'goals' && servers.goalsServer) servers.goalsServer.broadcastConfig(configToSend);
 
         return { success: true };
     });
@@ -152,6 +156,7 @@ function registerHandlers(deps) {
         if (widgetName === 'spotify' && servers.spotifyServer) return servers.spotifyServer.getUrl(localIp);
         if (widgetName === 'subgoals' && servers.subgoalsServer) return servers.subgoalsServer.getUrl(localIp);
         if (widgetName === 'roulette' && servers.rouletteServer) return servers.rouletteServer.getUrl(localIp);
+        if (widgetName === 'goals' && servers.goalsServer) return servers.goalsServer.getUrl(localIp);
         return servers.chatServer ? servers.chatServer.getUrl(localIp, widgetName) : '';
     });
 
@@ -168,7 +173,8 @@ function registerHandlers(deps) {
             lastSub: servers.subgoalsServer ? servers.subgoalsServer.getUrl(localIp, 'last-sub') : '',
             lastFollow: servers.subgoalsServer ? servers.subgoalsServer.getUrl(localIp, 'last-follow') : '',
             lastDonation: servers.subgoalsServer ? servers.subgoalsServer.getUrl(localIp, 'last-donation') : '',
-            roulette: servers.rouletteServer ? servers.rouletteServer.getUrl(localIp) : ''
+            roulette: servers.rouletteServer ? servers.rouletteServer.getUrl(localIp) : '',
+            goals: servers.goalsServer ? servers.goalsServer.getUrl(localIp) : '',
         };
     });
 

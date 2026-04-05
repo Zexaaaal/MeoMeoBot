@@ -11,6 +11,7 @@ const { createSpotifyWidgetServer } = require('./server/spotifyWidgetServer');
 const { createSubgoalsWidgetServer } = require('./server/subgoalsWidgetServer');
 const { createRouletteWidgetServer } = require('./server/rouletteWidgetServer');
 const { createAlertsWidgetServer } = require('./server/alertsWidgetServer');
+const { createGoalsWidgetServer } = require('./server/goalsWidgetServer');
 
 const autoUpdaterModule = require('./main/auto-updater');
 const mediaServerModule = require('./main/media-server');
@@ -24,6 +25,7 @@ const DEFAULT_SPOTIFY_WIDGET_PORT = 8090;
 const DEFAULT_SUBGOALS_WIDGET_PORT = 8091;
 const DEFAULT_ROULETTE_WIDGET_PORT = 8092;
 const DEFAULT_ALERTS_WIDGET_PORT = 8097;
+const DEFAULT_GOALS_WIDGET_PORT = 8093;
 
 let mainWindow;
 
@@ -35,9 +37,10 @@ let spotifyServer;
 let subgoalsServer;
 let rouletteServer;
 let alertsWidgetServer;
+let goalsServer;
 
 function getServers() {
-    return { chatServer, spotifyServer, subgoalsServer, rouletteServer, alertsWidgetServer };
+    return { chatServer, spotifyServer, subgoalsServer, rouletteServer, alertsWidgetServer, goalsServer };
 }
 
 function createWindow() {
@@ -136,8 +139,8 @@ function openCssEditorWindow(widgetName = 'chat') {
 function openSubgoalsConfigWindow() {
     openChildWindow('subgoalsConfig', {
         filePath: 'widgets/config/subgoals_config.html',
-        width: 700, height: 600,
-        title: 'Configuration Sub-Goals'
+        width: 900, height: 600,
+        title: 'Configuration Subgoals'
     });
 }
 
@@ -146,6 +149,14 @@ function openRouletteConfigWindow() {
         filePath: 'widgets/config/roulette_config.html',
         width: 600, height: 500,
         title: 'Configuration Roulette'
+    });
+}
+
+function openGoalsConfigWindow() {
+    openChildWindow('goalsConfig', {
+        filePath: 'widgets/config/goals_config.html',
+        width: 1000, height: 600,
+        title: 'Configuration Goals'
     });
 }
 
@@ -177,6 +188,7 @@ function setupBotEvents() {
             subgoalsServer.broadcastSubUpdate(count);
         }
         safeSend('sub-count-updated', count);
+        if (goalsServer) goalsServer.broadcastCurrentCounts();
     });
 
     bot.on('daily-sub-count-update', (count) => {
@@ -184,6 +196,10 @@ function setupBotEvents() {
             const config = bot.getWidgetConfig('subgoals') || {};
             subgoalsServer.broadcastConfig({ ...config, dailyCurrentCount: count }, 'subgoals');
         }
+    });
+
+    bot.on('new-follow', () => {
+        if (goalsServer) goalsServer.broadcastCurrentCounts();
     });
 
     bot.on('message-deleted', (messageId) => {
@@ -203,6 +219,7 @@ function setupBotEvents() {
         if (subgoalsServer) subgoalsServer.broadcast({ type: 'reload' });
         if (rouletteServer) rouletteServer.broadcast({ type: 'reload' });
         if (alertsWidgetServer) alertsWidgetServer.refresh();
+        if (goalsServer) goalsServer.broadcast({ type: 'reload' });
     });
 
     bot.on('toggle-widgets', (visible) => {
@@ -212,6 +229,7 @@ function setupBotEvents() {
         if (spotifyServer) spotifyServer.broadcast(data);
         if (subgoalsServer) subgoalsServer.broadcast(data);
         if (rouletteServer) rouletteServer.broadcast(data);
+        if (goalsServer) goalsServer.broadcast(data);
     });
 
     bot.on('chat-message', (msg) => {
@@ -234,6 +252,13 @@ function setupBotEvents() {
 ipcMain.handle('open-css-editor', (event, widgetName) => openCssEditorWindow(widgetName));
 ipcMain.handle('open-subgoals-config', () => openSubgoalsConfigWindow());
 ipcMain.handle('open-roulette-config', () => openRouletteConfigWindow());
+ipcMain.handle('open-goals-config', () => openGoalsConfigWindow());
+
+ipcMain.handle('get-goal-widget-url', (event, goalId) => {
+    const localIp = castManager.getLocalIp();
+    if (goalsServer) return goalsServer.getGoalUrl(localIp, goalId);
+    return '';
+});
 
 let cachedFonts = null;
 ipcMain.handle('get-system-fonts', async () => {
@@ -303,6 +328,7 @@ app.whenReady().then(async () => {
     subgoalsServer = createSubgoalsWidgetServer(bot, DEFAULT_SUBGOALS_WIDGET_PORT);
     rouletteServer = createRouletteWidgetServer(bot, DEFAULT_ROULETTE_WIDGET_PORT);
     alertsWidgetServer = createAlertsWidgetServer(bot, DEFAULT_ALERTS_WIDGET_PORT);
+    goalsServer = createGoalsWidgetServer(bot, DEFAULT_GOALS_WIDGET_PORT);
 
     streamlabsClient = new StreamlabsClient(bot);
     if (config.streamlabsSocketToken) {
@@ -320,8 +346,10 @@ app.whenReady().then(async () => {
         spotifyServer.start(),
         subgoalsServer.start(),
         rouletteServer.start(),
-        alertsWidgetServer.start()
+        alertsWidgetServer.start(),
+        goalsServer.start()
     ]).then(() => {
+        if (goalsServer) goalsServer.startPolling();
         onServerPortChanged();
         log.info('MAIN_SERVERS_STARTED');
     }).catch(err => {
@@ -358,6 +386,7 @@ function cleanup() {
     if (subgoalsServer) subgoalsServer.stop();
     if (rouletteServer) rouletteServer.stop();
     if (alertsWidgetServer) alertsWidgetServer.stop();
+    if (goalsServer) goalsServer.stop();
     if (streamlabsClient) streamlabsClient.stop();
     mediaServerModule.stop();
     castManager.cleanup();

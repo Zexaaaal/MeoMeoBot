@@ -1,21 +1,34 @@
 :root {
-    --bg-primary: #0e0e10;
-    --bg-secondary: #18181b;
-    --bg-tertiary: #1f1f23;
-    --accent: #9147ff;
-    --text-primary: #efeff1;
-    --text-secondary: #adadb8;
-    --success: #00b35f;
-    --danger: #e91916;
-    --border: #343437;
-    --update-color-avail: #ffcc00;
-    --update-color-ok: #008744;
+    --bg-primary: #0a0a0c;
+    --bg-secondary: #141418;
+    --bg-tertiary: #1c1c22;
+    --accent: #8b5cf6;
+    --accent-hover: #7c3aed;
+    --accent-muted: rgba(139, 92, 246, 0.12);
+    --text-primary: #f0f0f3;
+    --text-secondary: #9ca3af;
+    --text-muted: #6b7280;
+    --success: #10b981;
+    --success-muted: rgba(16, 185, 129, 0.12);
+    --danger: #ef4444;
+    --danger-muted: rgba(239, 68, 68, 0.12);
+    --warning: #f59e0b;
+    --border: #27272f;
+    --border-hover: #3f3f4a;
+    --update-color-avail: #fbbf24;
+    --update-color-ok: #10b981;
 
-    --glass-bg: rgba(24, 24, 27, 0.65);
-    --glass-border: rgba(255, 255, 255, 0.08);
-    --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-    --glass-blur: blur(12px);
+    --glass-bg: rgba(20, 20, 24, 0.72);
+    --glass-border: rgba(255, 255, 255, 0.06);
+    --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    --glass-blur: blur(16px);
+
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 16px;
+    --radius-xl: 20px;
 }
+
 
 .hidden {
     display: none !important;
@@ -309,10 +322,10 @@ body {
 }
 
 .tab.active {
-    background: rgba(255, 255, 255, 0.1);
-    color: var(--text-primary);
+    background: var(--accent-muted);
+    color: var(--accent);
     font-weight: 600;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 2px 8px rgba(139, 92, 246, 0.15);
 }
 
 .tab.icon-tab {
@@ -369,7 +382,7 @@ body {
     backdrop-filter: var(--glass-blur);
     border: 1px solid var(--glass-border);
     box-shadow: var(--glass-shadow);
-    border-radius: 12px;
+    border-radius: var(--radius-lg);
     padding: 20px;
     display: flex;
     flex-direction: column;
@@ -450,6 +463,7 @@ input:focus,
 textarea:focus {
     border-color: var(--accent);
     outline: none;
+    box-shadow: 0 0 0 3px var(--accent-muted);
 }
 
 input[readonly]:not(.interactive-input) {
@@ -483,7 +497,7 @@ textarea {
 }
 
 .btn-primary:hover {
-    background: #772ce8;
+    background: var(--accent-hover);
 }
 
 .btn-success {
@@ -657,45 +671,8 @@ textarea {
     margin-top: 20px;
 }
 
-#notification-container {
-    position: fixed;
-    bottom: 10px;
-    right: 20px;
-    z-index: 2000;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
 
 
-.notification.success {
-    border-color: var(--success);
-}
-
-.notification.error {
-    border-color: var(--danger);
-}
-
-.notification.info {
-    border-color: var(--accent);
-}
-
-::-webkit-scrollbar {
-    width: 6px;
-}
-
-::-webkit-scrollbar-track {
-    background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-    background-color: var(--border);
-    border-radius: 3px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-    background-color: var(--text-secondary);
-}
 
 input[type="number"]::-webkit-outer-spin-button,
 input[type="number"]::-webkit-inner-spin-button {

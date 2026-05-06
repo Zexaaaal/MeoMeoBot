@@ -6,21 +6,91 @@ class AlertManager {
     }
 
     getDefaultText(type) {
-        switch (type) {
-            case 'follow': return '{username} suit la chaîne !';
-            case 'sub': return '{username} s\'est abonné !';
-            case 'resub': return '{username} s\'est réabonné pour {months} mois !';
-            case 'subgift': return '{username} a offert {amount} sub{s} !';
-            case 'raid': return 'Raid de {username} !';
-            case 'donation': return '{username} a donné {amount}€';
-            case 'cheer': return '{username} a envoyé {amount} bits !';
-            case 'hypetrain': return 'Hype Train Niveau {amount} !';
-            default: return 'Nouvelle alerte';
+        const defaults = {
+            'follow': '{username} suit la chaîne !',
+            'sub': '{username} s\'est abonné !',
+            'resub': '{username} s\'est réabonné pour {months} mois !',
+            'subgift': '{username} a offert {amount} sub{s} !',
+            'raid': 'Raid de {username} !',
+            'donation': '{username} a donné {amount}€',
+            'cheer': '{username} a envoyé {amount} bits !',
+            'hypetrain': 'Hype Train Niveau {amount} !',
+            'kick-follow': '{username} suit la chaîne !',
+            'kick-sub': '{username} s\'est abonné !',
+            'kick-resub': '{username} s\'est réabonné ({months} mois) !',
+            'kick-subgift': '{username} a offert {amount} sub{s} !',
+            'kick-gift': '{username} a envoyé {amount} Kicks !'
+        };
+        return defaults[type] || 'Nouvelle alerte';
+    }
+
+    normalizeKickEventType(kickEventType) {
+        const mapping = {
+            'channel.followed': 'follow',
+            'channel.subscription.new': 'sub',
+            'channel.subscription.renewal': 'resub',
+            'channel.subscription.gifts': 'subgift',
+            'kicks.gifted': 'donation'
+        };
+        return mapping[kickEventType] || kickEventType;
+    }
+
+    triggerFromKickWebhook(eventType, payload) {
+        const alertType = this.normalizeKickEventType(eventType);
+
+        let data = {};
+        switch (eventType) {
+            case 'channel.followed':
+                data = {
+                    username: payload.follower?.username || 'Inconnu',
+                    platform: 'kick'
+                };
+                break;
+            case 'channel.subscription.new':
+                data = {
+                    username: payload.subscriber?.username || 'Inconnu',
+                    duration: payload.duration || 1,
+                    platform: 'kick'
+                };
+                break;
+            case 'channel.subscription.renewal':
+                data = {
+                    username: payload.subscriber?.username || 'Inconnu',
+                    months: payload.duration || 1,
+                    platform: 'kick'
+                };
+                break;
+            case 'channel.subscription.gifts':
+                data = {
+                    username: payload.gifter?.is_anonymous ? 'Anonyme' : (payload.gifter?.username || 'Inconnu'),
+                    amount: payload.giftees?.length || 1,
+                    platform: 'kick'
+                };
+                break;
+            case 'kicks.gifted':
+                data = {
+                    username: payload.sender?.username || 'Inconnu',
+                    amount: payload.gift?.amount || 0,
+                    message: payload.gift?.message || '',
+                    platform: 'kick'
+                };
+                break;
         }
+
+        this.trigger(alertType, data);
     }
 
     trigger(type, data) {
-        log.info(`[BOT] Triggering Alert: ${type}`, data);
+        const platform = data.platform || 'twitch';
+
+        if (platform === 'youtube') return;
+
+        if (platform === 'kick') {
+            const chatConfig = this.bot.getWidgetConfig('chat') || {};
+            if (!chatConfig.platformKick) return;
+        }
+
+        log.info('ALERT_TRIGGER', { type, username: data.username, platform });
 
         const allConfig = this.bot.getWidgetConfig('alerts');
         const typeConfig = allConfig ? allConfig[type] : null;
@@ -38,7 +108,8 @@ class AlertManager {
             volume: typeConfig?.volume,
             duration: typeConfig?.duration,
             layout: typeConfig?.layout,
-            isVod: !!typeConfig?.isVod
+            isVod: !!typeConfig?.isVod,
+            platform: data.platform || 'twitch'
         };
 
         if (['sub', 'resub', 'subgift'].includes(type)) {

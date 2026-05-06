@@ -389,10 +389,10 @@ function openConfigEditor() {
                     await loadThemes(currentWidget);
                     setStatus(NOTIFICATIONS.SUCCESS.THEME_DELETED, 'ok');
                 } else {
-                    alert(NOTIFICATIONS.ERROR.DELETE.replace('{error}', res.message));
+                    showNotification(NOTIFICATIONS.ERROR.DELETE.replace('{error}', res.message), 'error');
                 }
             } catch (e) {
-                alert(NOTIFICATIONS.ERROR.GENERIC.replace('{error}', e));
+                showNotification(NOTIFICATIONS.ERROR.GENERIC.replace('{error}', e), 'error');
             }
         };
 
@@ -1055,7 +1055,7 @@ function init() {
                 initThemeBuilder();
                 syncBuilderToPreview();
             } catch (err) {
-                alert(NOTIFICATIONS.ERROR.LOAD.replace('{error}', err));
+                showNotification(NOTIFICATIONS.ERROR.LOAD.replace('{error}', err), 'error');
             }
         });
     }
@@ -1156,7 +1156,7 @@ function init() {
                 if (modal) modal.style.display = 'none';
                 loadThemes(currentWidget);
                 setStatus(NOTIFICATIONS.SUCCESS.SAVED, 'ok');
-            } catch (e) { alert(NOTIFICATIONS.ERROR.SAVE + ': ' + e); }
+            } catch (e) { showNotification(NOTIFICATIONS.ERROR.SAVE + ': ' + e, 'error'); }
         });
     }
 }

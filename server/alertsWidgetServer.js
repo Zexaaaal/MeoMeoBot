@@ -61,7 +61,7 @@ class AlertsWidgetServer extends BaseWidgetServer {
     }
 
     onConnection(ws) {
-        // log.info('ALERTS_CLIENT_CONN');
+
         this.isPlaying = false;
         this.processQueue();
 

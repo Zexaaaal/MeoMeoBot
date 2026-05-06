@@ -15,19 +15,25 @@ function registerHandlers(deps) {
     ipcMain.handle('get-app-version', () => app.getVersion());
 
     ipcMain.handle('connect-bot', async () => {
-        try { await bot.connect(); return { success: true }; }
+        try { 
+            const config = bot.getConfig();
+            await bot.connect(); 
+            if (deps.kickBot && config.kickChannel) deps.kickBot.connect(config.kickChannel);
+            if (deps.youtubeBot && config.youtubeChannel) deps.youtubeBot.connect(config.youtubeChannel);
+            return { success: true }; 
+        }
         catch (error) { return { success: false, error: error.message }; }
     });
 
     ipcMain.handle('disconnect-bot', async () => {
         bot.disconnect();
+        if (deps.kickBot) deps.kickBot.disconnect();
+        if (deps.youtubeBot) deps.youtubeBot.disconnect();
         return { success: true };
     });
 
     ipcMain.handle('get-config', () => {
-        // log.info('IPC_GET_CONFIG_CALLED');
         const config = bot.getConfig();
-        // log.info('IPC_RETURNING_CONFIG_KEYS', { keys: Object.keys(config || {}).join(', ') });
         return config;
     });
     ipcMain.handle('get-bot-status', () => ({
@@ -49,6 +55,8 @@ function registerHandlers(deps) {
         }
 
         if (config.channel || config.username || config.token) setTimeout(() => bot.connect(), 500);
+        if (deps.kickBot && config.kickChannel) setTimeout(() => deps.kickBot.connect(config.kickChannel), 500);
+        if (deps.youtubeBot && config.youtubeChannel) setTimeout(() => deps.youtubeBot.connect(config.youtubeChannel), 500);
         return { success: true };
     });
 
@@ -165,6 +173,7 @@ function registerHandlers(deps) {
         const servers = getServers();
         return {
             chat: servers.chatServer ? servers.chatServer.getUrl(localIp, 'chat') : '',
+            dock: servers.chatServer ? servers.chatServer.getUrl(localIp, 'dock') : '',
             spotify: servers.spotifyServer ? servers.spotifyServer.getUrl(localIp) : '',
             emoteWall: servers.chatServer ? servers.chatServer.getUrl(localIp, 'emote-wall') : '',
             subgoals: servers.subgoalsServer ? servers.subgoalsServer.getUrl(localIp) : '',

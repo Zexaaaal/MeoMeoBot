@@ -82,6 +82,8 @@ class TwitchBot extends EventEmitter {
             this.userId = validation.userId;
         }
 
+        await this.ensureAppAccessToken();
+
         this.client = new tmi.Client({
             options: { debug: false },
             connection: { secure: true, reconnect: true },
@@ -90,7 +92,6 @@ class TwitchBot extends EventEmitter {
         });
 
         this.client.on('message', (channel, tags, message, self) => {
-            if (self) return;
             this.handleMessage(channel, tags, message);
         });
 
@@ -132,7 +133,9 @@ class TwitchBot extends EventEmitter {
         this.eventSubHandler.close();
     }
 
-    async handleMessage(channel, tags, message) {
+    async handleMessage(channel, tags, message, self) {
+        if (self) return; 
+        
         if (this.containsBannedWords(message)) {
             if (this.userId && this.clientId && tags['room-id'] && tags['user-id']) {
                 await this.twitchAPI.deleteMessage(tags['room-id'], tags.id);
@@ -492,6 +495,16 @@ class TwitchBot extends EventEmitter {
             this.client.say(config.channel, startMsg);
         }
         this.emit('participants-updated');
+    }
+
+    say(text) {
+        const config = this.getConfig();
+        if (this.client && this.isConnected && config.channel) {
+            this.client.say(config.channel, text);
+            return true;
+        }
+        log.warn('Cannot send Twitch message: not connected');
+        return false;
     }
 
     stopGiveaway() {

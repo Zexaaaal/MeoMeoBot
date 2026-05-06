@@ -20,21 +20,16 @@ Thumbs.db
 # Fichiers de configuration locaux
 .env
 DOCUMENTATION.md
+config.json
+release-notes.temp.md
+Backlog.md
+package-lock.json
 
 # Cmd
 publish.bat
 publish.ps1
 
-# Json
-package-lock.json
-
-#Md & stuff
-release-notes.temp.md
-
 # Scripts & Tooling
 increment-version.js
 dev_options.js
 publish.js
-
-# Dev config (electron-store)
-config.json

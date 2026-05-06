@@ -22,7 +22,12 @@ module.exports = {
         spotifyRefreshToken: "",
         spotifyTokenExpiry: 0,
         discordWebhookUrl: "",
-        discordPlanningMessageId: ""
+        discordPlanningMessageId: "",
+        kickChannel: "",
+        kickToken: "",
+        kickClientId: "",
+        kickClientSecret: "",
+        kickAppToken: ""
     },
     widgets: {
         chat: {

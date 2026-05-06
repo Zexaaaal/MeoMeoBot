@@ -100,7 +100,7 @@ class BaseWidgetServer {
         }
 
         const urlPath = req.url.split('?')[0];
-        // log.info('SERVER_REQUEST', { method: req.method, url: req.url });
+
 
         if (req.url.startsWith('/widget/assets/')) {
             return this.serveAsset(req, res);
@@ -345,13 +345,21 @@ class BaseWidgetServer {
                     
                     ws.onopen = () => {};
 
+
+                    window.sendMessage = (type, payload) => {
+                        if (ws && ws.readyState === WebSocket.OPEN) {
+                            ws.send(JSON.stringify({ type, ...payload }));
+                        }
+                    };
+
                     ws.onmessage = (event) => {
                         try {
                             const data = JSON.parse(event.data);
                             
                             if (data.type === 'handshake') {
+                                const isDock = window.location.pathname.includes('/widget/dock');
                                 const lastRunId = sessionStorage.getItem('widget_run_id');
-                                if (lastRunId && lastRunId !== data.runId) {
+                                if (!isDock && lastRunId && lastRunId !== data.runId) {
                                     sessionStorage.setItem('widget_run_id', data.runId);
                                     const url = new URL(window.location.href);
                                     url.searchParams.set('t', Date.now());
@@ -363,6 +371,9 @@ class BaseWidgetServer {
                             }
 
                             if (data.type === 'reload') {
+                                const isDock = window.location.pathname.includes('/widget/dock');
+                                if (isDock) return; // Skip auto-reload for dock
+
                                 const url = new URL(window.location.href);
                                 url.searchParams.set('t', Date.now());
                                 window.location.href = url.toString();
@@ -435,6 +446,21 @@ class BaseWidgetServer {
 
             this.onConnection(ws);
 
+            ws.on('message', (message) => {
+                try {
+                    const data = JSON.parse(message);
+                    if (data.type === 'get-config') {
+                        const config = this.bot.getWidgetConfig(this.widgetName);
+                        ws.send(JSON.stringify({ type: 'config', config }));
+                    }
+                    if (this.handleMessage) {
+                        this.handleMessage(ws, data);
+                    }
+                } catch (e) {
+                    log.error('SERVER_WS_MSG_ERR', e);
+                }
+            });
+
             ws.on('close', () => {
                 this.connections.delete(ws);
             });
@@ -473,7 +499,7 @@ class BaseWidgetServer {
             this.wss = null;
         }
         if (this.server) {
-            // log.info('SERVER_STOPPING');
+
             this.server.close((err) => {
                 if (err) log.error('SERVER_CLOSE_ERR', err);
             });

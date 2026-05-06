@@ -52,6 +52,8 @@
         const APP_TOKEN = '__TWITCH_APP_TOKEN__';
 
         const BADGE_PREFS = {};
+        const PLATFORM_CONFIG = {};
+        const IS_DOCK = false;
         const globalBadgeMap = {};
         const channelBadgeCache = {};
         let globalBadgesLoaded = false;
@@ -64,6 +66,19 @@
         let MAX_MESSAGES = 10;
 
         const ALLOWED_BADGES = ['subscriber', 'moderator', 'vip', 'partner', 'staff', 'premium'];
+
+        function shouldShowPlatform(platform) {
+            if (IS_DOCK) return true;
+            if (platform === 'twitch') return true;
+            if (platform === 'kick') return !!PLATFORM_CONFIG.kick;
+            if (platform === 'youtube') return !!PLATFORM_CONFIG.youtube;
+            return true;
+        }
+
+        function shouldShowPlatformIcon() {
+            if (IS_DOCK) return true;
+            return PLATFORM_CONFIG.kick || PLATFORM_CONFIG.youtube;
+        }
 
         function sanitizeClass(str) {
             return String(str || '').toLowerCase().replace(/[^a-z0-9_-]+/g, '-').replace(/^-+|-+$/g, '') || 'user';
@@ -251,6 +266,7 @@
                         if (style) style.textContent = cfg.customCSS;
                     }
                 } else if (data.type === 'chat') {
+                    if (!shouldShowPlatform(data.platform)) return;
                     await addMessage(data);
                 } else if (data.type === 'delete-message') {
                     const messageId = data.messageId;
@@ -309,6 +325,21 @@
                 group.style.setProperty('--user-color-soft', soft);
                 const header = document.createElement('div');
                 header.className = 'msg-header';
+
+                if (shouldShowPlatformIcon()) {
+                    const platformIcon = document.createElement('img');
+                    platformIcon.className = 'platform-icon';
+                    platformIcon.style.cssText = 'width:16px;height:16px;margin-right:8px;vertical-align:middle;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.3))';
+                    if (msg.platform === 'kick') {
+                        platformIcon.src = '/widget/assets/kick.png';
+                    } else if (msg.platform === 'youtube') {
+                        platformIcon.src = '/widget/assets/youtube.png';
+                    } else {
+                        platformIcon.src = '/widget/assets/twitch.png';
+                    }
+                    header.appendChild(platformIcon);
+                }
+
                 const nameSpan = document.createElement('span');
                 nameSpan.className = 'msg-username';
                 nameSpan.textContent = displayName || username;

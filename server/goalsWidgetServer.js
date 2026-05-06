@@ -35,7 +35,8 @@ class GoalsWidgetServer extends BaseWidgetServer {
             config: goalsConfig
         }));
 
-        // Send current counts immediately
+
+
         this.sendCurrentCounts(ws);
     }
 

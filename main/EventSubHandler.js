@@ -27,7 +27,6 @@ class EventSubHandler {
         }
 
         const url = this.reconnectUrl || 'wss://eventsub.wss.twitch.tv/ws';
-        // log.info('EVENTSUB_CONNECTING', { url });
 
         this.ws = new WebSocket(url);
 
@@ -41,7 +40,6 @@ class EventSubHandler {
         });
 
         this.ws.on('close', (code, reason) => {
-            // log.info('EVENTSUB_DISCONNECTED', { code });
             this.sessionId = null;
             this.reconnectUrl = null;
             setTimeout(() => this.connect(), 5000);
@@ -58,16 +56,13 @@ class EventSubHandler {
 
         if (messageType === 'session_welcome') {
             this.sessionId = payload.session.id;
-            // log.info('EVENTSUB_SESSION_WELCOME', { sessionId: this.sessionId });
             this.subscribeToAllEvents();
         } else if (messageType === 'session_keepalive') {
 
         } else if (messageType === 'notification') {
-            // log.info('EVENTSUB_NOTIFICATION_RECEIVED', { type: payload.subscription.type });
             this.handleNotification(payload);
         } else if (messageType === 'session_reconnect') {
             this.reconnectUrl = payload.session.reconnect_url;
-            // log.info('EVENTSUB_RECONNECT_REQUESTED', { url: this.reconnectUrl });
             this.connect();
         } else if (messageType === 'revocation') {
             log.warn('[EventSub] Souscription révoquée:', payload.subscription.type);
@@ -94,7 +89,6 @@ class EventSubHandler {
         for (const event of events) {
             try {
                 await this.subscribeToEvent(event.type, event.version, event.condition);
-                // log.info('EVENTSUB_SUBSCRIPTION_SENT', { type: event.type });
             } catch (e) {
                 log.error(`[EventSub] Échec souscription ${event.type} :`, e.message);
             }
@@ -134,7 +128,6 @@ class EventSubHandler {
         const { subscription, event } = payload;
         const type = subscription.type;
 
-        // log.info('EVENTSUB_NOTIFICATION_RECEIVED', { type });
 
         switch (type) {
             case 'channel.channel_points_custom_reward_redemption.add':

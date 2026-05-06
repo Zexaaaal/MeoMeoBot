@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Chat Dock</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+    <style id="base-css">
+        body {
+            background-color: #18181b !important;
+            color: #efeff1 !important;
+            font-family: 'Inter', "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+            font-size: 13px !important; /* Forced fixed size */
+            overflow-x: hidden !important;
+            overflow-y: auto !important;
+            margin: 0 !important;
+            padding: 4px !important;
+            line-height: 1.4 !important;
+            zoom: 1 !important; /* Attempt to reset browser zoom */
+        }
+
+        #chat-container {
+            display: flex !important;
+            flex-direction: column !important;
+            width: 100% !important;
+            box-sizing: border-box !important;
+        }
+
+        .chat-line {
+            padding: 2px 4px !important;
+            word-wrap: break-word !important;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+            animation: fadeIn 0.15s ease-out !important;
+            line-height: 1.3 !important;
+            display: flex !important;
+            align-items: flex-start !important;
+            flex-wrap: wrap !important;
+            font-size: 13px !important;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .platform-icon {
+            width: 14px !important;
+            height: 14px !important;
+            margin-right: 6px !important;
+            margin-top: 2px !important;
+            flex-shrink: 0 !important;
+        }
+
+        .username {
+            font-weight: 700 !important;
+            margin-right: 4px !important;
+            font-size: 16px !important;
+        }
+
+        .separator {
+            font-size: 16px !important;
+            color: #efeff1 !important;
+            margin-right: 6px !important;
+        }
+
+        .message {
+            color: #efeff1 !important;
+            word-break: break-word !important;
+            font-size: 16px !important;
+        }
+
+        .badge-img {
+            width: 14px !important;
+            height: 14px !important;
+            margin-right: 3px !important;
+            margin-top: 2px !important;
+        }
+
+        /* Hide background video in dock */
+        #bg-video {
+            display: none !important;
+        }
+
+        #chat-input-container {
+            position: fixed !important;
+            bottom: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            background: #1f1f23 !important;
+            padding: 10px !important;
+            border-top: 1px solid rgba(255, 255, 255, 0.15) !important;
+            display: flex !important;
+            gap: 8px !important;
+            z-index: 100 !important;
+            height: 50px !important; /* Increased height */
+            box-sizing: border-box !important;
+        }
+
+        #chat-input {
+            flex: 1 !important;
+            background: #0e0e10 !important;
+            border: 1px solid rgba(255, 255, 255, 0.3) !important;
+            color: white !important;
+            padding: 0 12px !important;
+            border-radius: 6px !important;
+            outline: none !important;
+            font-size: 14px !important;
+            height: 30px !important;
+        }
+
+        #chat-input:focus {
+            border-color: #9147ff !important;
+            background: #000 !important;
+        }
+
+        #send-button {
+            width: 30px !important;
+            height: 30px !important;
+            background: #9147ff !important;
+            border: none !important;
+            border-radius: 6px !important;
+            color: white !important;
+            cursor: pointer !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            flex-shrink: 0 !important;
+            transition: background 0.2s !important;
+        }
+
+        #send-button:hover {
+            background: #772ce8 !important;
+        }
+
+        #send-button svg {
+            width: 16px !important;
+            height: 16px !important;
+            fill: white !important;
+        }
+
+        #chat-container {
+            padding-bottom: 60px !important;
+        }
+    </style>
+</head>
+
+<body>
+    <video id="bg-video" loop autoplay muted playsinline></video>
+
+    <div id="chat-container"></div>
+
+    <div id="chat-input-container">
+        <input type="text" id="chat-input" placeholder="Envoyer un message...">
+        <button id="send-button" title="Envoyer">
+            <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path></svg>
+        </button>
+    </div>
+    
+    <style id="custom-css">
+        /* __CUSTOM_CSS__ */
+    </style>
+
+    <script>
+        const CLIENT_ID = '__TWITCH_CLIENT_ID__';
+        const APP_TOKEN = '__TWITCH_APP_TOKEN__';
+
+        const BADGE_PREFS = {};
+        const globalBadgeMap = {};
+        const channelBadgeCache = {};
+        let globalBadgesLoaded = false;
+        let globalBadgesPending = null;
+
+        let ws;
+        const messageQueue = [];
+        let MAX_MESSAGES = 50; // Increased for dock
+
+        const ALLOWED_BADGES = ['subscriber', 'moderator', 'vip', 'partner', 'staff', 'premium'];
+
+        function computeColors(hexColor) {
+            const fallback = '#6dd4ff';
+            let c = (hexColor || '').trim();
+            if (!/^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(c)) return fallback;
+            return c;
+        }
+
+        function normalizeEmotes(emotes) {
+            if (!emotes || typeof emotes !== 'object') return [];
+            const parts = [];
+            Object.keys(emotes).forEach(id => {
+                emotes[id].forEach(r => {
+                    if (typeof r === 'string') {
+                        const [s, e] = r.split('-').map(n => parseInt(n, 10));
+                        if (!Number.isNaN(s) && !Number.isNaN(e)) parts.push({ id, start: s, end: e });
+                    } else if (r && typeof r === 'object' && Number.isInteger(r.start) && Number.isInteger(r.end)) {
+                        parts.push({ id, start: r.start, end: r.end });
+                    }
+                });
+            });
+            parts.sort((a, b) => a.start - b.start);
+            return parts;
+        }
+
+        function renderTextWithEmotes(text, emotesMap) {
+            const frag = document.createDocumentFragment();
+            const parts = normalizeEmotes(emotesMap);
+            if (!parts.length) {
+                frag.appendChild(document.createTextNode(text));
+                return frag;
+            }
+            let cursor = 0;
+            for (const part of parts) {
+                if (cursor < part.start) frag.appendChild(document.createTextNode(text.slice(cursor, part.start)));
+                const emoteImg = document.createElement('img');
+                emoteImg.src = `https://static-cdn.jtvnw.net/emoticons/v2/${part.id}/default/dark/1.0`;
+                emoteImg.alt = text.slice(part.start, part.end + 1);
+                emoteImg.style.verticalAlign = 'middle';
+                emoteImg.style.height = '1.2em';
+                frag.appendChild(emoteImg);
+                cursor = part.end + 1;
+            }
+            if (cursor < text.length) frag.appendChild(document.createTextNode(text.slice(cursor)));
+            return frag;
+        }
+
+        async function fetchHelixBadges(url) {
+            if (!CLIENT_ID || !APP_TOKEN) return null;
+            try {
+                const resp = await fetch(url, {
+                    headers: {
+                        'Client-ID': CLIENT_ID,
+                        'Authorization': `Bearer ${APP_TOKEN}`
+                    }
+                });
+                if (!resp.ok) return null;
+                return resp.json();
+            } catch (e) { return null; }
+        }
+
+        async function ensureGlobalBadges() {
+            if (globalBadgesLoaded || globalBadgesPending) return;
+            globalBadgesPending = fetchHelixBadges('https://api.twitch.tv/helix/chat/badges/global').then(data => {
+                const sets = (data && data.data) || [];
+                sets.forEach(set => {
+                    const setId = set.set_id;
+                    globalBadgeMap[setId] = globalBadgeMap[setId] || {};
+                    (set.versions || []).forEach(v => {
+                        globalBadgeMap[setId][v.id] = v.image_url_1x;
+                    });
+                });
+                globalBadgesLoaded = true;
+            }).finally(() => { globalBadgesPending = null; });
+        }
+
+        const channelBadgePromises = {};
+        async function ensureChannelBadges(roomId) {
+            if (!roomId || channelBadgeCache[roomId] || channelBadgePromises[roomId]) return;
+            channelBadgePromises[roomId] = fetchHelixBadges(`https://api.twitch.tv/helix/chat/badges?broadcaster_id=${roomId}`)
+                .then(data => {
+                    const map = {};
+                    const sets = (data && data.data) || [];
+                    sets.forEach(set => {
+                        const setId = set.set_id;
+                        (set.versions || []).forEach(v => {
+                            map[`${setId}/${v.id}`] = v.image_url_1x;
+                        });
+                    });
+                    channelBadgeCache[roomId] = map;
+                });
+        }
+
+        function parseBadgesRaw(badgesRaw) {
+            if (!badgesRaw) return [];
+            return badgesRaw.split(',').map(entry => {
+                const [set, version] = entry.trim().split('/');
+                return set && version ? { set, version } : null;
+            }).filter(Boolean).filter(b => ALLOWED_BADGES.includes(b.set.toLowerCase()));
+        }
+
+        function parseBadgesObj(badgesObj) {
+            if (!badgesObj || typeof badgesObj !== 'object') return [];
+            return Object.entries(badgesObj).map(([set, version]) => ({ set, version }))
+                .filter(b => ALLOWED_BADGES.includes(b.set.toLowerCase()));
+        }
+
+        function createBadgeNode(entry, roomId) {
+            const set = entry.set.toLowerCase();
+            const version = entry.version || '1';
+            if (BADGE_PREFS && BADGE_PREFS[set] === false) return null;
+            
+            let url = null;
+            if (set === 'subscriber') {
+                const map = channelBadgeCache[roomId];
+                url = map && map[`${set}/${version}`];
+            } else {
+                const versions = globalBadgeMap[set];
+                url = versions && versions[version];
+            }
+
+            if (url) {
+                const img = document.createElement('img');
+                img.className = 'badge-img';
+                img.src = url;
+                return img;
+            }
+            return null;
+        }
+
+        function connectWebSocket() {
+            // Force clear all caches for a fresh start
+            localStorage.clear();
+            sessionStorage.clear();
+            document.getElementById('chat-container').innerHTML = '';
+            
+            ws = connectWidget(async (data) => {
+                if (data.type === 'config' || data.type === 'config-update') {
+                    const cfg = data.config || data;
+                    if (cfg.maxMessages) {
+                        MAX_MESSAGES = Math.max(50, parseInt(cfg.maxMessages, 10)); // Min 50 for dock
+                    }
+                } else if (data.type === 'chat') {
+                    await addMessage(data);
+                } else if (data.type === 'delete-message') {
+                    const el = document.querySelector(`.chat-line[data-id="${data.messageId}"]`);
+                    if (el) el.remove();
+                } else if (data.type === 'clear-chat' || data.type === 'clear') {
+                    document.getElementById('chat-container').innerHTML = '';
+                    messageQueue.length = 0;
+                }
+            });
+        }
+
+        async function addMessage(msg) {
+            const { username, displayName, color, badgesRaw, badges: badgesObj, text, emotes, roomId, platform } = msg;
+            
+            ensureGlobalBadges();
+            if (roomId) ensureChannelBadges(roomId);
+
+            const container = document.getElementById('chat-container');
+            const line = document.createElement('div');
+            line.className = 'chat-line';
+            if (msg.id) line.setAttribute('data-id', msg.id);
+
+            // Platform Icon
+            const platformIcon = document.createElement('img');
+            platformIcon.className = 'platform-icon';
+            if (platform === 'kick') {
+                platformIcon.src = '/widget/assets/kick.png';
+            } else if (platform === 'youtube') {
+                platformIcon.src = '/widget/assets/youtube.png';
+            } else {
+                platformIcon.src = '/widget/assets/twitch.png';
+            }
+            line.appendChild(platformIcon);
+
+            // Badges
+            const badges = parseBadgesRaw(badgesRaw).concat(parseBadgesObj(badgesObj || {}));
+            const seen = new Set();
+            badges.forEach(entry => {
+                const key = `${entry.set}/${entry.version}`;
+                if (seen.has(key)) return;
+                const node = createBadgeNode(entry, roomId);
+                if (node) line.appendChild(node);
+                seen.add(key);
+            });
+
+            // Username
+            const nameSpan = document.createElement('span');
+            nameSpan.className = 'username';
+            nameSpan.textContent = displayName || username;
+            nameSpan.style.color = computeColors(color);
+            line.appendChild(nameSpan);
+
+            // Separator
+            const sepSpan = document.createElement('span');
+            sepSpan.className = 'separator';
+            sepSpan.textContent = ':';
+            line.appendChild(sepSpan);
+
+            // Message
+            const messageSpan = document.createElement('span');
+            messageSpan.className = 'message';
+            messageSpan.appendChild(renderTextWithEmotes(text, emotes));
+            line.appendChild(messageSpan);
+
+            container.appendChild(line);
+            messageQueue.push(line);
+
+            // Cleanup
+            while (messageQueue.length > MAX_MESSAGES) {
+                const old = messageQueue.shift();
+                if (old) old.remove();
+            }
+
+            // Auto scroll to bottom
+            window.scrollTo(0, document.body.scrollHeight);
+        }
+
+        // Handle Chat Sending
+        function doSend() {
+            const input = document.getElementById('chat-input');
+            const text = input.value.trim();
+            if (text && window.sendMessage) {
+                window.sendMessage('send-chat', { text });
+                input.value = '';
+                input.focus();
+            }
+        }
+
+        document.getElementById('chat-input').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                doSend();
+            }
+        });
+
+        document.getElementById('send-button').addEventListener('click', () => {
+            doSend();
+        });
+
+        connectWebSocket();
+    </script>
+</body>
+
+</html>

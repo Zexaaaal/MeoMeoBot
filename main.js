@@ -5,6 +5,9 @@ const fontList = require('font-list');
 const TwitchBot = require('./bot.js');
 const StreamlabsClient = require('./server/streamlabs');
 const log = require('./main/logger').tagged('Main');
+const KickBot = require('./main/KickBot');
+const KickAPI = require('./main/KickAPI');
+const YouTubeBot = require('./main/YouTubeBot');
 
 const { createChatWidgetServer } = require('./server/chatWidgetServer');
 const { createSpotifyWidgetServer } = require('./server/spotifyWidgetServer');
@@ -30,7 +33,11 @@ const DEFAULT_GOALS_WIDGET_PORT = 8093;
 let mainWindow;
 
 let bot;
+let kickBot;
+let kickApi;
+let youtubeBot;
 let streamlabsClient = null;
+let kickCodeVerifier = null;
 
 let chatServer;
 let spotifyServer;
@@ -165,10 +172,67 @@ function autoConnectBot() {
     if (bot && config.channel && config.username && config.token) {
         setTimeout(() => bot.connect(), 1000);
     }
+    if (kickBot && config.kickChannel) {
+        setTimeout(() => kickBot.connect(config.kickChannel), 1000);
+    }
+    if (youtubeBot && config.youtubeChannel) {
+        setTimeout(() => youtubeBot.connect(config.youtubeChannel), 1000);
+    }
 }
 
 function setupBotEvents() {
     if (!bot) return;
+
+    bot.on('kick-oauth-code', async (code) => {
+        if (!kickApi || !kickCodeVerifier) {
+            log.error('KICK_OAUTH_MISSING', { hasApi: !!kickApi, hasVerifier: !!kickCodeVerifier });
+            if (mainWindow && !mainWindow.isDestroyed()) {
+                mainWindow.webContents.send('notification', 'Erreur OAuth Kick: verifier manquant', 'error');
+            }
+            return;
+        }
+        try {
+            const config = bot.getConfig();
+            const params = new URLSearchParams({
+                grant_type: 'authorization_code',
+                client_id: config.kickClientId,
+                client_secret: config.kickClientSecret,
+                redirect_uri: 'http://localhost:8087/kick/callback',
+                code_verifier: kickCodeVerifier,
+                code
+            });
+            const response = await fetch('https://id.kick.com/oauth/token', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: params.toString()
+            });
+            if (response.ok) {
+                const data = await response.json();
+                bot.updateConfig({
+                    kickToken: data.access_token,
+                    kickRefreshToken: data.refresh_token
+                });
+                kickApi.userAccessToken = data.access_token;
+                log.info('KICK_USER_TOKEN_OK');
+                if (mainWindow && !mainWindow.isDestroyed()) {
+                    mainWindow.webContents.send('notification', 'Token Kick obtenu avec succès !', 'success');
+                }
+            } else {
+                const text = await response.text();
+                log.error('KICK_TOKEN_EXCHANGE_ERR', { status: response.status, body: text });
+                if (mainWindow && !mainWindow.isDestroyed()) {
+                    mainWindow.webContents.send('notification', 'Erreur échange token Kick: ' + response.status, 'error');
+                }
+            }
+            kickCodeVerifier = null;
+        } catch (err) {
+            log.error('KICK_TOKEN_EXCHANGE_ERR', { error: err.message });
+            if (mainWindow && !mainWindow.isDestroyed()) {
+                mainWindow.webContents.send('notification', 'Erreur OAuth Kick: ' + err.message, 'error');
+            }
+            kickCodeVerifier = null;
+        }
+    });
 
     const safeSend = (channel, data) => {
         if (mainWindow && !mainWindow.isDestroyed()) {
@@ -233,8 +297,26 @@ function setupBotEvents() {
     });
 
     bot.on('chat-message', (msg) => {
-        if (chatServer) chatServer.broadcast({ type: 'chat', ...msg });
+        if (chatServer) {
+            chatServer.broadcast({ type: 'chat', platform: 'twitch', ...msg });
+        }
     });
+
+    if (kickBot) {
+        kickBot.on('chat-message', (msg) => {
+            if (chatServer) {
+                chatServer.broadcast({ type: 'chat', platform: 'kick', ...msg });
+            }
+        });
+    }
+
+    if (youtubeBot) {
+        youtubeBot.on('chat-message', (msg) => {
+            if (chatServer) {
+                chatServer.broadcast({ type: 'chat', platform: 'youtube', ...msg });
+            }
+        });
+    }
 
     bot.on('emote-rain', (emotes) => {
         if (chatServer) chatServer.broadcast({ type: 'emote-rain', emotes });
@@ -253,6 +335,50 @@ ipcMain.handle('open-css-editor', (event, widgetName) => openCssEditorWindow(wid
 ipcMain.handle('open-subgoals-config', () => openSubgoalsConfigWindow());
 ipcMain.handle('open-roulette-config', () => openRouletteConfigWindow());
 ipcMain.handle('open-goals-config', () => openGoalsConfigWindow());
+ipcMain.handle('open-external-url', async (event, url) => {
+    const { shell } = require('electron');
+    shell.openExternal(url);
+});
+
+
+ipcMain.handle('store-kick-verifier', (event, verifier) => {
+    kickCodeVerifier = verifier;
+    log.info('KICK_VERIFIER_STORED');
+});
+
+ipcMain.handle('kick-auth-oauth', async (event, code, codeVerifier) => {
+    if (kickApi) {
+        try {
+            const config = bot.getConfig();
+            const params = new URLSearchParams({
+                grant_type: 'authorization_code',
+                client_id: config.kickClientId,
+                client_secret: config.kickClientSecret,
+                redirect_uri: 'http://localhost:8087/kick/callback',
+                code_verifier: codeVerifier,
+                code
+            });
+            const response = await fetch('https://id.kick.com/oauth/token', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: params.toString()
+            });
+            if (response.ok) {
+                const data = await response.json();
+                bot.updateConfig({
+                    kickToken: data.access_token,
+                    kickRefreshToken: data.refresh_token
+                });
+                kickApi.userAccessToken = data.access_token;
+                return { success: true };
+            }
+            return { success: false, error: 'Token exchange failed' };
+        } catch (err) {
+            return { success: false, error: err.message };
+        }
+    }
+    return { success: false, error: 'KickAPI not initialized' };
+});
 
 ipcMain.handle('get-goal-widget-url', (event, goalId) => {
     const localIp = castManager.getLocalIp();
@@ -312,6 +438,10 @@ ipcMain.on('resize-css-editor', (event, width) => {
 
 app.whenReady().then(async () => {
     bot = new TwitchBot();
+    kickBot = new KickBot();
+    kickApi = new KickAPI(bot);
+    kickBot.setApi(kickApi);
+    youtubeBot = new YouTubeBot();
     try {
         await themeManager.reloadThemeContent(bot);
     } catch (e) {
@@ -323,7 +453,7 @@ app.whenReady().then(async () => {
     mediaServerModule.start();
 
     const config = bot.getConfig();
-    chatServer = createChatWidgetServer(bot, DEFAULT_WIDGET_PORT);
+    chatServer = createChatWidgetServer(bot, DEFAULT_WIDGET_PORT, kickBot);
     spotifyServer = createSpotifyWidgetServer(bot, { defaultPort: DEFAULT_SPOTIFY_WIDGET_PORT });
     subgoalsServer = createSubgoalsWidgetServer(bot, DEFAULT_SUBGOALS_WIDGET_PORT);
     rouletteServer = createRouletteWidgetServer(bot, DEFAULT_ROULETTE_WIDGET_PORT);
@@ -368,6 +498,8 @@ app.whenReady().then(async () => {
     log.info('MAIN_IPC_REGISTER');
     ipcHandlers.registerHandlers({
         bot,
+        kickBot,
+        youtubeBot,
         getServers,
         getLocalIp: castManager.getLocalIp,
         mediaServer: mediaServerModule.getServer(),

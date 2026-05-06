@@ -254,8 +254,17 @@
                                 <strong>Tchat</strong>
                                 <button class="btn btn-sm btn-secondary copy-source-btn" id="btnCopyChatUrl">📄
                                     Source</button>
+                                <button class="btn btn-sm btn-secondary copy-source-btn" id="btnCopyDockUrl" title="Dock OBS">📄
+                                    Global</button>
                             </div>
-                            <div class="widget-col-config" id="badgePrefs"></div>
+                            <div class="widget-col-config" id="badgePrefs">
+                            </div>
+                            <div class="widget-col-config">
+                                <div class="badge-grid" style="grid-template-columns: repeat(2, 1fr); gap: 4px;">
+                                    <label title="Afficher Kick dans le widget"><input type="checkbox" id="chatPlatformKick"> Kick</label>
+                                    <label title="Afficher YouTube dans le widget"><input type="checkbox" id="chatPlatformYoutube"> YouTube</label>
+                                </div>
+                            </div>
                             <div class="widget-col-actions">
                                 <button class="btn btn-secondary btn-sm" onclick="editWidgetCss('chat')">Thèmes</button>
                                 <button class="btn btn-primary btn-sm" id="saveBadgePrefs"
@@ -714,81 +723,110 @@
     </div>
 
     <div class="tab-content" id="config-tab">
-        <div class="config-columns">
-            <div class="config-section">
-                <div class="config-group">
-                    <div class="form-group">
-                        <label>Chaîne</label>
-                        <input type="text" id="config-channel" placeholder="Ex: meomeobot">
-                    </div>
-                    <div class="form-group">
-                        <label>Compte Bot</label>
-                        <input type="text" id="config-username" placeholder="Ex: meomeobot">
-                    </div>
-                    <div class="form-group">
-                        <label>OAuth Token (Bot)</label>
-                        <input type="password" id="config-token" placeholder="oauth:xxxxxxxxxxxx">
-                    </div>
-
-                    <div class="config-divider"></div>
-
-                    <div class="form-group">
-                        <label>Client ID API</label>
-                        <input type="text" id="config-twitchClientId">
-                    </div>
-                    <div class="form-group">
-                        <label>App Token API</label>
-                        <input type="password" id="config-twitchAppToken">
+        <div class="config-scroll-area">
+            <div class="config-columns">
+                <div class="config-section">
+                    <div class="config-group">
+                        <div class="config-group-title">Twitch</div>
+                        <div class="form-group">
+                            <label>Chaîne</label>
+                            <input type="text" id="config-channel" placeholder="meomeobot">
+                        </div>
+                        <div class="form-group">
+                            <label>Compte Bot</label>
+                            <input type="text" id="config-username" placeholder="meomeobot">
+                        </div>
+                        <div class="form-group">
+                            <label>OAuth Token</label>
+                            <input type="password" id="config-token" placeholder="oauth:xxx">
+                        </div>
+                        <div class="config-divider"></div>
+                        <div class="form-group">
+                            <label>Client ID</label>
+                            <input type="text" id="config-twitchClientId">
+                        </div>
+                        <div class="form-group">
+                            <label>App Token</label>
+                            <input type="password" id="config-twitchAppToken">
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <div class="config-section">
-                <div class="config-group">
-                    <div class="form-group">
-                        <label>Spotify Client ID</label>
-                        <input type="text" id="config-spotifyClientId">
+                <div class="config-section">
+                    <div class="config-group">
+                        <div class="config-group-title">Kick</div>
+                        <div class="form-group">
+                            <label>Chaîne</label>
+                            <input type="text" id="config-kickChannel" placeholder="meomeobot">
+                        </div>
+                        <div class="form-group">
+                            <label>Client ID</label>
+                            <input type="text" id="config-kickClientId">
+                        </div>
+                        <div class="form-group">
+                            <label>Client Secret</label>
+                            <input type="password" id="config-kickClientSecret">
+                        </div>
+                        <button class="btn btn-secondary btn-full" id="kickOAuthBtn">🔑 OAuth Kick</button>
+                        <div class="form-group">
+                            <label>User Token</label>
+                            <input type="password" id="config-kickToken">
+                        </div>
+                        <div class="form-group">
+                            <label>App Token (Auto)</label>
+                            <input type="password" id="config-kickAppToken" readonly>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label>Spotify Client Secret</label>
-                        <input type="password" id="config-spotifyClientSecret">
+                </div>
+
+                <div class="config-section">
+                    <div class="config-group">
+                        <div class="config-group-title">YouTube</div>
+                        <div class="form-group">
+                            <label>Chaîne / Live ID</label>
+                            <input type="text" id="config-youtubeChannel" placeholder="UCxxx ou @handle">
+                        </div>
                     </div>
-                    <button class="btn btn-secondary btn-full" id="spotifyAuthBtn" style="margin-bottom: 5px;">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                            <path
-                                d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z" />
-                        </svg>
-                        Lier Spotify
-                    </button>
-
-                    <div class="config-divider"></div>
-
-                    <div class="form-group">
-                        <label>Token Streamlabs</label>
-                        <input type="password" id="config-streamlabsSocketToken">
+                    <div class="config-group">
+                        <div class="config-group-title">Spotify</div>
+                        <div class="form-group">
+                            <label>Client ID</label>
+                            <input type="text" id="config-spotifyClientId">
+                        </div>
+                        <div class="form-group">
+                            <label>Client Secret</label>
+                            <input type="password" id="config-spotifyClientSecret">
+                        </div>
+                        <button class="btn btn-secondary btn-full" id="spotifyAuthBtn">🎵 Lier Spotify</button>
                     </div>
-                    <div class="form-group">
-                        <label>SteamGridDB Key</label>
-                        <input type="password" id="config-steamGridDbApiKey">
-                    </div>
+                </div>
 
-                    <div class="config-divider"></div>
-
-                    <div class="form-group">
-                        <label>Discord Webhook URL</label>
-                        <input type="text" id="config-discordWebhookUrl"
-                            placeholder="https://discord.com/api/webhooks/...">
+                <div class="config-section">
+                    <div class="config-group">
+                        <div class="config-group-title">Intégrations</div>
+                        <div class="form-group">
+                            <label>Token Streamlabs</label>
+                            <input type="password" id="config-streamlabsSocketToken">
+                        </div>
+                        <div class="form-group">
+                            <label>SteamGridDB Key</label>
+                            <input type="password" id="config-steamGridDbApiKey">
+                        </div>
+                        <div class="config-divider"></div>
+                        <div class="form-group">
+                            <label>Discord Webhook</label>
+                            <input type="text" id="config-discordWebhookUrl" placeholder="https://discord.com/api/...">
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
 
         <div class="config-footer">
-            <button class="btn btn-primary" id="saveConfigBtn">Enregistrer tout</button>
+            <button class="btn btn-primary" id="saveConfigBtn">Enregistrer</button>
             <button class="btn btn-success" id="connectBtn">Connecter</button>
             <button class="btn btn-danger" id="disconnectBtn">Déconnecter</button>
         </div>
-    </div>
     </div>
 
 

@@ -78,6 +78,21 @@ function setupEventListeners() {
     el('connectBtn')?.addEventListener('click', connectBot);
     el('disconnectBtn')?.addEventListener('click', disconnectBot);
     el('saveConfigBtn')?.addEventListener('click', saveConfig);
+    el('kickOAuthBtn')?.addEventListener('click', async () => {
+        const clientId = document.getElementById('config-kickClientId').value.trim();
+        if (!clientId) { showNotification('Remplissez le Kick Client ID', 'error'); return; }
+        const arr = new Uint8Array(32); crypto.getRandomValues(arr);
+        const cv = Array.from(arr, b => b.toString(16).padStart(2, '0')).join('');
+        const enc = new TextEncoder();
+        const dig = await crypto.subtle.digest('SHA-256', enc.encode(cv));
+        const cc = btoa(String.fromCharCode(...new Uint8Array(dig))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+        await window.api.invoke('store-kick-verifier', cv);
+        const s = crypto.randomUUID();
+        const redirectUri = 'http://localhost:8087/kick/callback';
+        const u = `https://id.kick.com/oauth/authorize?response_type=code&client_id=${encodeURIComponent(clientId)}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=chat:write+chat:read+channel:read+events:subscribe&code_challenge=${cc}&code_challenge_method=S256&state=${s}`;
+        window.api.invoke('open-external-url', u);
+        showNotification('Autorisez MeoMeoBot sur Kick puis revenez ici', 'info');
+    });
 
     el('addCommandBtn')?.addEventListener('click', addCommand);
     el('newCommand')?.addEventListener('keydown', (e) => { if (e.key === 'Enter') el('commandResponse')?.focus(); });
@@ -196,6 +211,12 @@ async function saveConfig() {
         streamlabsSocketToken: document.getElementById('config-streamlabsSocketToken').value,
         steamGridDbApiKey: document.getElementById('config-steamGridDbApiKey').value,
         discordWebhookUrl: document.getElementById('config-discordWebhookUrl').value,
+        kickChannel: document.getElementById('config-kickChannel').value,
+        kickClientId: document.getElementById('config-kickClientId').value,
+        kickClientSecret: document.getElementById('config-kickClientSecret').value,
+        kickToken: document.getElementById('config-kickToken').value,
+        kickAppToken: document.getElementById('config-kickAppToken').value,
+        youtubeChannel: document.getElementById('config-youtubeChannel').value,
         giveawayCommand: document.getElementById('giveawayCommand').value,
         giveawayStartMessage: document.getElementById('giveawayStartMessage').value,
         giveawayStopMessage: document.getElementById('giveawayStopMessage').value,
@@ -222,6 +243,12 @@ function updateConfigForm(config) {
     document.getElementById('config-streamlabsSocketToken').value = config.streamlabsSocketToken || '';
     document.getElementById('config-steamGridDbApiKey').value = config.steamGridDbApiKey || '';
     document.getElementById('config-discordWebhookUrl').value = config.discordWebhookUrl || '';
+    document.getElementById('config-kickChannel').value = config.kickChannel || '';
+    document.getElementById('config-kickClientId').value = config.kickClientId || '';
+    document.getElementById('config-kickClientSecret').value = config.kickClientSecret || '';
+    document.getElementById('config-kickToken').value = config.kickToken || '';
+    document.getElementById('config-kickAppToken').value = config.kickAppToken || '';
+    document.getElementById('config-youtubeChannel').value = config.youtubeChannel || '';
 
     document.getElementById('giveawayCommand').value = config.giveawayCommand || '!giveaway';
     document.getElementById('giveawayStartMessage').value = config.giveawayStartMessage !== undefined ? config.giveawayStartMessage : 'Le giveaway commence ! Tape !giveaway pour participer.';
@@ -255,6 +282,7 @@ async function loadWidgetUrls() {
         };
 
         setBtnUrl('btnCopyChatUrl', urls.chat);
+        setBtnUrl('btnCopyDockUrl', urls.dock);
         setBtnUrl('btnCopySpotifyUrl', urls.spotify);
         setBtnUrl('btnCopyEmoteWallUrl', urls.emoteWall);
         setBtnUrl('btnCopySubgoalsUrl', urls.subgoals);
@@ -279,6 +307,12 @@ async function loadBadgePrefs() {
     try {
         const prefs = await API.getBadgePrefs();
         renderBadgePrefs(prefs);
+
+        const chatConfig = await API.widgets.getConfig('chat') || {};
+        const kickCb = document.getElementById('chatPlatformKick');
+        const ytCb = document.getElementById('chatPlatformYoutube');
+        if (kickCb) kickCb.checked = !!chatConfig.platformKick;
+        if (ytCb) ytCb.checked = !!chatConfig.platformYoutube;
     } catch (e) { console.error('Erreur de chargement badges', e); }
 }
 
@@ -315,8 +349,18 @@ async function saveBadgePrefs() {
     checkboxes.forEach(cb => {
         prefs[cb.dataset.badge] = cb.checked;
     });
+
+    const platformKick = document.getElementById('chatPlatformKick')?.checked || false;
+    const platformYoutube = document.getElementById('chatPlatformYoutube')?.checked || false;
+
     try {
         await API.saveBadgePrefs(prefs);
+
+        const chatConfig = await API.widgets.getConfig('chat') || {};
+        chatConfig.platformKick = platformKick;
+        chatConfig.platformYoutube = platformYoutube;
+        await API.widgets.saveConfig('chat', chatConfig);
+
         showNotification('Préférences sauvegardées', 'success');
     } catch (e) { showNotification('Erreur sauvegarde badges: ' + e, 'error'); }
 }

@@ -61,7 +61,13 @@ class ChatWidgetServer extends BaseWidgetServer {
             const error = url.searchParams.get('error');
             if (error) {
                 res.writeHead(200, { 'Content-Type': 'text/html' });
-                res.end(`<html><body style="background:#0a0a0c;color:#ef4444;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0"><h2>Erreur OAuth Kick: ${error}</h2></body></html>`);
+                const redirectUri = `http://127.0.0.1:${this.port}/kick/callback`;
+                res.end(`<html><body style="background:#0a0a0c;color:#ef4444;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;flex-direction:column;padding:20px;text-align:center">
+                    <h2>Erreur OAuth Kick: ${error}</h2>
+                    <p style="color:#9ca3af;max-width:600px">Assurez-vous que l'URL suivante est bien enregistrée dans votre Dashboard Kick Developer :</p>
+                    <code style="background:#1a1a1c;padding:10px;border-radius:8px;color:#10b981;margin:10px 0">${redirectUri}</code>
+                    <p style="color:#6b7280;font-size:0.9em;margin-top:20px">Si vous utilisez un port personnalisé, l'URL doit correspondre exactement.</p>
+                </body></html>`);
                 return true;
             }
             if (code) {

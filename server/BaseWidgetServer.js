@@ -75,7 +75,8 @@ class BaseWidgetServer {
     }
 
     resolvePort() {
-        return this.defaultPort;
+        const config = this.bot.getConfig ? this.bot.getConfig() : {};
+        return config[this.configKey] || this.defaultPort;
     }
 
     getPort() {

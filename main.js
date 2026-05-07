@@ -193,11 +193,13 @@ function setupBotEvents() {
         }
         try {
             const config = bot.getConfig();
+            const chatPort = chatServer ? chatServer.getPort() : DEFAULT_WIDGET_PORT;
+            const redirectUri = `http://127.0.0.1:${chatPort}/kick/callback`;
             const params = new URLSearchParams({
                 grant_type: 'authorization_code',
                 client_id: config.kickClientId,
                 client_secret: config.kickClientSecret,
-                redirect_uri: 'http://localhost:8087/kick/callback',
+                redirect_uri: redirectUri,
                 code_verifier: kickCodeVerifier,
                 code
             });
@@ -350,11 +352,13 @@ ipcMain.handle('kick-auth-oauth', async (event, code, codeVerifier) => {
     if (kickApi) {
         try {
             const config = bot.getConfig();
+            const chatPort = chatServer ? chatServer.getPort() : DEFAULT_WIDGET_PORT;
+            const redirectUri = `http://127.0.0.1:${chatPort}/kick/callback`;
             const params = new URLSearchParams({
                 grant_type: 'authorization_code',
                 client_id: config.kickClientId,
                 client_secret: config.kickClientSecret,
-                redirect_uri: 'http://localhost:8087/kick/callback',
+                redirect_uri: redirectUri,
                 code_verifier: codeVerifier,
                 code
             });

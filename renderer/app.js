@@ -88,9 +88,7 @@ function setupEventListeners() {
         const cc = btoa(String.fromCharCode(...new Uint8Array(dig))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
         await window.api.invoke('store-kick-verifier', cv);
         const s = crypto.randomUUID();
-        const config = await API.getConfig();
-        const chatPort = config.chatWidgetPort || 8087;
-        const redirectUri = `http://127.0.0.1:${chatPort}/kick/callback`;
+        const redirectUri = 'http://localhost:8087/kick/callback';
         const u = `https://id.kick.com/oauth/authorize?response_type=code&client_id=${encodeURIComponent(clientId)}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=chat:write+chat:read+channel:read+events:subscribe&code_challenge=${cc}&code_challenge_method=S256&state=${s}`;
         window.api.invoke('open-external-url', u);
         showNotification('Autorisez MeoMeoBot sur Kick puis revenez ici', 'info');

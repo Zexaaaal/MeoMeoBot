@@ -12,25 +12,23 @@
     background: transparent;
 }
 
-
 .planning-sidebar {
     width: 380px;
     display: flex;
     flex-direction: column;
     flex-shrink: 0;
-
     padding: 10px;
     gap: 10px;
     overflow-y: auto;
 }
 
-.sidebar-section {
+.planning-sidebar .planning-section {
     display: flex;
     flex-direction: column;
     gap: 12px;
 }
 
-.sidebar-section h3 {
+.planning-sidebar .planning-section h3 {
     margin: 0 0 5px 0;
     font-size: 14px;
     color: var(--text-secondary);
@@ -83,7 +81,7 @@
     font-size: 12px;
 }
 
-.sidebar-actions {
+.planning-sidebar .planning-actions {
     display: flex;
     flex-direction: row;
     gap: 8px;
@@ -91,7 +89,7 @@
     margin-bottom: 10px;
 }
 
-.sidebar-actions .btn {
+.planning-sidebar .planning-actions .btn {
     flex: 1;
 }
 
@@ -104,7 +102,6 @@
     background: var(--border);
     margin: 5px 0;
 }
-
 
 .list-section.unified-editor {
     flex: 1;
@@ -120,7 +117,7 @@
 .day-selector {
     display: flex;
     background: var(--bg-tertiary);
-    padding: 4px;
+    padding: 0 10px;
     border-bottom: 1px solid var(--border);
     position: relative;
     z-index: 1;
@@ -129,26 +126,29 @@
 .day-tab {
     flex: 1;
     text-align: center;
-    padding: 8px 4px;
+    padding: 11px 4px;
     font-size: 11px;
     font-weight: 500;
     cursor: pointer;
-    border-radius: 4px;
+    border-radius: 0;
     color: var(--text-secondary);
     transition: all 0.2s;
     background: transparent;
     border: none;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
     text-transform: uppercase;
 }
 
 .day-tab:hover {
-    background: rgba(255, 255, 255, 0.05);
+    background: transparent;
     color: var(--text-primary);
 }
 
 .day-tab.active {
-    background: var(--accent);
-    color: white;
+    background: transparent;
+    color: var(--text-primary);
+    border-bottom-color: var(--accent);
     font-weight: 600;
 }
 
@@ -511,16 +511,12 @@
     font-weight: 500;
 }
 
-
 .planning-main-preview {
     flex: 1;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: #111;
     overflow: hidden;
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
     padding: 0;
     position: relative;
 }
@@ -598,7 +594,6 @@
     margin-top: 30px;
     height: calc(100% - 30px);
     position: relative;
-
     font-size: 14px;
     font-weight: 600;
     color: rgba(255, 255, 255, 0.9);
@@ -651,9 +646,7 @@
 .planning-col-content {
     flex: 1;
     position: relative;
-
 }
-
 
 .preview-event {
     position: absolute;
@@ -688,7 +681,6 @@
 
 .preview-event-info {
     padding: 10px;
-
     flex: 1;
     display: flex;
     flex-direction: column;
@@ -699,7 +691,6 @@
     position: relative;
     z-index: 1;
     gap: 4px;
-
 }
 
 .preview-event.has-image .preview-event-info {
@@ -708,7 +699,6 @@
 
 .preview-event-title {
     font-size: clamp(14px, 12cqh, 32px);
-
     font-weight: 800;
     color: white;
     text-transform: uppercase;

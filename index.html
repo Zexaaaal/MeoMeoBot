@@ -19,71 +19,93 @@
 </head>
 
 <body>
-    <div class="header">
-        <h2 class="app-title">
-            <img src="assets/icon.png" alt="App Icon" class="app-icon">
-            <span>MeoMeoBot <small id="app-version-tag"
-                    style="font-size: 0.5em; color: var(--text-secondary); vertical-align: middle; margin-left: 10px;"></small></span>
-        </h2>
-        <div class="header-right">
-            <div id="updateStatus" class="status checking">
-                <span class="status-dot"></span>
-                <span class="update-text-label">Vérification...</span>
+<div class="app-layout">
+
+    <div class="titlebar">
+        <div class="titlebar-drag">
+            <img src="assets/icon.png" alt="" class="titlebar-logo">
+            <span class="titlebar-name">MeoMeoBot</span>
+            <span class="titlebar-ver" id="app-version-tag"></span>
+        </div>
+        <div class="titlebar-controls">
+            <button class="wc-btn" id="minimize-btn" title="Minimiser">
+                <svg viewBox="0 0 10 2" fill="currentColor"><rect width="10" height="1.5" y="0.25"/></svg>
+            </button>
+            <button class="wc-btn" id="maximize-btn" title="Agrandir">
+                <svg viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="0.75" y="0.75" width="8.5" height="8.5"/></svg>
+            </button>
+            <button class="wc-btn wc-close" id="close-btn" title="Fermer">
+                <svg viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="1" y1="1" x2="9" y2="9"/><line x1="9" y1="1" x2="1" y2="9"/></svg>
+            </button>
+        </div>
+    </div>
+
+    <div class="app-body">
+
+    <aside class="sidebar">
+
+        <div class="sidebar-top-spacer"></div>
+
+        <nav class="sidebar-nav">
+            <div class="nav-item tab active" data-tab="commands" title="Commandes">
+                <svg viewBox="0 0 24 24"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+                <span class="nav-label">Commandes</span>
+            </div>
+            <div class="nav-item tab" data-tab="giveaway" title="Giveaway">
+                <svg viewBox="0 0 24 24"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><line x1="12" y1="22" x2="12" y2="7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>
+                <span class="nav-label">Giveaway</span>
+            </div>
+            <div class="nav-item tab" data-tab="moderation" title="Modération">
+                <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                <span class="nav-label">Modération</span>
+            </div>
+            <div class="nav-item tab" data-tab="cast" title="Cast">
+                <svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="15" rx="2"/><polyline points="17 2 12 7 7 2"/></svg>
+                <span class="nav-label">Cast</span>
+            </div>
+            <div class="nav-item tab" data-tab="widgets" title="Widgets">
+                <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                <span class="nav-label">Widgets</span>
+            </div>
+            <div class="nav-item tab" data-tab="alerts" title="Alertes">
+                <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                <span class="nav-label">Alertes</span>
+            </div>
+            <div class="nav-item tab" data-tab="points" title="Points">
+                <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                <span class="nav-label">Points</span>
+            </div>
+            <div class="nav-item tab" data-tab="planning" title="Planning">
+                <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                <span class="nav-label">Planning</span>
+            </div>
+        </nav>
+
+        <div class="sidebar-footer">
+            <div class="nav-item tab" data-tab="config" title="Configuration">
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                <span class="nav-label">Configuration</span>
+            </div>
+
+            <div class="sidebar-status disconnected" id="connectionStatus">
+                <span class="sidebar-status-dot"></span>
+                <span class="sidebar-status-label">Déconnecté</span>
+            </div>
+
+            <div class="sidebar-status checking" id="updateStatus">
+                <span class="sidebar-status-dot"></span>
+                <span class="update-text-label sidebar-status-label">Vérification...</span>
                 <div id="update-action-container" class="hidden">
-                    <span id="update-confirm-icon" class="update-icon confirm-icon"
-                        title="Cliquer pour télécharger/installer">📥</span>
-                    <span id="update-deny-icon" class="update-icon deny-icon" title="Refuser/Annuler">❌</span>
+                    <span id="update-confirm-icon" class="update-icon" title="Télécharger/Installer">📥</span>
+                    <span id="update-deny-icon" class="update-icon" title="Refuser">❌</span>
                 </div>
             </div>
-            <div id="connectionStatus" class="status disconnected">
-                <span class="status-dot"></span>
-                <span>Déconnecté</span>
-            </div>
-            <div class="window-controls">
-                <span id="global-status-msg" class="status-msg" style="margin-right: 15px;"></span>
-                <div class="control-btn" id="minimize-btn" title="Minimiser"><svg width="12" height="12"
-                        viewBox="0 0 107.97 10.8">
-                        <path fill="currentColor" d="M0,0h107.97v10.8H0V0Z" />
-                    </svg></div>
-                <div class="control-btn" id="maximize-btn" title="Agrandir"><svg width="12" height="12"
-                        viewBox="0 0 107.97 88.52">
-                        <path fill="currentColor"
-                            d="M97.18,0H0v88.52h107.97V0h-10.8ZM97.18,77.72H10.8V10.8h86.38v66.93Z" />
-                    </svg></div>
-                <div class="control-btn" id="close-btn" title="Fermer"><svg width="12" height="12"
-                        viewBox="0 0 91.14 91.14">
-                        <polygon fill="currentColor"
-                            points="91.14 8.29 82.86 0 45.57 37.28 8.29 0 0 8.29 37.29 45.57 0 82.86 8.29 91.14 45.57 53.86 82.86 91.14 91.14 82.86 53.86 45.57 91.14 8.29" />
-                    </svg></div>
-            </div>
         </div>
-    </div>
 
-    <div id="notification-container"></div>
+    </aside>
+    <div class="content-area">
+        <div id="notification-container"></div>
 
-    <div class="tabs-container">
-        <div class="main-tabs">
-            <div class="tab active" data-tab="commands">Commandes</div>
-            <div class="tab" data-tab="giveaway">Giveaway</div>
-            <div class="tab" data-tab="moderation">Modération</div>
-            <div class="tab" data-tab="cast">Cast</div>
-            <div class="tab" data-tab="widgets">Widgets</div>
-            <div class="tab" data-tab="alerts">Alertes</div>
-            <div class="tab" data-tab="points">Points</div>
-            <div class="tab" data-tab="planning">Planning</div>
-        </div>
-        <div class="settings-tab">
-            <div class="tab icon-tab" data-tab="config" title="Configuration">
-                <svg width="20" height="20" viewBox="0 0 192.1 192.1" fill="none" stroke="currentColor"
-                    stroke-width="8.08" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="96.05" cy="96.05" r="25.09"></circle>
-                    <path
-                        d="M157.95,121.14c-2.28,5.16-1.18,11.19,2.76,15.22l.5.5c6.54,6.53,6.54,17.12.01,23.66h-.01c-6.53,6.55-17.12,6.56-23.66.03h-.01s-.5-.52-.5-.52c-4.03-3.95-10.06-5.04-15.22-2.76-5.06,2.17-8.34,7.13-8.36,12.63v1.42c0,9.24-7.49,16.73-16.73,16.73s-16.73-7.49-16.73-16.73v-.75c-.13-5.67-3.71-10.67-9.03-12.63-5.16-2.28-11.19-1.18-15.22,2.76l-.5.5c-6.53,6.54-17.12,6.54-23.66.01,0,0,0,0-.01-.01-6.54-6.53-6.54-17.12-.01-23.66,0,0,0,0,.01-.01l.5-.5c3.95-4.03,5.04-10.06,2.76-15.22-2.17-5.06-7.13-8.34-12.63-8.36h-1.42c-9.24,0-16.73-7.49-16.73-16.73s7.49-16.73,16.73-16.73h.75c5.67-.13,10.67-3.71,12.63-9.03,2.28-5.16,1.18-11.19-2.76-15.22l-.5-.5c-6.54-6.53-6.54-17.12-.01-23.66,0,0,0,0,.01-.01,6.53-6.54,17.12-6.54,23.66-.01,0,0,0,0,.01.01l.5.5c4.03,3.95,10.06,5.04,15.22,2.76h.67c5.06-2.17,8.34-7.13,8.36-12.63v-1.42c0-9.24,7.49-16.73,16.73-16.73s16.73,7.49,16.73,16.73v.75c.02,5.5,3.31,10.46,8.36,12.63,5.16,2.28,11.19,1.18,15.22-2.76l.5-.5c6.53-6.54,17.12-6.54,23.66-.01,0,0,0,0,.01.01,6.54,6.53,6.54,17.12.01,23.66,0,0,0,0-.01.01l-.5.5c-3.95,4.03-5.04,10.06-2.76,15.22v.67c2.17,5.06,7.13,8.34,12.63,8.36h1.42c9.24,0,16.73,7.49,16.73,16.73s-7.49,16.73-16.73,16.73h-.75c-5.5.02-10.46,3.31-12.63,8.36Z">
-                    </path>
-                </svg>
-            </div>
-        </div>
-    </div>
 
     <div class="tab-content active" id="commands-tab">
         <div class="card full-height-card">
@@ -723,111 +745,119 @@
     </div>
 
     <div class="tab-content" id="config-tab">
-        <div class="config-scroll-area">
-            <div class="config-columns">
-                <div class="config-section">
-                    <div class="config-group">
-                        <div class="config-group-title">Twitch</div>
-                        <div class="form-group">
-                            <label>Chaîne</label>
-                            <input type="text" id="config-channel" placeholder="meomeobot">
-                        </div>
-                        <div class="form-group">
-                            <label>Compte Bot</label>
-                            <input type="text" id="config-username" placeholder="meomeobot">
-                        </div>
-                        <div class="form-group">
-                            <label>OAuth Token</label>
-                            <input type="password" id="config-token" placeholder="oauth:xxx">
-                        </div>
-                        <div class="config-divider"></div>
-                        <div class="form-group">
-                            <label>Client ID</label>
-                            <input type="text" id="config-twitchClientId">
-                        </div>
-                        <div class="form-group">
-                            <label>App Token</label>
-                            <input type="password" id="config-twitchAppToken">
-                        </div>
-                    </div>
-                </div>
 
-                <div class="config-section">
-                    <div class="config-group">
-                        <div class="config-group-title">Kick</div>
-                        <div class="form-group">
-                            <label>Chaîne</label>
-                            <input type="text" id="config-kickChannel" placeholder="meomeobot">
-                        </div>
-                        <div class="form-group">
-                            <label>Client ID</label>
-                            <input type="text" id="config-kickClientId">
-                        </div>
-                        <div class="form-group">
-                            <label>Client Secret</label>
-                            <input type="password" id="config-kickClientSecret">
-                        </div>
-                        <button class="btn btn-secondary btn-full" id="kickOAuthBtn">🔑 OAuth Kick</button>
-                        <div class="form-group">
-                            <label>User Token</label>
-                            <input type="password" id="config-kickToken">
-                        </div>
-                        <div class="form-group">
-                            <label>App Token (Auto)</label>
-                            <input type="password" id="config-kickAppToken" readonly>
-                        </div>
-                    </div>
-                </div>
+        <div class="config-platform-tabs">
+            <button class="config-ptab active" data-platform="twitch">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714z"/></svg>
+                Twitch
+            </button>
+            <button class="config-ptab" data-platform="kick">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 2h4v8l5-8h5l-5.5 9 5.5 11h-5l-5-8v8H4z"/></svg>
+                Kick
+            </button>
+            <button class="config-ptab" data-platform="youtube">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M23.5 6.19a3.02 3.02 0 0 0-2.12-2.14C19.54 3.5 12 3.5 12 3.5s-7.54 0-9.38.55A3.02 3.02 0 0 0 .5 6.19C0 8.03 0 12 0 12s0 3.97.5 5.81a3.02 3.02 0 0 0 2.12 2.14C4.46 20.5 12 20.5 12 20.5s7.54 0 9.38-.55a3.02 3.02 0 0 0 2.12-2.14C24 15.97 24 12 24 12s0-3.97-.5-5.81zM9.75 15.52V8.48L15.5 12l-5.75 3.52z"/></svg>
+                YouTube
+            </button>
+            <button class="config-ptab" data-platform="spotify">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/></svg>
+                Spotify
+            </button>
+            <button class="config-ptab" data-platform="integrations">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                Int&eacute;grations
+            </button>
+        </div>
 
-                <div class="config-section">
-                    <div class="config-group">
-                        <div class="config-group-title">YouTube</div>
-                        <div class="form-group">
-                            <label>Chaîne / Live ID</label>
-                            <input type="text" id="config-youtubeChannel" placeholder="UCxxx ou @handle">
-                        </div>
-                    </div>
-                    <div class="config-group">
-                        <div class="config-group-title">Spotify</div>
-                        <div class="form-group">
-                            <label>Client ID</label>
-                            <input type="text" id="config-spotifyClientId">
-                        </div>
-                        <div class="form-group">
-                            <label>Client Secret</label>
-                            <input type="password" id="config-spotifyClientSecret">
-                        </div>
-                        <button class="btn btn-secondary btn-full" id="spotifyAuthBtn">🎵 Lier Spotify</button>
-                    </div>
+        <div class="config-platform-panel active" data-platform="twitch">
+            <div class="config-panel-header">
+                <div class="config-panel-brand" style="--brand:#9147ff">
+                    <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714z"/></svg>
+                    Twitch
                 </div>
+                <div class="config-panel-actions">
+                    <button class="btn btn-success" id="connectBtn">Connecter</button>
+                    <button class="btn btn-danger" id="disconnectBtn">D&eacute;connecter</button>
+                </div>
+            </div>
+            <div class="config-fields-grid">
+                <div class="form-group"><label>Cha&icirc;ne</label><input type="text" id="config-channel" placeholder="meomeobot"></div>
+                <div class="form-group"><label>Compte Bot</label><input type="text" id="config-username" placeholder="meomeobot"></div>
+                <div class="form-group"><label>OAuth Token</label><input type="password" id="config-token" placeholder="oauth:xxx"></div>
+                <div class="form-group"><label>Client ID</label><input type="text" id="config-twitchClientId"></div>
+                <div class="form-group span-2"><label>App Token</label><input type="password" id="config-twitchAppToken"></div>
+            </div>
+        </div>
 
-                <div class="config-section">
-                    <div class="config-group">
-                        <div class="config-group-title">Intégrations</div>
-                        <div class="form-group">
-                            <label>Token Streamlabs</label>
-                            <input type="password" id="config-streamlabsSocketToken">
-                        </div>
-                        <div class="form-group">
-                            <label>SteamGridDB Key</label>
-                            <input type="password" id="config-steamGridDbApiKey">
-                        </div>
-                        <div class="config-divider"></div>
-                        <div class="form-group">
-                            <label>Discord Webhook</label>
-                            <input type="text" id="config-discordWebhookUrl" placeholder="https://discord.com/api/...">
-                        </div>
-                    </div>
+        <div class="config-platform-panel" data-platform="kick">
+            <div class="config-panel-header">
+                <div class="config-panel-brand" style="--brand:#53fc18">
+                    <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M4 2h4v8l5-8h5l-5.5 9 5.5 11h-5l-5-8v8H4z"/></svg>
+                    Kick
                 </div>
+                <div class="config-panel-actions">
+                    <button class="btn btn-secondary" id="kickOAuthBtn">&#128273; OAuth Kick</button>
+                </div>
+            </div>
+            <div class="config-fields-grid">
+                <div class="form-group"><label>Cha&icirc;ne</label><input type="text" id="config-kickChannel" placeholder="meomeobot"></div>
+                <div class="form-group"><label>Client ID</label><input type="text" id="config-kickClientId"></div>
+                <div class="form-group"><label>Client Secret</label><input type="password" id="config-kickClientSecret"></div>
+                <div class="form-group"><label>User Token</label><input type="password" id="config-kickToken"></div>
+                <div class="form-group span-2"><label>App Token <span class="config-label-hint">(auto)</span></label><input type="password" id="config-kickAppToken" readonly></div>
+            </div>
+        </div>
+
+        <div class="config-platform-panel" data-platform="youtube">
+            <div class="config-panel-header">
+                <div class="config-panel-brand" style="--brand:#ff0000">
+                    <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M23.5 6.19a3.02 3.02 0 0 0-2.12-2.14C19.54 3.5 12 3.5 12 3.5s-7.54 0-9.38.55A3.02 3.02 0 0 0 .5 6.19C0 8.03 0 12 0 12s0 3.97.5 5.81a3.02 3.02 0 0 0 2.12 2.14C4.46 20.5 12 20.5 12 20.5s7.54 0 9.38-.55a3.02 3.02 0 0 0 2.12-2.14C24 15.97 24 12 24 12s0-3.97-.5-5.81zM9.75 15.52V8.48L15.5 12l-5.75 3.52z"/></svg>
+                    YouTube
+                </div>
+            </div>
+            <div class="config-fields-grid">
+                <div class="form-group span-2"><label>Cha&icirc;ne / Live ID</label><input type="text" id="config-youtubeChannel" placeholder="UCxxx ou @handle"></div>
+            </div>
+        </div>
+
+        <div class="config-platform-panel" data-platform="spotify">
+            <div class="config-panel-header">
+                <div class="config-panel-brand" style="--brand:#1db954">
+                    <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/></svg>
+                    Spotify
+                </div>
+                <div class="config-panel-actions">
+                    <button class="btn btn-secondary" id="spotifyAuthBtn">&#127925; Lier Spotify</button>
+                </div>
+            </div>
+            <div class="config-fields-grid">
+                <div class="form-group"><label>Client ID</label><input type="text" id="config-spotifyClientId"></div>
+                <div class="form-group"><label>Client Secret</label><input type="password" id="config-spotifyClientSecret"></div>
+            </div>
+        </div>
+
+        <div class="config-platform-panel" data-platform="integrations">
+            <div class="config-panel-header">
+                <div class="config-panel-brand">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                    Int&eacute;grations
+                </div>
+            </div>
+            <div class="config-fields-grid">
+                <div class="form-group"><label>Token Streamlabs</label><input type="password" id="config-streamlabsSocketToken"></div>
+                <div class="form-group"><label>SteamGridDB API Key</label><input type="password" id="config-steamGridDbApiKey"></div>
+                <div class="form-group span-2"><label>Discord Webhook</label><input type="text" id="config-discordWebhookUrl" placeholder="https://discord.com/api/webhooks/..."></div>
             </div>
         </div>
 
         <div class="config-footer">
-            <button class="btn btn-primary" id="saveConfigBtn">Enregistrer</button>
-            <button class="btn btn-success" id="connectBtn">Connecter</button>
-            <button class="btn btn-danger" id="disconnectBtn">Déconnecter</button>
+            <button class="btn btn-primary" id="saveConfigBtn">&#128190; Enregistrer</button>
         </div>
     </div>
+
+    </div>
+    </div>
+</div>
 
 
     <div id="device-picker-overlay" class="confirmation-overlay">
@@ -848,6 +878,9 @@
     <script src="node_modules/html2canvas/dist/html2canvas.min.js"></script>
     <script src="renderer/planning.js" type="module"></script>
     <script src="renderer/app.js" type="module"></script>
+
+    <span id="global-status-msg" class="status-msg"></span>
+
 </body>
 
 </html>

@@ -1,19 +1,16 @@
 .moderation-layout {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 20px;
-    height: 100%;
-}
-
-.moderation-layout .card {
-    height: 100%;
+    gap: 16px;
+    flex: 1;
+    min-height: 0;
 }
 
 .moderation-settings-col {
     display: flex;
     flex-direction: column;
-    gap: 20px;
-    height: 100%;
+    gap: 16px;
+    min-height: 0;
 }
 
 .moderation-settings-col .card {
@@ -23,19 +20,14 @@
     flex-direction: column;
 }
 
-.moderation-settings-col .card:first-child .form-group:first-of-type {
-    flex: 1;
-}
-
 #autoMessage {
     flex: 1;
     resize: none;
-    min-height: 100px;
+    min-height: 80px;
 }
 
 #saveAutoMessage,
 #saveClipConfig {
-    margin-bottom: 12px;
     margin-top: 10px;
     flex: 1;
 }
@@ -43,7 +35,6 @@
 .moderation-layout .interactive-header .header-main-controls .form-group:first-child {
     flex-grow: 1;
     min-width: 0;
-
 }
 
 .moderation-layout .interactive-header .header-main-controls button,

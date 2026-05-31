@@ -2,18 +2,16 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background: var(--card-bg);
-    border: 1px solid var(--border);
-    padding: 10px 15px;
-    margin-bottom: 8px;
-    border-radius: 4px;
-    transition: transform 0.2s;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    padding: 10px 14px;
+    margin-bottom: 6px;
+    border-radius: var(--radius-sm);
 }
-
-
 
 .reward-details {
     flex: 1;
+    min-width: 0;
 }
 
 .reward-title {
@@ -25,29 +23,32 @@
 }
 
 .cost-badge {
-    background: #9147ff;
+    background: var(--accent);
     color: white;
-    padding: 2px 6px;
+    padding: 2px 7px;
     border-radius: 10px;
     font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
 }
 
 .reward-sub {
     font-size: 12px;
-    color: var(--text-secondary);
+    color: var(--text-2);
     margin-top: 4px;
 }
 
 .reward-actions {
     display: flex;
     gap: 5px;
+    flex-shrink: 0;
 }
 
 .reward-editor-container {
-    background: var(--bg-secondary);
-    padding: 15px;
-    border-radius: 12px;
-    margin-bottom: 20px;
+    background: var(--bg-surface-2);
+    padding: 14px;
+    border-radius: var(--radius-md);
+    margin-bottom: 16px;
     border: 1px solid var(--border);
     overflow: hidden;
 }
@@ -56,97 +57,67 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 15px;
+    margin-bottom: 14px;
     padding-bottom: 10px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    border-bottom: 1px solid var(--border);
 }
 
 .reward-editor-header h3 {
-    font-size: 14px;
+    font-size: 11px;
     margin: 0;
     text-transform: uppercase;
-    color: var(--text-secondary);
-    letter-spacing: 0.5px;
+    letter-spacing: 1px;
+    color: var(--text-2);
+    font-weight: 700;
 }
 
 .reward-form-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 12px 20px;
+    gap: 10px 16px;
 }
 
 .reward-form-grid .span-2 {
     grid-column: span 2;
 }
 
-.form-row {
-    display: flex;
-    gap: 20px;
-    align-items: center;
-    padding: 5px 0;
-}
-
-.checkbox-group {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    cursor: pointer;
-    user-select: none;
-}
-
-.checkbox-group input[type="checkbox"] {
-    width: 16px;
-    height: 16px;
-    margin: 0;
-    cursor: pointer;
-}
-
-.checkbox-group label {
-    margin: 0;
-    font-size: 13px;
-    color: var(--text-primary);
-    cursor: pointer;
-}
-
 .reward-folder {
-    background: var(--card-bg);
-    border: 1px solid var(--border);
-    margin-bottom: 8px;
-    border-radius: 4px;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    margin-bottom: 6px;
+    border-radius: var(--radius-sm);
     overflow: hidden;
-    transition: background 0.2s, border-color 0.2s;
 }
 
 .reward-folder.drag-over {
-    border-color: var(--primary);
-    background: rgba(145, 70, 255, 0.1);
+    border-color: var(--accent);
+    background: var(--accent-soft);
 }
 
 .folder-header {
     display: flex;
     align-items: center;
-    padding: 10px 15px;
-    gap: 15px;
-    background: transparent;
+    padding: 10px 14px;
+    gap: 12px;
 }
 
 .folder-name-input {
     background: transparent;
     border: 1px solid transparent;
-    color: var(--text-primary);
+    color: var(--text-1);
     font-size: 14px;
     font-weight: 600;
     padding: 4px 8px;
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
     width: 200px;
-    transition: border-color 0.2s, background 0.2s;
     outline: none;
+    transition: border-color 0.15s ease, background 0.15s ease;
 }
 
 .folder-name-input:focus,
 .folder-name-input:hover {
     border-color: var(--border);
-    background: var(--bg-primary);
+    background: var(--bg-surface-2);
 }
 
 .folder-content {
@@ -162,15 +133,14 @@
     display: flex;
     align-items: center;
     gap: 6px;
-    background: var(--card-bg);
+    background: var(--bg-surface-2);
     border: 1px solid var(--border);
     border-left-width: 3px;
     padding: 4px 8px;
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
     font-size: 12px;
     cursor: grab;
     user-select: none;
-    transition: transform 0.1s, box-shadow 0.1s;
 }
 
 .reward-chip:active {
@@ -178,11 +148,11 @@
 }
 
 .reward-chip .chip-cost {
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.08);
     padding: 1px 4px;
     border-radius: 4px;
     font-size: 10px;
-    color: var(--text-secondary);
+    color: var(--text-2);
 }
 
 .folder-toggle-container {
@@ -190,7 +160,7 @@
     align-items: center;
     gap: 8px;
     font-size: 12px;
-    color: var(--text-secondary);
+    color: var(--text-2);
 }
 
 .toggle-switch {
@@ -209,13 +179,10 @@
 .slider {
     position: absolute;
     cursor: pointer;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: #3a3a3a;
-    transition: .4s;
+    inset: 0;
+    background: var(--bg-surface-3);
     border-radius: 20px;
+    transition: background 0.2s ease;
 }
 
 .slider:before {
@@ -225,23 +192,46 @@
     width: 14px;
     left: 3px;
     bottom: 3px;
-    background-color: white;
-    transition: .4s;
+    background: var(--text-2);
+    transition: transform 0.2s ease;
     border-radius: 50%;
 }
 
-input:checked+.slider {
-    background-color: var(--accent);
+input:checked + .slider {
+    background: var(--accent);
 }
 
-input:checked+.slider:before {
+input:checked + .slider:before {
     transform: translateX(16px);
+    background: white;
+}
+
+.checkbox-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    user-select: none;
+}
+
+.checkbox-group input[type="checkbox"] {
+    width: 15px;
+    height: 15px;
+    margin: 0;
+    cursor: pointer;
+    accent-color: var(--accent);
+}
+
+.checkbox-group label {
+    margin: 0;
+    font-size: 13px;
+    color: var(--text-1);
+    cursor: pointer;
 }
 
 .folder-empty-placeholder {
     font-size: 11px;
-    color: var(--text-secondary);
+    color: var(--text-3);
     font-style: italic;
     pointer-events: none;
-    opacity: 0.5;
 }

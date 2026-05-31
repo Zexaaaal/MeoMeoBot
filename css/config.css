@@ -1,136 +1,129 @@
 #config-tab.active {
     display: flex;
     flex-direction: column;
-    height: 100%;
     overflow: hidden;
 }
 
-.config-scroll-area {
-    flex: 1;
-    overflow: hidden;
-    padding: 16px;
-    width: 100%;
-}
-
-.config-columns {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    grid-template-rows: repeat(2, 1fr);
-    gap: 16px;
-    width: 100%;
-    height: 100%;
-}
-
-.config-section {
+.config-platform-tabs {
     display: flex;
-    flex-direction: column;
-    gap: 12px;
-    min-width: 0;
-}
-
-.config-group {
-    background: var(--glass-bg);
-    backdrop-filter: var(--glass-blur);
-    border: 1px solid var(--glass-border);
-    border-radius: var(--radius-md);
-    padding: 12px;
-    box-shadow: var(--glass-shadow);
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    transition: border-color 0.2s ease;
-}
-
-.config-group:hover {
-    border-color: rgba(255, 255, 255, 0.12);
-}
-
-.config-group-title {
-    font-size: 11px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 1.2px;
-    color: var(--text-secondary);
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    margin-bottom: 2px;
-}
-
-.config-group-title svg {
-    width: 14px;
-    height: 14px;
-    stroke: var(--accent);
-    fill: none;
-    stroke-width: 2;
+    gap: 0;
+    padding: 0 20px;
+    border-bottom: 1px solid var(--border);
     flex-shrink: 0;
 }
 
-.config-group .form-group {
+.config-ptab {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 11px 16px;
+    border: none;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    background: transparent;
+    color: var(--text-2);
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    white-space: nowrap;
+    font-family: inherit;
+}
+
+.config-ptab svg {
+    width: 15px;
+    height: 15px;
+    flex-shrink: 0;
+}
+
+.config-ptab:hover {
+    color: var(--text-1);
+}
+
+.config-ptab.active {
+    color: var(--text-1);
+    border-bottom-color: var(--accent);
+}
+
+.config-platform-panel {
+    display: none;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 24px 28px;
+    gap: 22px;
+}
+
+.config-platform-panel.active {
+    display: flex;
+}
+
+.config-platform-panel::-webkit-scrollbar { width: 4px; }
+.config-platform-panel::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+.config-panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 18px;
+    border-bottom: 1px solid var(--border);
+}
+
+.config-panel-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--brand, var(--accent));
+    font-size: 17px;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+}
+
+.config-panel-brand svg {
+    color: var(--brand, var(--accent));
+    opacity: 0.9;
+}
+
+.config-panel-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.config-fields-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px 22px;
+    max-width: 700px;
+}
+
+.config-fields-grid .span-2 {
+    grid-column: span 2;
+}
+
+.config-fields-grid .form-group {
     margin-bottom: 0;
 }
 
-.config-group .form-group label {
-    font-size: 11px;
-    margin-bottom: 2px;
-}
-
-.config-group .form-group input {
-    height: 28px;
-    font-size: 12px;
-    padding: 0 8px;
-}
-
-.config-divider {
-    height: 1px;
-    background: var(--glass-border);
-    margin: 2px -4px;
-    opacity: 0.5;
-}
-
-.btn-full {
-    width: 100%;
-    margin-top: 2px;
-}
-
-.config-group .btn-full {
-    height: 28px;
-    font-size: 11px;
-    padding: 0 8px;
+.config-label-hint {
+    font-size: 10px;
+    color: var(--text-3);
+    font-weight: 400;
+    margin-left: 4px;
+    letter-spacing: 0;
+    text-transform: none;
 }
 
 .config-footer {
     display: flex;
     justify-content: flex-end;
-    align-items: center;
     gap: 8px;
-    padding: 8px 16px;
-    border-top: 1px solid var(--glass-border);
+    padding: 12px 28px;
+    border-top: 1px solid var(--border);
     flex-shrink: 0;
 }
 
-.config-footer .btn {
-    min-width: 120px;
-    height: 32px;
-    font-size: 12px;
-    border-radius: var(--radius-sm);
-}
-
-.kick-oauth-status {
+.card.full-height-card {
+    height: 100%;
     display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 4px 8px;
-    border-radius: var(--radius-sm);
-    font-size: 11px;
-    font-weight: 500;
-    background: rgba(83, 252, 24, 0.08);
-    border: 1px solid rgba(83, 252, 24, 0.2);
-    color: #53fc18;
-}
-
-.kick-oauth-status.disconnected {
-    background: rgba(239, 68, 68, 0.08);
-    border-color: rgba(239, 68, 68, 0.2);
-    color: var(--danger);
+    flex-direction: column;
 }

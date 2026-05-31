@@ -65,8 +65,9 @@ async function loadAllData() {
         console.error(error);
         const el = document.getElementById('connectionStatus');
         if (el) {
-            el.className = 'status disconnected';
-            el.querySelector('span:last-child').textContent = 'Erreur Chargement';
+            el.className = 'sidebar-status disconnected';
+            const label = el.querySelector('.sidebar-status-label');
+            if (label) label.textContent = 'Erreur chargement';
             el.title = error.message || error;
         }
     }
@@ -182,6 +183,21 @@ function setupEventListeners() {
             }
         }
     });
+
+    const configPtabs = document.querySelectorAll('.config-ptab');
+    configPtabs.forEach(ptab => {
+        ptab.addEventListener('click', () => {
+            if (ptab.classList.contains('active')) return;
+            
+            document.querySelector('.config-ptab.active')?.classList.remove('active');
+            document.querySelector('.config-platform-panel.active')?.classList.remove('active');
+            
+            ptab.classList.add('active');
+            const platform = ptab.dataset.platform;
+            const panel = document.querySelector(`.config-platform-panel[data-platform="${platform}"]`);
+            if (panel) panel.classList.add('active');
+        });
+    });
 }
 
 async function connectBot() {
@@ -259,17 +275,11 @@ function updateConfigForm(config) {
 
 function updateBotStatus(status) {
     const el = document.getElementById('connectionStatus');
-    const dot = el.querySelector('.status-dot');
-    const text = el.querySelector('span:not(.status-dot)');
+    if (!el) return;
+    const label = el.querySelector('.sidebar-status-label');
 
-    el.className = 'status';
-    if (status === 'connected') {
-        el.classList.add('connected');
-        text.textContent = 'Connecté';
-    } else {
-        el.classList.add('disconnected');
-        text.textContent = 'Déconnecté';
-    }
+    el.className = 'sidebar-status ' + status;
+    if (label) label.textContent = status === 'connected' ? 'Connecté' : 'Déconnecté';
 }
 
 async function loadWidgetUrls() {

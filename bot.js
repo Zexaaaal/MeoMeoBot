@@ -100,9 +100,14 @@ class TwitchBot extends EventEmitter {
             this.emit('message-deleted', userstate['target-msg-id']);
         });
 
-        this.client.on('clearchat', (channel) => {
-            log.info('BOT_CHAT_CLEARED');
-            this.emit('clear-chat');
+        this.client.on('clearchat', (channel, username) => {
+            if (username) {
+                log.info('BOT_USER_CLEARED', { username });
+                this.emit('clear-user', username);
+            } else {
+                log.info('BOT_CHAT_CLEARED');
+                this.emit('clear-chat');
+            }
         });
 
         this.client.on('usernotice', (channel, id, username, state, message) => {
@@ -435,21 +440,9 @@ class TwitchBot extends EventEmitter {
                 const startedAt = streamInfo.started_at;
                 const lastKnownStart = this.getWidgetConfig('subgoals')?.lastStreamStart;
 
-                let isNewStream = startedAt !== lastKnownStart;
-
-                if (startedAt && lastKnownStart && isNewStream) {
-                    const time1 = new Date(startedAt).getTime();
-                    const time2 = new Date(lastKnownStart).getTime();
-                    if (!isNaN(time1) && !isNaN(time2) && Math.abs(time1 - time2) < 10000) {
-                        isNewStream = false;
-                        this.saveWidgetConfig('subgoals', { lastStreamStart: startedAt });
-                    }
-                }
-
-                if (isNewStream) {
-                    log.info('BOT_NEW_STREAM_DETECTED', { startedAt });
-                    this.resetDailySubCount();
+                if (startedAt && startedAt !== lastKnownStart) {
                     this.saveWidgetConfig('subgoals', { lastStreamStart: startedAt });
+                    log.info('BOT_STREAM_START_SAVED', { startedAt });
                 } else {
                     log.info('BOT_STREAM_ALREADY_TRACKED');
                 }

@@ -276,6 +276,11 @@ function setupBotEvents() {
         if (chatServer) chatServer.broadcast({ type: 'clear-chat' });
     });
 
+    bot.on('clear-user', (username) => {
+        log.info('MAIN_USER_CLEARED', { username });
+        if (chatServer) chatServer.broadcast({ type: 'clear-user', username });
+    });
+
     bot.on('refresh-widgets', () => {
         log.info('MAIN_REFRESH_WIDGETS');
         if (chatServer) chatServer.broadcast({ type: 'reload' });

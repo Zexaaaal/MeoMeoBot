@@ -291,6 +291,26 @@
                     lastUser = null;
                     lastGroup = null;
                     messageQueue.length = 0;
+                } else if (data.type === 'clear-user') {
+                    const username = data.username;
+                    if (!username) return;
+                    const container = document.getElementById('chat-container');
+                    if (!container) return;
+                    const toRemove = messageQueue.filter(line => {
+                        const grp = line.parentElement && line.parentElement.parentElement;
+                        return grp && grp.classList.contains(`user-${sanitizeClass(username)}`);
+                    });
+                    toRemove.forEach(line => {
+                        const idx = messageQueue.indexOf(line);
+                        if (idx > -1) messageQueue.splice(idx, 1);
+                    });
+                    container.querySelectorAll(`.msg-group.user-${sanitizeClass(username)}`).forEach(grp => {
+                        if (grp === lastGroup) {
+                            lastGroup = null;
+                            lastUser = null;
+                        }
+                        grp.remove();
+                    });
                 }
             });
         }

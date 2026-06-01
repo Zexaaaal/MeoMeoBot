@@ -367,22 +367,19 @@ function registerHandlers(deps) {
         }
     });
 
-    ipcMain.handle('sync-planning-discord', async (event, imageBase64, title) => {
+    ipcMain.handle('sync-planning-discord', async (event, imageBase64, title, existingMessageId) => {
         const config = bot.getConfig();
         const webhookUrl = config.discordWebhookUrl;
         if (!webhookUrl) return { success: false, error: 'Aucun webhook Discord configuré' };
+        const messageId = existingMessageId || config.discordPlanningMessageId || null;
 
         try {
             const result = await sendPlanningToDiscord(
                 webhookUrl,
                 imageBase64,
                 title,
-                config.discordPlanningMessageId || null
+                messageId
             );
-
-            if (result.success && result.messageId) {
-                bot.updateConfig({ discordPlanningMessageId: result.messageId });
-            }
 
             return result;
         } catch (e) {

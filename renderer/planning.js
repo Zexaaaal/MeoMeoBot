@@ -8,6 +8,8 @@ let currentState = {
     bgImage: null,
     bgImagePath: null,
     title: "PLANNING",
+    roleId: "",
+    webhookMessage: "",
     events: {}
 };
 
@@ -16,6 +18,8 @@ const els = {
     nextWeekBtn: document.getElementById('planning-next-week'),
     weekLabel: document.getElementById('planning-week-label'),
     titleInput: document.getElementById('planning-title-input'),
+    roleIdInput: document.getElementById('planning-role-id'),
+    webhookMessageInput: document.getElementById('planning-webhook-message'),
     compactModeCheck: document.getElementById('planning-compact-mode'),
     bgInput: document.getElementById('planning-bg-input'),
     bgClearBtn: document.getElementById('planning-bg-clear-btn'),
@@ -87,6 +91,20 @@ function setupEventListeners() {
         saveState();
         renderHeader();
     });
+
+    if (els.roleIdInput) {
+        els.roleIdInput.addEventListener('input', (e) => {
+            currentState.roleId = e.target.value;
+            saveState();
+        });
+    }
+
+    if (els.webhookMessageInput) {
+        els.webhookMessageInput.addEventListener('input', (e) => {
+            currentState.webhookMessage = e.target.value;
+            saveState();
+        });
+    }
 
     els.compactModeCheck.addEventListener('change', (e) => {
         currentState.compactMode = e.target.checked;
@@ -243,6 +261,8 @@ function saveState() {
         bgImage: currentState.bgImage,
         bgImagePath: currentState.bgImagePath,
         title: currentState.title,
+        roleId: currentState.roleId,
+        webhookMessage: currentState.webhookMessage,
         events: currentState.events
     }));
 }
@@ -276,6 +296,14 @@ function loadState(loadEvents = false) {
             if (parsed.title !== undefined) {
                 currentState.title = parsed.title;
                 els.titleInput.value = parsed.title;
+            }
+            if (parsed.roleId !== undefined) {
+                currentState.roleId = parsed.roleId;
+                if (els.roleIdInput) els.roleIdInput.value = parsed.roleId;
+            }
+            if (parsed.webhookMessage !== undefined) {
+                currentState.webhookMessage = parsed.webhookMessage;
+                if (els.webhookMessageInput) els.webhookMessageInput.value = parsed.webhookMessage;
             }
             if (loadEvents && parsed.events) {
                 currentState.events = parsed.events;
@@ -953,6 +981,49 @@ async function syncPlanning() {
     btn.disabled = false;
     btn.innerHTML = 'Sync';
 }
+function getWeekKey() {
+    const d = new Date(currentState.weekStart);
+    const year = d.getFullYear();
+    const jan4 = new Date(year, 0, 4);
+    const startOfWeek1 = new Date(jan4);
+    startOfWeek1.setDate(jan4.getDate() - ((jan4.getDay() + 6) % 7));
+    const weekNum = Math.floor((d - startOfWeek1) / (7 * 24 * 60 * 60 * 1000)) + 1;
+    return `${year}-W${String(weekNum).padStart(2, '0')}`;
+}
+
+function getDiscordMessageIds() {
+    try {
+        return JSON.parse(localStorage.getItem('planning_discord_message_ids') || '{}');
+    } catch { return {}; }
+}
+
+function setDiscordMessageId(weekKey, messageId) {
+    const ids = getDiscordMessageIds();
+    ids[weekKey] = messageId;
+    localStorage.setItem('planning_discord_message_ids', JSON.stringify(ids));
+}
+
+function buildWebhookContent() {
+    const roleId = (currentState.roleId || '').trim();
+    let msg = (currentState.webhookMessage || '').trim();
+
+    if (!msg) {
+        const start = new Date(currentState.weekStart);
+        if (currentState.startSunday) start.setDate(start.getDate() - 1);
+        const end = new Date(start);
+        end.setDate(end.getDate() + 6);
+        const fmt = (d) => `${d.getDate().toString().padStart(2, '0')}.${(d.getMonth() + 1).toString().padStart(2, '0')}`;
+        msg = `# ${currentState.title} du ${fmt(start)} au ${fmt(end)}`;
+    }
+
+    if (roleId) {
+        msg = msg.replace(/\{roleid\}/gi, `<@&${roleId}>`);
+    } else {
+        msg = msg.replace(/\{roleid\}/gi, '');
+    }
+
+    return msg;
+}
 
 async function syncDiscord() {
     const card = els.previewCard;
@@ -991,16 +1062,18 @@ async function syncDiscord() {
 
         const dataURL = canvas.toDataURL('image/jpeg', 0.85);
 
-        const start = new Date(currentState.weekStart);
-        if (currentState.startSunday) start.setDate(start.getDate() - 1);
-        const end = new Date(start);
-        end.setDate(end.getDate() + 6);
-        const fmt = (d) => `${d.getDate().toString().padStart(2, '0')}.${(d.getMonth() + 1).toString().padStart(2, '0')}`;
-        const discordTitle = `# ${currentState.title} du ${fmt(start)} au ${fmt(end)}`;
+        const content = buildWebhookContent();
 
-        const res = await api.invoke('sync-planning-discord', dataURL, discordTitle);
+        const weekKey = getWeekKey();
+        const messageIds = getDiscordMessageIds();
+        const existingMessageId = messageIds[weekKey] || null;
+
+        const res = await api.invoke('sync-planning-discord', dataURL, content, existingMessageId);
 
         if (res.success) {
+            if (res.messageId) {
+                setDiscordMessageId(weekKey, res.messageId);
+            }
             showNotification('Discord sync OK', 'success');
         } else if (res.error) {
             showNotification(`Discord: ${res.error}`, 'error');

@@ -48,6 +48,12 @@ class ChatWidgetServer extends BaseWidgetServer {
     handleCustomRoutes(req, res) {
         const url = new URL(req.url, `http://127.0.0.1:${this.port}`);
 
+        // Gateway routes: /go/{widget} redirects to the correct port
+        const goMatch = url.pathname.match(/^\/go\/(.+)$/);
+        if (goMatch) {
+            return this._handleGoRedirect(req, res, goMatch[1]);
+        }
+
         if (url.pathname === '/widget/emote-wall') {
             this.serveEmoteWall(req, res);
             return true;

@@ -130,6 +130,22 @@ class TwitchAPI {
         return 0;
     }
 
+    /**
+     * Returns the raw subscriber total from the Twitch API.
+     * Used to take a snapshot at stream start so we can compute
+     * how many subs were gained during the current stream.
+     */
+    async fetchRawSubTotal() {
+        if (!this.bot.userId || !this.bot.clientId) return null;
+        try {
+            const data = await this.helixRequest('subscriptions');
+            return data ? data.total : null;
+        } catch (e) {
+            log.error('TWITCH_RAW_SUB_TOTAL_ERR', e);
+            return null;
+        }
+    }
+
     async fetchFollowerCount() {
         if (!this.bot.userId || !this.bot.clientId) return 0;
         try {

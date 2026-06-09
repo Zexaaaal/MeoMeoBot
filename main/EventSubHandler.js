@@ -83,7 +83,8 @@ class EventSubHandler {
             { type: 'channel.hype_train.progress', version: '2', condition: { broadcaster_user_id: this.bot.userId } },
             { type: 'channel.hype_train.end', version: '2', condition: { broadcaster_user_id: this.bot.userId } },
             { type: 'channel.follow', version: '2', condition: { broadcaster_user_id: this.bot.userId, moderator_user_id: this.bot.userId } },
-            { type: 'stream.online', version: '1', condition: { broadcaster_user_id: this.bot.userId } }
+            { type: 'stream.online', version: '1', condition: { broadcaster_user_id: this.bot.userId } },
+            { type: 'stream.offline', version: '1', condition: { broadcaster_user_id: this.bot.userId } }
         ];
 
         for (const event of events) {
@@ -227,10 +228,19 @@ class EventSubHandler {
                 break;
 
             case 'stream.online':
-                this.bot.resetDailySubCount();
+                // Take a fresh baseline snapshot and reset the daily counter.
+                this.bot.syncDailySubCountFromBaseline(event.started_at).catch(e =>
+                    log.error('[EventSub] syncDailySubCountFromBaseline error:', e.message)
+                );
                 if (event.started_at) {
                     this.bot.saveWidgetConfig('subgoals', { lastStreamStart: event.started_at });
                 }
+                break;
+
+            case 'stream.offline':
+                log.info('[EventSub] Stream offline — resetting daily sub count');
+                this.bot.resetDailySubCount();
+                this.bot.saveWidgetConfig('subgoals', { lastStreamStart: null, streamStartSubTotal: null });
                 break;
         }
     }

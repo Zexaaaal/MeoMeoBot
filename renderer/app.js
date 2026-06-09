@@ -138,12 +138,9 @@ function setupEventListeners() {
 
     const updateStatus = el('updateStatus');
     updateStatus?.addEventListener('click', (e) => {
-        if (!e.target.closest('.update-popover')) {
-            if (updateStatus.classList.contains('update-available') || updateStatus.classList.contains('downloaded')) {
-                updateStatus.classList.toggle('active');
-            } else if (updateStatus.classList.contains('up-to-date')) {
-                window.api.send('check-for-updates');
-            }
+        // If clicking outside the action buttons on an up-to-date status, trigger a manual check
+        if (!e.target.closest('#update-action-container') && updateStatus.classList.contains('up-to-date')) {
+            window.api.send('check-for-updates');
         }
     });
     el('update-confirm-icon')?.addEventListener('click', (e) => {
@@ -157,7 +154,9 @@ function setupEventListeners() {
     });
     el('update-deny-icon')?.addEventListener('click', (e) => {
         e.stopPropagation();
-        updateStatus?.classList.remove('active');
+        // Hide the action container without changing the status text
+        const actionContainer = document.getElementById('update-action-container');
+        if (actionContainer) actionContainer.classList.add('hidden');
     });
 
     window.api.on('bot-status', (status) => updateBotStatus(status.connected ? 'connected' : 'disconnected'));

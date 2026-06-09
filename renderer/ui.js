@@ -32,13 +32,21 @@ export function updateUpdaterStatus(status) {
     statusEl.className = 'sidebar-status ' + status;
 
     const textEl = statusEl.querySelector('.update-text-label');
-    if (!textEl) return;
-    if (status === 'checking')          textEl.textContent = 'Recherche...';
-    if (status === 'up-to-date')        textEl.textContent = 'À jour';
-    if (status === 'update-available')  textEl.textContent = 'MàJ disponible';
-    if (status === 'downloading')       textEl.textContent = 'Téléchargement...';
-    if (status === 'downloaded')        textEl.textContent = 'Prêt à installer';
-    if (status === 'error')             textEl.textContent = 'Erreur MàJ';
+    if (textEl) {
+        if (status === 'checking')          textEl.textContent = 'Recherche...';
+        if (status === 'up-to-date')        textEl.textContent = 'À jour';
+        if (status === 'update-available')  textEl.textContent = 'MàJ disponible';
+        if (status === 'downloading')       textEl.textContent = 'Téléchargement...';
+        if (status === 'downloaded')        textEl.textContent = 'Prêt à installer';
+        if (status === 'error')             textEl.textContent = 'Erreur MàJ';
+    }
+
+    // Show action buttons only when user needs to confirm download or install
+    const actionContainer = document.getElementById('update-action-container');
+    if (actionContainer) {
+        const needsAction = status === 'update-available' || status === 'downloaded';
+        actionContainer.classList.toggle('hidden', !needsAction);
+    }
 
     statusEl.classList.add('status-visible');
 

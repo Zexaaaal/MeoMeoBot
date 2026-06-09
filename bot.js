@@ -436,20 +436,77 @@ class TwitchBot extends EventEmitter {
         if (!this.userId) return;
         try {
             const streamInfo = await this.twitchAPI.getStreamInfo(this.userId);
+
             if (streamInfo && streamInfo.type === 'live') {
                 const startedAt = streamInfo.started_at;
-                const lastKnownStart = this.getWidgetConfig('subgoals')?.lastStreamStart;
+                const config = this.getWidgetConfig('subgoals') || {};
+                const lastKnownStart = config.lastStreamStart;
 
                 if (startedAt && startedAt !== lastKnownStart) {
-                    this.saveWidgetConfig('subgoals', { lastStreamStart: startedAt });
-                    log.info('BOT_STREAM_START_SAVED', { startedAt });
+                    // New stream detected on startup (app opened after stream started).
+                    // Take a baseline snapshot and sync the count.
+                    log.info('BOT_STREAM_START_NEW', { startedAt });
+                    await this.syncDailySubCountFromBaseline(startedAt);
                 } else {
-                    log.info('BOT_STREAM_ALREADY_TRACKED');
+                    // Same stream — just re-sync the count in case subs happened
+                    // while the app was closed.
+                    log.info('BOT_STREAM_RESYNCING_COUNT');
+                    await this.syncDailySubCountFromBaseline(startedAt);
+                }
+            } else {
+                // Stream is offline — ensure count is reset.
+                const config = this.getWidgetConfig('subgoals') || {};
+                if (config.lastStreamStart) {
+                    log.info('BOT_STREAM_OFFLINE_CLEANUP');
+                    this.resetDailySubCount();
+                    this.saveWidgetConfig('subgoals', { lastStreamStart: null, streamStartSubTotal: null });
                 }
             }
         } catch (e) {
             log.error('BOT_STREAM_STATUS_ERROR', { error: e.message || e });
         }
+    }
+
+    /**
+     * Fetches the current raw sub total and computes dailyCurrentCount
+     * as (currentTotal - streamStartSubTotal).
+     * If no baseline exists yet, creates one now.
+     */
+    async syncDailySubCountFromBaseline(startedAt) {
+        const config = this.getWidgetConfig('subgoals') || {};
+        const currentTotal = await this.twitchAPI.fetchRawSubTotal();
+        if (currentTotal === null) return; // API unavailable, skip
+
+        let baseline = config.streamStartSubTotal;
+
+        if (baseline === null || baseline === undefined || config.lastStreamStart !== startedAt) {
+            // First time we see this stream — store baseline and reset counter
+            baseline = currentTotal;
+            this.saveWidgetConfig('subgoals', {
+                lastStreamStart: startedAt,
+                streamStartSubTotal: baseline,
+                dailyCurrentCount: 0,
+                dailyGoalCount: config.baseDailyGoalCount || config.dailyGoalCount || 10
+            });
+            log.info('BOT_DAILY_BASELINE_SET', { baseline, startedAt });
+            this.emit('daily-sub-count-update', 0);
+            return;
+        }
+
+        // Baseline exists for this stream — compute gained subs
+        const gained = Math.max(0, currentTotal - baseline);
+        const goal = config.dailyGoalCount || 10;
+
+        this.saveWidgetConfig('subgoals', {
+            lastStreamStart: startedAt,
+            dailyCurrentCount: gained
+        });
+        log.info('BOT_DAILY_SYNCED', { baseline, currentTotal, gained });
+        this.emit('daily-sub-count-update', gained);
+    }
+
+    async fetchRawSubTotal() {
+        return this.twitchAPI.fetchRawSubTotal();
     }
 
     addCommand(command, response) {

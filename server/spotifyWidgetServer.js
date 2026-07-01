@@ -230,15 +230,20 @@ class SpotifyWidgetServer extends BaseWidgetServer {
                 return resolve({ isPlaying: false, trackTitle: '', trackArtist: '', trackAlbum: '', coverUrl: '' });
             }
 
-            const { exec } = require('child_process');
-            const cmd = `powershell -NoProfile -ExecutionPolicy Bypass -Command "[Console]::OutputEncoding = [System.Text.Encoding]::UTF8; Get-Process -Name Spotify -ErrorAction SilentlyContinue | Where-Object { $_.MainWindowTitle } | Select-Object -ExpandProperty MainWindowTitle"`;
+            const { execFile } = require('child_process');
+            const args = [
+                '-NoProfile',
+                '-ExecutionPolicy', 'Bypass',
+                '-Command',
+                `$OutputEncoding = [Console]::OutputEncoding = [System.Text.Encoding]::UTF8; Get-Process -Name Spotify -ErrorAction SilentlyContinue | Where-Object {$_.MainWindowTitle} | Select-Object -ExpandProperty MainWindowTitle`
+            ];
             
-            exec(cmd, (err, stdout) => {
+            execFile('powershell.exe', args, { encoding: 'buffer' }, (err, stdout) => {
                 if (err || !stdout) {
                     return resolve({ isPlaying: false, trackTitle: '', trackArtist: '', trackAlbum: '', coverUrl: '' });
                 }
                 
-                const title = stdout.trim();
+                const title = stdout.toString('utf8').trim();
                 if (!title || ['spotify', 'spotify free', 'spotify premium'].includes(title.toLowerCase())) {
                     return resolve({ isPlaying: false, trackTitle: '', trackArtist: '', trackAlbum: '', coverUrl: '' });
                 }

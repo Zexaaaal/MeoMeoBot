@@ -228,7 +228,8 @@ const defaultCss = {
 };
 
 let cssInput, maxMessagesInput, statusBar, nameLabel;
-let currentWidget = 'chat';
+const urlParams = new URLSearchParams(window.location.search);
+let currentWidget = urlParams.get('widget') || 'chat';
 let currentWidgetConfig = {};
 
 function setStatus(msg, type = 'success') {

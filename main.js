@@ -97,7 +97,14 @@ function openChildWindow(name, { filePath, width, height, x, y, title, onReady, 
         }
     });
 
-    win.loadFile(filePath);
+    const qIdx = filePath.indexOf('?');
+    if (qIdx !== -1) {
+        const pathOnly = filePath.substring(0, qIdx);
+        const search = filePath.substring(qIdx + 1);
+        win.loadFile(pathOnly, { search });
+    } else {
+        win.loadFile(filePath);
+    }
     win.setMenu(null);
 
     win.on('ready-to-show', () => {
@@ -134,7 +141,7 @@ function openCssEditorWindow(widgetName = 'chat') {
     const bounds = config.cssEditorBounds || { width: 900, height: 720 };
 
     openChildWindow('cssEditor', {
-        filePath: 'widgets/config/css_editor.html',
+        filePath: `widgets/config/css_editor.html?widget=${widgetName}`,
         width: bounds.width, height: bounds.height,
         x: bounds.x, y: bounds.y,
         title: 'Editeur CSS Widget',

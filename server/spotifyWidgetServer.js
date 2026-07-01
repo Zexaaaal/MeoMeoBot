@@ -54,6 +54,7 @@ class SpotifyWidgetServer extends BaseWidgetServer {
     }
 
     onConnection(ws) {
+        log.info('SPOTIFY_CLIENT_CONNECTED');
         const config = this.currentSpotifyTrack || this.bot.getWidgetConfig('spotify') || { isPlaying: false };
         ws.send(JSON.stringify({
             type: 'config-update',
@@ -180,6 +181,7 @@ class SpotifyWidgetServer extends BaseWidgetServer {
             return tokens.accessToken;
         }
 
+        log.info('SPOTIFY_REFRESHING_TOKEN');
         const body = new URLSearchParams({
             grant_type: 'refresh_token',
             refresh_token: tokens.refreshToken
@@ -200,6 +202,7 @@ class SpotifyWidgetServer extends BaseWidgetServer {
             refreshToken: data.refresh_token || tokens.refreshToken,
             expiresIn: data.expires_in || 3600
         });
+        log.info('SPOTIFY_REFRESH_SUCCESS');
         return this.getStoredTokens().accessToken;
     }
 
@@ -213,7 +216,7 @@ class SpotifyWidgetServer extends BaseWidgetServer {
         }
 
         if (!token) {
-            log.debug('[SPOTIFY] No access token available (not logged in?)');
+            log.info('SPOTIFY_NO_TOKEN');
             return { isPlaying: false, trackTitle: '', trackArtist: '', trackAlbum: '', coverUrl: '' };
         }
 
@@ -257,6 +260,15 @@ class SpotifyWidgetServer extends BaseWidgetServer {
         const current = this.bot.getWidgetConfig('spotify') || {};
         const next = { ...current, ...trackData };
         this.bot.saveWidgetConfig('spotify', next);
+
+        const trackChanged = !this.currentSpotifyTrack ||
+            this.currentSpotifyTrack.trackTitle !== next.trackTitle ||
+            this.currentSpotifyTrack.isPlaying !== next.isPlaying;
+
+        if (trackChanged) {
+            log.info('SPOTIFY_TRACK_UPDATED', { title: next.trackTitle, artist: next.trackArtist, isPlaying: next.isPlaying });
+        }
+
         this.currentSpotifyTrack = next;
         this.broadcastConfig(next);
     }

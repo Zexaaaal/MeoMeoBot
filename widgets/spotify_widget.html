@@ -121,7 +121,7 @@
     <script>
         const INITIAL_CONFIG = {};
 
-        const FALLBACK_COVER = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxNDAgMTQwIj48cmVjdCB3aWR0aD0iMTQwIiBoZWlnaHQ9IjE0MCIgZmlsbD0iIzIyMiIvPjx0ZXh0IHg9IjcwIiB5PSI3NSIgZm9udC1zaXplPSI1MCIgdGV4dC1hbmNob3I9Im1lkZGxlIiBmaWxsPSIjNDQ0Ij7wn461PC90ZXh0Pjwvc3ZnPg==';
+        const FALLBACK_COVER = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxNDAgMTQwIj48cmVjdCB3aWR0aD0iMTQwIiBoZWlnaHQ9IjE0MCIgZmlsbD0iIzIyMiIvPjx0ZXh0IHg9IjcwIiB5PSI4NSIgZm9udC1zaXplPSI1MCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0iIzQ0NCI+8J+OtTwvdGV4dD48L3N2Zz4=';
 
         let ws = null;
         let currentConfig = INITIAL_CONFIG || {};
@@ -154,32 +154,44 @@
             const host = window.location.hostname || 'localhost';
             const port = new URL(document.URL).port || '8090';
             const wsUrl = `ws://${host}:${port}`;
+            console.log('[Spotify Widget] Connecting to WebSocket:', wsUrl);
             ws = new WebSocket(wsUrl);
 
             ws.onopen = () => {
+                console.log('[Spotify Widget] WebSocket connected successfully');
                 if (currentConfig) applyConfig(currentConfig);
             };
 
             ws.onmessage = (event) => {
+                console.log('[Spotify Widget] Message received:', event.data);
                 try {
                     const data = JSON.parse(event.data);
                     if (data.type === 'config-update' && data.widget === 'spotify') {
                         currentConfig = { ...currentConfig, ...data.config };
+                        console.log('[Spotify Widget] Applying config update:', currentConfig);
                         applyConfig(currentConfig);
                     } else if (data.type === 'reload') {
+                        console.log('[Spotify Widget] Reload requested');
                         const url = new URL(window.location.href);
                         url.searchParams.set('t', Date.now());
                         window.location.href = url.toString();
                     } else if (data.type === 'visibility') {
+                        console.log('[Spotify Widget] Visibility toggled to:', data.visible);
                         document.body.style.display = data.visible ? '' : 'none';
                     }
                 } catch (err) {
-                    console.warn('Spotify widget message parse error', err);
+                    console.warn('[Spotify Widget] Message parse error:', err);
                 }
             };
 
-            ws.onclose = () => setTimeout(connectWebSocket, 4000);
-            ws.onerror = () => { try { ws.close(); } catch (e) { } };
+            ws.onclose = (event) => {
+                console.log('[Spotify Widget] WebSocket closed. Reconnecting in 4 seconds...', event);
+                setTimeout(connectWebSocket, 4000);
+            };
+            ws.onerror = (err) => {
+                console.error('[Spotify Widget] WebSocket error:', err);
+                try { ws.close(); } catch (e) { }
+            };
         }
 
         applyConfig(currentConfig);

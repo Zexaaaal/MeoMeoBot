@@ -154,6 +154,11 @@ const LOG_MESSAGES = {
     SPOTIFY_FETCH_ERROR: "Erreur récupération track actuel :",
     SPOTIFY_NO_TRACK: "Aucun track récupéré ou erreur d'authentification",
     SPOTIFY_POLLING_ERROR: "Erreur polling",
+    SPOTIFY_CLIENT_CONNECTED: "Client connecté au WebSocket du widget Spotify.",
+    SPOTIFY_REFRESHING_TOKEN: "Rafraîchissement du token d'accès Spotify...",
+    SPOTIFY_REFRESH_SUCCESS: "Token d'accès Spotify rafraîchi avec succès.",
+    SPOTIFY_NO_TOKEN: "Aucun token d'accès Spotify disponible (non connecté ?)",
+    SPOTIFY_TRACK_UPDATED: "Statut de lecture mis à jour : {title} - {artist} (Lecture : {isPlaying})",
 
     ALERTS_CLIENT_CONN: "Client connecté",
     ALERTS_FINISHED: "Alerte terminée",

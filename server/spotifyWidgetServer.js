@@ -231,7 +231,7 @@ class SpotifyWidgetServer extends BaseWidgetServer {
             }
 
             const { exec } = require('child_process');
-            const cmd = `powershell -NoProfile -ExecutionPolicy Bypass -Command "Get-Process -Name Spotify -ErrorAction SilentlyContinue | Where-Object { $_.MainWindowTitle } | Select-Object -ExpandProperty MainWindowTitle"`;
+            const cmd = `powershell -NoProfile -ExecutionPolicy Bypass -Command "[Console]::OutputEncoding = [System.Text.Encoding]::UTF8; Get-Process -Name Spotify -ErrorAction SilentlyContinue | Where-Object { $_.MainWindowTitle } | Select-Object -ExpandProperty MainWindowTitle"`;
             
             exec(cmd, (err, stdout) => {
                 if (err || !stdout) {

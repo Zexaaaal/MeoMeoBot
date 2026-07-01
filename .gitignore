@@ -24,6 +24,7 @@ config.json
 release-notes.temp.md
 Backlog.md
 package-lock.json
+/portable_data/
 
 # Cmd
 publish.bat

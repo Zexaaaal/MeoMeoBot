@@ -8,7 +8,8 @@ const isDev = !app.isPackaged;
 class ConfigManager {
     constructor() {
         const storeOptions = { defaults };
-        if (isDev) {
+        const hasPortableArg = process.argv.includes('--portable') || process.argv.includes('-p');
+        if (isDev && !hasPortableArg) {
             storeOptions.cwd = path.join(__dirname, '..');
         }
         this.store = new Store(storeOptions);

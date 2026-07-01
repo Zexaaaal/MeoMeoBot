@@ -1,10 +1,185 @@
 require('dotenv').config();
 const { app, BrowserWindow, ipcMain, Menu } = require('electron');
 const path = require('path');
+const fs = require('fs');
+
+// --- SUPPORT DU MODE PORTABLE ---
+let isPortable = false;
+let portableDataPath = null;
+
+function copyFolderRecursiveSync(source, target) {
+    if (!fs.existsSync(target)) {
+        fs.mkdirSync(target, { recursive: true });
+    }
+    const files = fs.readdirSync(source);
+    for (const file of files) {
+        const curSource = path.join(source, file);
+        const curTarget = path.join(target, file);
+        if (fs.lstatSync(curSource).isDirectory()) {
+            copyFolderRecursiveSync(curSource, curTarget);
+        } else {
+            fs.copyFileSync(curSource, curTarget);
+        }
+    }
+}
+
+if (process.env.PORTABLE_EXECUTABLE_DIR) {
+    isPortable = true;
+    portableDataPath = path.join(process.env.PORTABLE_EXECUTABLE_DIR, 'portable_data');
+} else if (app.isPackaged) {
+    const exeDir = path.dirname(process.execPath);
+    const hasPortableArg = process.argv.includes('--portable') || process.argv.includes('-p');
+    const hasPortableFile = fs.existsSync(path.join(exeDir, 'portable')) || fs.existsSync(path.join(exeDir, 'portable.txt'));
+    const hasPortableFolder = fs.existsSync(path.join(exeDir, 'portable_data'));
+    
+    if (hasPortableArg || hasPortableFile || hasPortableFolder) {
+        isPortable = true;
+        portableDataPath = path.join(exeDir, 'portable_data');
+    }
+} else {
+    const hasPortableArg = process.argv.includes('--portable') || process.argv.includes('-p');
+    if (hasPortableArg) {
+        isPortable = true;
+        portableDataPath = path.join(__dirname, 'portable_data');
+    }
+}
+
+if (isPortable && portableDataPath) {
+    const defaultUserDataPath = app.getPath('userData');
+    
+    if (!fs.existsSync(portableDataPath)) {
+        fs.mkdirSync(portableDataPath, { recursive: true });
+    }
+    
+    const portableConfigPath = path.join(portableDataPath, 'config.json');
+    if (!fs.existsSync(portableConfigPath)) {
+        const defaultConfigPath = path.join(defaultUserDataPath, 'config.json');
+        if (fs.existsSync(defaultConfigPath)) {
+            try {
+                const configContent = fs.readFileSync(defaultConfigPath, 'utf8');
+                const configData = JSON.parse(configContent);
+                
+                const copiedAssetsDir = path.join(portableDataPath, 'copied_assets');
+                const crypto = require('crypto');
+                
+                const MEDIA_EXTENSIONS = new Set([
+                    '.mp3', '.wav', '.ogg', '.flac', '.m4a', '.aac',
+                    '.png', '.jpg', '.jpeg', '.gif', '.svg', '.webp',
+                    '.webm', '.mp4', '.avi', '.mov', '.mkv'
+                ]);
+
+                function getMediaFilePath(val) {
+                    if (typeof val !== 'string' || !val) return null;
+                    let cleanPath = val;
+                    if (cleanPath.startsWith('file://')) {
+                        cleanPath = cleanPath.substring(7);
+                    }
+                    if (cleanPath.startsWith('/') && process.platform === 'win32') {
+                        if (/^\/[a-zA-Z]:/.test(cleanPath)) {
+                            cleanPath = cleanPath.substring(1);
+                        }
+                    }
+                    try {
+                        cleanPath = decodeURIComponent(cleanPath);
+                    } catch (e) {}
+                    
+                    const absolutePath = path.resolve(cleanPath);
+                    const ext = path.extname(absolutePath).toLowerCase();
+                    
+                    if (MEDIA_EXTENSIONS.has(ext)) {
+                        if (fs.existsSync(absolutePath)) {
+                            try {
+                                if (fs.statSync(absolutePath).isFile()) {
+                                    return absolutePath;
+                                }
+                            } catch (e) {}
+                        }
+                    }
+                    return null;
+                }
+
+                function migrateAssets(obj) {
+                    if (typeof obj !== 'object' || obj === null) return;
+                    for (const key of Object.keys(obj)) {
+                        const val = obj[key];
+                        const resolvedPath = getMediaFilePath(val);
+                        if (resolvedPath) {
+                            if (!fs.existsSync(copiedAssetsDir)) {
+                                fs.mkdirSync(copiedAssetsDir, { recursive: true });
+                            }
+                            const fileHash = crypto.createHash('md5').update(resolvedPath).digest('hex').substring(0, 8);
+                            const filename = `${fileHash}_${path.basename(resolvedPath)}`;
+                            const targetPath = path.join(copiedAssetsDir, filename);
+                            try {
+                                fs.copyFileSync(resolvedPath, targetPath);
+                                obj[key] = `file://{userData}/copied_assets/${filename}`;
+                                console.log(`[Portable] Copied asset: ${resolvedPath} -> ${targetPath}`);
+                            } catch (err) {
+                                console.error(`[Portable] Failed to copy asset ${resolvedPath}:`, err);
+                            }
+                        } else if (typeof obj[key] === 'object') {
+                            migrateAssets(obj[key]);
+                        }
+                    }
+                }
+                
+                migrateAssets(configData);
+                
+                fs.writeFileSync(portableConfigPath, JSON.stringify(configData, null, 4), 'utf8');
+            } catch (err) {
+                console.error('[Portable] Failed to migrate config:', err);
+                try {
+                    fs.copyFileSync(defaultConfigPath, portableConfigPath);
+                } catch (e) {}
+            }
+        }
+        
+        const defaultThemeConfigPath = path.join(defaultUserDataPath, 'themeConfig.json');
+        const portableThemeConfigPath = path.join(portableDataPath, 'themeConfig.json');
+        if (fs.existsSync(defaultThemeConfigPath)) {
+            try {
+                fs.copyFileSync(defaultThemeConfigPath, portableThemeConfigPath);
+            } catch (err) {
+                console.error('[Portable] Failed to copy themeConfig:', err);
+            }
+        }
+
+        const defaultThemesDir = path.join(defaultUserDataPath, 'themes');
+        const portableThemesDir = path.join(portableDataPath, 'themes');
+        if (fs.existsSync(defaultThemesDir)) {
+            try {
+                copyFolderRecursiveSync(defaultThemesDir, portableThemesDir);
+            } catch (err) {
+                console.error('[Portable] Failed to copy themes folder:', err);
+            }
+        }
+    }
+    
+    if (fs.existsSync(portableConfigPath)) {
+        try {
+            const configText = fs.readFileSync(portableConfigPath, 'utf8');
+            const currentPathNormalized = portableDataPath.replace(/\\/g, '/');
+            
+            const updatedText = configText.replace(/file:\/\/[^"]+?\/copied_assets\/([^"]+)/g, `file://${currentPathNormalized}/copied_assets/$1`);
+            
+            fs.writeFileSync(portableConfigPath, updatedText, 'utf8');
+        } catch (err) {
+            console.error('[Portable] Failed to update current asset paths:', err);
+        }
+    }
+    
+    app.setPath('userData', portableDataPath);
+}
+// --------------------------------
+
 const fontList = require('font-list');
 const TwitchBot = require('./bot.js');
 const StreamlabsClient = require('./server/streamlabs');
 const log = require('./main/logger').tagged('Main');
+
+if (isPortable) {
+    log.info(`[Portable] Mode portable actif. Données stockées dans : ${portableDataPath}`);
+}
 const KickBot = require('./main/KickBot');
 const KickAPI = require('./main/KickAPI');
 const YouTubeBot = require('./main/YouTubeBot');

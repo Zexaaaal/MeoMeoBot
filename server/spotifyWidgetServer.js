@@ -70,9 +70,16 @@ class SpotifyWidgetServer extends BaseWidgetServer {
 
     getCredentials() {
         const cfg = this.bot.getConfig ? this.bot.getConfig() : {};
+        const isDev = !require('electron').app.isPackaged;
+        if (isDev) {
+            return {
+                clientId: process.env.SPOTIFY_CLIENT_ID || cfg.spotifyClientId || '',
+                clientSecret: process.env.SPOTIFY_CLIENT_SECRET || cfg.spotifyClientSecret || ''
+            };
+        }
         return {
-            clientId: process.env.SPOTIFY_CLIENT_ID || cfg.spotifyClientId || '',
-            clientSecret: process.env.SPOTIFY_CLIENT_SECRET || cfg.spotifyClientSecret || ''
+            clientId: cfg.spotifyClientId || '',
+            clientSecret: cfg.spotifyClientSecret || ''
         };
     }
 
@@ -161,7 +168,7 @@ class SpotifyWidgetServer extends BaseWidgetServer {
                         <h2 style="color: #1DB954;">Connexion Spotify réussie !</h2>
                         <p>Cette fenêtre se fermera automatiquement dans 3 secondes...</p>
                         <script>
-                            setTimeout(() => { window.close(); }, 3000);
+                             setTimeout(() => { window.close(); }, 3000);
                         </script>
                     </body>
                 </html>
@@ -176,8 +183,17 @@ class SpotifyWidgetServer extends BaseWidgetServer {
     async ensureAccessToken() {
         const creds = this.getCredentials();
         const tokens = this.getStoredTokens();
-        if (!creds.clientId || !creds.clientSecret || !tokens.refreshToken) return null;
+        if (!creds.clientId || !creds.clientSecret || !tokens.refreshToken) {
+            log.info('SPOTIFY_MISSING_CREDENTIALS_OR_TOKEN', {
+                hasClientId: !!creds.clientId,
+                hasClientSecret: !!creds.clientSecret,
+                hasRefreshToken: !!tokens.refreshToken
+            });
+            return null;
+        }
         if (tokens.accessToken && tokens.expiry && tokens.expiry > Date.now()) {
+            const expiresIn = Math.round((tokens.expiry - Date.now()) / 1000);
+            log.info('SPOTIFY_TOKEN_VALID', { expiresIn });
             return tokens.accessToken;
         }
 
@@ -225,7 +241,12 @@ class SpotifyWidgetServer extends BaseWidgetServer {
                 headers: { Authorization: `Bearer ${token}` }
             });
 
-            if (resp.status === 204) return { isPlaying: false, trackTitle: '', trackArtist: '', trackAlbum: '', coverUrl: '' };
+            log.info('SPOTIFY_API_RESPONSE', { status: resp.status, statusText: resp.statusText });
+
+            if (resp.status === 204) {
+                log.info('SPOTIFY_204_NO_CONTENT');
+                return { isPlaying: false, trackTitle: '', trackArtist: '', trackAlbum: '', coverUrl: '' };
+            }
 
             if (resp.status === 401) {
                 log.warn('SPOTIFY_TOKEN_EXPIRED');
@@ -239,7 +260,10 @@ class SpotifyWidgetServer extends BaseWidgetServer {
             }
 
             const data = await resp.json();
-            if (!data || !data.item) return { isPlaying: false, trackTitle: '', trackArtist: '', trackAlbum: '', coverUrl: '' };
+            if (!data || !data.item) {
+                log.info('SPOTIFY_DATA_NO_ITEM');
+                return { isPlaying: false, trackTitle: '', trackArtist: '', trackAlbum: '', coverUrl: '' };
+            }
 
             const track = data.item;
             return {

@@ -175,6 +175,7 @@ function registerHandlers(deps) {
             chat: servers.chatServer ? servers.chatServer.getUrl(localIp, 'chat') : '',
             dock: servers.chatServer ? servers.chatServer.getUrl(localIp, 'dock') : '',
             spotify: servers.spotifyServer ? servers.spotifyServer.getUrl(localIp) : '',
+            spotifyRedirect: servers.spotifyServer ? servers.spotifyServer.getRedirectUri() : '',
             emoteWall: servers.chatServer ? servers.chatServer.getUrl(localIp, 'emote-wall') : '',
             subgoals: servers.subgoalsServer ? servers.subgoalsServer.getUrl(localIp) : '',
             subgoalsList: servers.subgoalsServer ? servers.subgoalsServer.getUrl(localIp, 'subgoals-list') : '',

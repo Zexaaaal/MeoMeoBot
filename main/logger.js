@@ -159,6 +159,11 @@ const LOG_MESSAGES = {
     SPOTIFY_REFRESH_SUCCESS: "Token d'accès Spotify rafraîchi avec succès.",
     SPOTIFY_NO_TOKEN: "Aucun token d'accès Spotify disponible (non connecté ?)",
     SPOTIFY_TRACK_UPDATED: "Statut de lecture mis à jour : {title} - {artist} (Lecture : {isPlaying})",
+    SPOTIFY_MISSING_CREDENTIALS_OR_TOKEN: "Identifiants ou token de rafraîchissement Spotify manquants. Client ID : {hasClientId}, Secret : {hasClientSecret}, Refresh Token : {hasRefreshToken}",
+    SPOTIFY_204_NO_CONTENT: "Spotify a renvoyé 204 Pas de contenu (aucune lecture active).",
+    SPOTIFY_DATA_NO_ITEM: "La réponse Spotify ne contient pas de morceau.",
+    SPOTIFY_TOKEN_VALID: "Le token d'accès Spotify est valide (expire dans {expiresIn}s).",
+    SPOTIFY_API_RESPONSE: "Réponse de l'API Spotify : {status} - {statusText}",
 
     ALERTS_CLIENT_CONN: "Client connecté",
     ALERTS_FINISHED: "Alerte terminée",

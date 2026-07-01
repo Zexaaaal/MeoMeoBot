@@ -303,6 +303,11 @@ async function loadWidgetUrls() {
         setBtnUrl('btnCopyRouletteUrl', urls.roulette);
         setBtnUrl('btnCopyGoalsUrl', urls.goals);
 
+        const elRedirect = document.getElementById('spotifyRedirectDisplay');
+        if (elRedirect && urls.spotifyRedirect) {
+            elRedirect.textContent = urls.spotifyRedirect;
+        }
+
     } catch (e) { console.error('Erreur URLs widgets', e); }
 }
 

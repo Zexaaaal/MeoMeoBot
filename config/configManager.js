@@ -5,6 +5,51 @@ const defaults = require('./defaults');
 
 const isDev = !app.isPackaged;
 
+function getNormalizedUserDataPath() {
+    return app.getPath('userData').replace(/\\/g, '/');
+}
+
+function resolvePaths(obj) {
+    if (typeof obj !== 'object' || obj === null) {
+        if (typeof obj === 'string' && obj.includes('{userData}')) {
+            return obj.replace(/\{userData\}/g, getNormalizedUserDataPath());
+        }
+        return obj;
+    }
+    
+    if (Array.isArray(obj)) {
+        return obj.map(item => resolvePaths(item));
+    }
+    
+    const resolved = {};
+    for (const key of Object.keys(obj)) {
+        resolved[key] = resolvePaths(obj[key]);
+    }
+    return resolved;
+}
+
+function unresolvePaths(obj) {
+    if (typeof obj !== 'object' || obj === null) {
+        if (typeof obj === 'string') {
+            const userDataPath = getNormalizedUserDataPath();
+            if (obj.includes(userDataPath)) {
+                return obj.replace(new RegExp(userDataPath, 'g'), '{userData}');
+            }
+        }
+        return obj;
+    }
+    
+    if (Array.isArray(obj)) {
+        return obj.map(item => unresolvePaths(item));
+    }
+    
+    const unresolved = {};
+    for (const key of Object.keys(obj)) {
+        unresolved[key] = unresolvePaths(obj[key]);
+    }
+    return unresolved;
+}
+
 class ConfigManager {
     constructor() {
         const storeOptions = { defaults };
@@ -16,21 +61,22 @@ class ConfigManager {
     }
 
     get(key, defaultValue) {
-        return this.store.get(key, defaultValue);
+        return resolvePaths(this.store.get(key, defaultValue));
     }
 
     set(key, value) {
-        this.store.set(key, value);
+        this.store.set(key, unresolvePaths(value));
     }
 
     getConfig() {
         const config = this.store.get('config');
-        return config;
+        return resolvePaths(config);
     }
 
     updateConfig(newConfig) {
-        const current = this.getConfig() || {};
-        this.store.set('config', { ...current, ...newConfig });
+        const current = this.store.get('config') || {};
+        const unresolvedNew = unresolvePaths(newConfig);
+        this.store.set('config', { ...current, ...unresolvedNew });
     }
 
     getCommands() {
@@ -101,12 +147,14 @@ class ConfigManager {
     }
 
     getWidgetConfig(widgetName) {
-        return this.store.get(`widgets.${widgetName}`);
+        const config = this.store.get(`widgets.${widgetName}`);
+        return resolvePaths(config);
     }
 
     saveWidgetConfig(widgetName, newConfig) {
-        const currentConfig = this.getWidgetConfig(widgetName) || {};
-        this.store.set(`widgets.${widgetName}`, { ...currentConfig, ...newConfig });
+        const currentConfig = this.store.get(`widgets.${widgetName}`) || {};
+        const unresolvedNew = unresolvePaths(newConfig);
+        this.store.set(`widgets.${widgetName}`, { ...currentConfig, ...unresolvedNew });
     }
 
     getLastEvents() {

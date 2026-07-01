@@ -158,13 +158,13 @@ if (isPortable && portableDataPath) {
     if (fs.existsSync(portableConfigPath)) {
         try {
             const configText = fs.readFileSync(portableConfigPath, 'utf8');
-            const currentPathNormalized = portableDataPath.replace(/\\/g, '/');
-            
-            const updatedText = configText.replace(/file:\/\/[^"]+?\/copied_assets\/([^"]+)/g, `file://${currentPathNormalized}/copied_assets/$1`);
-            
-            fs.writeFileSync(portableConfigPath, updatedText, 'utf8');
+            const updatedText = configText.replace(/file:\/\/[^"]+?\/copied_assets\/([^"]+)/g, `file://{userData}/copied_assets/$1`);
+            if (updatedText !== configText) {
+                fs.writeFileSync(portableConfigPath, updatedText, 'utf8');
+                console.log('[Portable] Sanitized absolute paths to relative {userData} placeholder in config.json');
+            }
         } catch (err) {
-            console.error('[Portable] Failed to update current asset paths:', err);
+            console.error('[Portable] Failed to sanitize config paths:', err);
         }
     }
     

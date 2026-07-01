@@ -12,6 +12,7 @@ class SpotifyWidgetServer extends BaseWidgetServer {
         this.spotifyAuthState = null;
         this.spotifyPollTimer = null;
         this.currentSpotifyTrack = null;
+        this.localCoverCache = new Map();
     }
 
     async start() {
@@ -222,18 +223,126 @@ class SpotifyWidgetServer extends BaseWidgetServer {
         return this.getStoredTokens().accessToken;
     }
 
+    getLocalTrackFromWindow() {
+        return new Promise((resolve) => {
+            const isWin = process.platform === 'win32';
+            if (!isWin) {
+                return resolve({ isPlaying: false, trackTitle: '', trackArtist: '', trackAlbum: '', coverUrl: '' });
+            }
+
+            const { exec } = require('child_process');
+            const cmd = `powershell -NoProfile -ExecutionPolicy Bypass -Command "Get-Process -Name Spotify -ErrorAction SilentlyContinue | Where-Object { $_.MainWindowTitle } | Select-Object -ExpandProperty MainWindowTitle"`;
+            
+            exec(cmd, (err, stdout) => {
+                if (err || !stdout) {
+                    return resolve({ isPlaying: false, trackTitle: '', trackArtist: '', trackAlbum: '', coverUrl: '' });
+                }
+                
+                const title = stdout.trim();
+                if (!title || ['spotify', 'spotify free', 'spotify premium'].includes(title.toLowerCase())) {
+                    return resolve({ isPlaying: false, trackTitle: '', trackArtist: '', trackAlbum: '', coverUrl: '' });
+                }
+
+                const separatorIndex = title.indexOf(' - ');
+                if (separatorIndex !== -1) {
+                    const artist = title.substring(0, separatorIndex).trim();
+                    const track = title.substring(separatorIndex + 3).trim();
+                    
+                    const cacheKey = `${artist} - ${track}`.toLowerCase();
+                    if (this.localCoverCache.has(cacheKey)) {
+                        return resolve({
+                            isPlaying: true,
+                            trackTitle: track,
+                            trackArtist: artist,
+                            trackAlbum: 'Spotify Local',
+                            coverUrl: this.localCoverCache.get(cacheKey)
+                        });
+                    }
+
+                    const query = encodeURIComponent(`${artist} ${track}`);
+                    fetch(`https://itunes.apple.com/search?term=${query}&entity=song&limit=1`)
+                        .then(res => res.json())
+                        .then(data => {
+                            let coverUrl = '';
+                            if (data && data.results && data.results[0]) {
+                                const item = data.results[0];
+                                coverUrl = item.artworkUrl100 ? item.artworkUrl100.replace('100x100bb.jpg', '600x600bb.jpg') : '';
+                            }
+                            this.localCoverCache.set(cacheKey, coverUrl);
+                            resolve({
+                                isPlaying: true,
+                                trackTitle: track,
+                                trackArtist: artist,
+                                trackAlbum: 'Spotify Local',
+                                coverUrl: coverUrl
+                            });
+                        })
+                        .catch(e => {
+                            log.error('LOCAL_COVER_FETCH_ERROR', e.message);
+                            resolve({
+                                isPlaying: true,
+                                trackTitle: track,
+                                trackArtist: artist,
+                                trackAlbum: 'Spotify Local',
+                                coverUrl: ''
+                            });
+                        });
+                } else {
+                    const cacheKey = title.toLowerCase();
+                    if (this.localCoverCache.has(cacheKey)) {
+                        return resolve({
+                            isPlaying: true,
+                            trackTitle: title,
+                            trackArtist: '',
+                            trackAlbum: 'Spotify Local',
+                            coverUrl: this.localCoverCache.get(cacheKey)
+                        });
+                    }
+
+                    const query = encodeURIComponent(title);
+                    fetch(`https://itunes.apple.com/search?term=${query}&entity=song&limit=1`)
+                        .then(res => res.json())
+                        .then(data => {
+                            let coverUrl = '';
+                            if (data && data.results && data.results[0]) {
+                                const item = data.results[0];
+                                coverUrl = item.artworkUrl100 ? item.artworkUrl100.replace('100x100bb.jpg', '600x600bb.jpg') : '';
+                            }
+                            this.localCoverCache.set(cacheKey, coverUrl);
+                            resolve({
+                                isPlaying: true,
+                                trackTitle: title,
+                                trackArtist: '',
+                                trackAlbum: 'Spotify Local',
+                                coverUrl: coverUrl
+                            });
+                        })
+                        .catch(e => {
+                            resolve({
+                                isPlaying: true,
+                                trackTitle: title,
+                                trackArtist: '',
+                                trackAlbum: 'Spotify Local',
+                                coverUrl: ''
+                            });
+                        });
+                }
+            });
+        });
+    }
+
     async fetchCurrentTrack() {
         let token;
         try {
             token = await this.ensureAccessToken();
         } catch (err) {
             log.error('SPOTIFY_REFRESH_ERROR', err.message);
-            return { isPlaying: false, trackTitle: '', trackArtist: '', trackAlbum: '', coverUrl: '' };
+            return this.getLocalTrackFromWindow();
         }
 
         if (!token) {
             log.info('SPOTIFY_NO_TOKEN');
-            return { isPlaying: false, trackTitle: '', trackArtist: '', trackAlbum: '', coverUrl: '' };
+            return this.getLocalTrackFromWindow();
         }
 
         try {
@@ -245,24 +354,27 @@ class SpotifyWidgetServer extends BaseWidgetServer {
 
             if (resp.status === 204) {
                 log.info('SPOTIFY_204_NO_CONTENT');
-                return { isPlaying: false, trackTitle: '', trackArtist: '', trackAlbum: '', coverUrl: '' };
+                return this.getLocalTrackFromWindow();
             }
 
             if (resp.status === 401) {
                 log.warn('SPOTIFY_TOKEN_EXPIRED');
                 this.bot.updateConfig({ spotifyAccessToken: '' });
-                return { isPlaying: false, trackTitle: '', trackArtist: '', trackAlbum: '', coverUrl: '' };
+                return this.getLocalTrackFromWindow();
             }
 
             if (!resp.ok) {
                 log.warn('SPOTIFY_FETCH_FAILED', { status: resp.status });
+                if (resp.status === 403) {
+                    return this.getLocalTrackFromWindow();
+                }
                 return { isPlaying: false, trackTitle: '', trackArtist: '', trackAlbum: '', coverUrl: '' };
             }
 
             const data = await resp.json();
             if (!data || !data.item) {
                 log.info('SPOTIFY_DATA_NO_ITEM');
-                return { isPlaying: false, trackTitle: '', trackArtist: '', trackAlbum: '', coverUrl: '' };
+                return this.getLocalTrackFromWindow();
             }
 
             const track = data.item;
@@ -275,7 +387,7 @@ class SpotifyWidgetServer extends BaseWidgetServer {
             };
         } catch (err) {
             log.error('SPOTIFY_FETCH_ERROR', err.message);
-            return { isPlaying: false, trackTitle: '', trackArtist: '', trackAlbum: '', coverUrl: '' };
+            return this.getLocalTrackFromWindow();
         }
     }
 

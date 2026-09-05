@@ -24,6 +24,11 @@ const ALLOWED_LOCAL_EXTENSIONS = new Set([
 
 const VIDEO_EXTENSIONS = new Set(['.webm', '.mp4', '.avi', '.mov', '.mkv']);
 
+const BIND_HOST = '0.0.0.0';
+const PORT_RETRY_LIMIT = 10;
+const PORT_RETRY_DELAY_MS = 1000;
+const EPHEMERAL_PORT_FLOOR = 32768;
+
 class BaseWidgetServer {
     constructor(bot, defaultPort, widgetName) {
         this.bot = bot;
@@ -44,11 +49,13 @@ class BaseWidgetServer {
             }
 
             this.port = this.resolvePort();
+            this.portAttempts = 0;
+            this.lastError = null;
             this.server = http.createServer(this.handleRequest.bind(this));
 
             this.server.on('listening', () => {
                 const address = this.server.address();
-                this.port = typeof address === 'string' ? 0 : address.port;
+                this.port = typeof address === 'string' ? this.port : address.port;
 
                 log.info('SERVER_START', { port: this.port });
 
@@ -62,20 +69,51 @@ class BaseWidgetServer {
 
             this.server.on('error', (err) => {
                 if (err.code === 'EADDRINUSE') {
+                    // Never fall back to a random port. A fixed port is the
+                    // whole reason the URL in OBS keeps working; a socket left
+                    // over from the previous run frees itself within seconds,
+                    // so retry the same port instead of moving.
+                    this.portAttempts++;
+                    if (this.portAttempts <= PORT_RETRY_LIMIT) {
+                        log.warn('SERVER_PORT_RETRY', {
+                            port: this.port,
+                            attempt: this.portAttempts,
+                            max: PORT_RETRY_LIMIT
+                        });
+                        setTimeout(() => {
+                            try {
+                                this.server.listen(this.port, BIND_HOST);
+                            } catch (e) {
+                                log.error('SERVER_ERROR', e);
+                            }
+                        }, PORT_RETRY_DELAY_MS);
+                        return;
+                    }
                     log.error('SERVER_PORT_IN_USE', { port: this.port });
-                    this.port = 0;
-                    this.server.listen(0, '127.0.0.1');
+                    this.lastError = `Port ${this.port} occupé par un autre programme`;
+                    resolve(0);
                 } else {
                     log.error('SERVER_ERROR', err);
+                    this.lastError = err.message || String(err);
                     resolve(0);
                 }
             });
-            this.server.listen(this.port, '0.0.0.0');
+            this.server.listen(this.port, BIND_HOST);
         });
     }
 
     resolvePort() {
+        const cfg = this.bot && this.bot.getConfig ? this.bot.getConfig() : {};
+        const saved = parseInt(cfg[this.configKey], 10);
+        // Ports at or above the ephemeral range were written by the old random
+        // fallback, not chosen by the user. Ignore them so a bad value from a
+        // previous run heals itself instead of being resurrected.
+        if (saved > 0 && saved < EPHEMERAL_PORT_FLOOR) return saved;
         return this.defaultPort;
+    }
+
+    getLastError() {
+        return this.lastError || null;
     }
 
     getPort() {
@@ -510,9 +548,11 @@ class BaseWidgetServer {
         }
     }
 
-    getUrl(localIp, widgetType) {
+    // OBS runs on the same machine, so loopback is the only host that stays
+    // valid across DHCP renewals, VPNs and virtual network adapters.
+    getUrl(host, widgetType) {
         const name = widgetType || this.widgetName;
-        return `http://${localIp}:${this.port}/widget/${name}`;
+        return `http://${host || '127.0.0.1'}:${this.port}/widget/${name}`;
     }
 }
 

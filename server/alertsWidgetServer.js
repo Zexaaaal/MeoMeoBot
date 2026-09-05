@@ -61,8 +61,8 @@ class AlertsWidgetServer extends BaseWidgetServer {
     }
 
     onConnection(ws) {
-
-        this.isPlaying = false;
+        // Only kick the queue. Resetting isPlaying here used to cut the running
+        // alert short whenever a second source (vod-audio) connected.
         this.processQueue();
 
         ws.on('message', (message) => {

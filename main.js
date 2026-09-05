@@ -196,6 +196,8 @@ const mediaServerModule = require('./main/media-server');
 const themeManager = require('./main/theme-manager');
 const castManager = require('./main/cast-manager');
 const ipcHandlers = require('./main/ipc-handlers');
+const ObsControl = require('./main/obs-control');
+const ReauthPrompter = require('./main/reauth');
 const videoHandlers = require('./main/video-handlers');
 
 const DEFAULT_WIDGET_PORT = 8087;
@@ -204,6 +206,14 @@ const DEFAULT_SUBGOALS_WIDGET_PORT = 8091;
 const DEFAULT_ROULETTE_WIDGET_PORT = 8092;
 const DEFAULT_ALERTS_WIDGET_PORT = 8097;
 const DEFAULT_GOALS_WIDGET_PORT = 8093;
+
+// A second instance would bind six different ports and silently invalidate
+// every browser source in OBS. Refuse to start one.
+const gotSingleInstanceLock = app.requestSingleInstanceLock();
+if (!gotSingleInstanceLock) {
+    log.warn('MAIN_SECOND_INSTANCE');
+    app.quit();
+}
 
 let mainWindow;
 
@@ -214,6 +224,9 @@ let youtubeBot;
 let streamlabsClient = null;
 let kickCodeVerifier = null;
 
+let obsControl;
+let reauthPrompter;
+
 let chatServer;
 let spotifyServer;
 let subgoalsServer;
@@ -223,6 +236,23 @@ let goalsServer;
 
 function getServers() {
     return { chatServer, spotifyServer, subgoalsServer, rouletteServer, alertsWidgetServer, goalsServer };
+}
+
+// Which server actually owns each widget path, so a stale port in an OBS
+// browser source can be rewritten to the live one.
+function getPortForWidget(widgetName) {
+    const owners = {
+        'chat': chatServer, 'dock': chatServer, 'emote-wall': chatServer,
+        'spotify': spotifyServer,
+        'subgoals': subgoalsServer, 'subgoals-list': subgoalsServer,
+        'daily-subs': subgoalsServer, 'last-sub': subgoalsServer,
+        'last-follow': subgoalsServer, 'last-donation': subgoalsServer,
+        'roulette': rouletteServer,
+        'goals': goalsServer,
+        'alerts': alertsWidgetServer
+    };
+    const server = owners[widgetName];
+    return server && server.getPort ? server.getPort() : null;
 }
 
 function createWindow() {
@@ -351,7 +381,7 @@ function openGoalsConfigWindow() {
 
 function autoConnectBot() {
     const config = bot.getConfig();
-    if (bot && config.channel && config.username && config.token) {
+    if (bot && config.channel && config.token) {
         setTimeout(() => bot.connect(), 1000);
     }
     if (kickBot && config.kickChannel) {
@@ -364,6 +394,17 @@ function autoConnectBot() {
 
 function setupBotEvents() {
     if (!bot) return;
+
+    bot.on('twitch-oauth-token', (token) => {
+        log.info('TWITCH_OAUTH_TOKEN_OK');
+        if (reauthPrompter) reauthPrompter.clear('twitch');
+        bot.updateConfig({ token: `oauth:${token}` });
+        if (mainWindow && !mainWindow.isDestroyed()) {
+            mainWindow.webContents.send('notification', 'Token Twitch obtenu avec succès !', 'success');
+            mainWindow.webContents.send('config-updated');
+        }
+        setTimeout(() => bot.connect(), 500);
+    });
 
     bot.on('kick-oauth-code', async (code) => {
         if (!kickApi || !kickCodeVerifier) {
@@ -421,6 +462,29 @@ function setupBotEvents() {
             mainWindow.webContents.send(channel, data);
         }
     };
+
+    bot.on('eventsub-status', (status) => safeSend('eventsub-status', status));
+
+    bot.on('token-invalid', () => {
+        if (reauthPrompter) reauthPrompter.request('twitch', 'validate failed');
+        else safeSend('notification', 'Token Twitch invalide ou expiré.', 'error');
+    });
+
+    bot.on('auth-expired', ({ service }) => {
+        if (reauthPrompter) reauthPrompter.request(service, 'refresh failed');
+    });
+
+    bot.on('auth-restored', ({ service }) => {
+        if (reauthPrompter) reauthPrompter.clear(service);
+    });
+
+    bot.on('token-expiring', (days) => {
+        safeSend('notification', `Le token Twitch expire dans ${days} jour(s).`, 'error');
+    });
+
+    bot.on('scopes-missing', (scopes) => {
+        safeSend('notification', `Permissions Twitch manquantes : ${scopes.join(', ')}`, 'error');
+    });
 
     bot.on('connected', () => safeSend('bot-status', { connected: true, channel: bot.getConfig().channel }));
     bot.on('disconnected', () => safeSend('bot-status', { connected: false }));
@@ -568,8 +632,7 @@ ipcMain.handle('kick-auth-oauth', async (event, code, codeVerifier) => {
 });
 
 ipcMain.handle('get-goal-widget-url', (event, goalId) => {
-    const localIp = castManager.getLocalIp();
-    if (goalsServer) return goalsServer.getGoalUrl(localIp, goalId);
+    if (goalsServer) return goalsServer.getGoalUrl('127.0.0.1', goalId);
     return '';
 });
 
@@ -623,7 +686,16 @@ ipcMain.on('resize-css-editor', (event, width) => {
     }
 });
 
+app.on('second-instance', () => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+        if (mainWindow.isMinimized()) mainWindow.restore();
+        mainWindow.focus();
+    }
+});
+
 app.whenReady().then(async () => {
+    if (!gotSingleInstanceLock) return;
+
     bot = new TwitchBot();
     kickBot = new KickBot();
     kickApi = new KickAPI(bot);
@@ -655,6 +727,8 @@ app.whenReady().then(async () => {
     const onServerPortChanged = () => {
         if (mainWindow && !mainWindow.isDestroyed()) {
             mainWindow.webContents.send('widget-ports-changed');
+            // The name every renderer module actually listens for.
+            mainWindow.webContents.send('refresh-widget-urls');
         }
     };
 
@@ -669,6 +743,17 @@ app.whenReady().then(async () => {
         if (goalsServer) goalsServer.startPolling();
         onServerPortChanged();
         log.info('MAIN_SERVERS_STARTED');
+
+        // Only now are the widget URLs actually serving, so this is the point
+        // at which refreshing OBS is worth anything.
+        obsControl = new ObsControl(bot, getPortForWidget);
+        obsControl.start();
+
+        reauthPrompter = new ReauthPrompter({
+            bot,
+            getMainWindow: () => mainWindow,
+            getServers
+        });
     }).catch(err => {
         log.error('MAIN_SERVERS_ERR', { error: err.message || err });
     });
@@ -687,6 +772,7 @@ app.whenReady().then(async () => {
         bot,
         kickBot,
         youtubeBot,
+        getObsControl: () => obsControl,
         getServers,
         getLocalIp: castManager.getLocalIp,
         mediaServer: mediaServerModule.getServer(),
@@ -707,6 +793,7 @@ function cleanup() {
     if (alertsWidgetServer) alertsWidgetServer.stop();
     if (goalsServer) goalsServer.stop();
     if (streamlabsClient) streamlabsClient.stop();
+    if (obsControl) obsControl.stop();
     mediaServerModule.stop();
     castManager.cleanup();
 }

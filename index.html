@@ -290,7 +290,7 @@
                                 </div>
                             </div>
                             <div class="widget-col-actions">
-                                <button class="btn btn-secondary btn-sm" onclick="editWidgetCss('chat')">Thèmes</button>
+                                <button class="btn btn-secondary btn-sm" data-edit-css="chat">Thèmes</button>
                                 <button class="btn btn-primary btn-sm" id="saveBadgePrefs"
                                     title="Sauvegarder">Sauvegarder</button>
                             </div>
@@ -305,7 +305,7 @@
                             <div class="widget-col-actions">
                                 <button class="btn btn-primary btn-sm" id="configureSubgoalsBtn">Configurer</button>
                                 <button class="btn btn-secondary btn-sm"
-                                    onclick="editWidgetCss('subgoals')">Thèmes</button>
+                                    data-edit-css="subgoals">Thèmes</button>
                             </div>
                         </div>
 
@@ -317,7 +317,7 @@
                             </div>
                             <div class="widget-col-actions">
                                 <button class="btn btn-secondary btn-sm"
-                                    onclick="editWidgetCss('subgoals-list')">Thèmes</button>
+                                    data-edit-css="subgoals-list">Thèmes</button>
                             </div>
                         </div>
 
@@ -393,7 +393,7 @@
                             <div class="widget-col-actions">
                                 <button class="btn btn-primary btn-sm" id="configureGoalsBtn">Configurer</button>
                                 <button class="btn btn-secondary btn-sm"
-                                    onclick="editWidgetCss('goals')">Thèmes</button>
+                                    data-edit-css="goals">Thèmes</button>
                             </div>
                         </div>
 
@@ -405,7 +405,7 @@
                             </div>
                             <div class="widget-col-config">
                                 <p style="margin-bottom:6px;font-size:12px;color:var(--text-secondary);">
-                                    <code id="spotifyRedirectDisplay">http://127.0.0.1:8090/auth/spotify/callback</code>
+                                    <code class="copy-on-click" title="Cliquer pour copier" style="cursor:pointer" id="spotifyRedirectDisplay">http://127.0.0.1:8090/auth/spotify/callback</code>
                                 </p>
                                 <div id="spotify-device-picker" class="hidden">
                                     <select id="spotify-devices" class="form-select"></select>
@@ -414,7 +414,7 @@
                             </div>
                             <div class="widget-col-actions">
                                 <button class="btn btn-secondary btn-sm"
-                                    onclick="editWidgetCss('spotify')">Thèmes</button>
+                                    data-edit-css="spotify">Thèmes</button>
                             </div>
                         </div>
 
@@ -427,7 +427,7 @@
                             <div class="widget-col-actions">
                                 <button class="btn btn-primary btn-sm" id="configureRouletteBtn">Configurer</button>
                                 <button class="btn btn-secondary btn-sm"
-                                    onclick="editWidgetCss('roulette')">Thèmes</button>
+                                    data-edit-css="roulette">Thèmes</button>
                                 <button class="btn btn-success btn-sm" id="spinRouletteBtn"
                                     title="Lancer la roulette">Lancer</button>
                             </div>
@@ -786,6 +786,7 @@
                     Twitch
                 </div>
                 <div class="config-panel-actions">
+                    <button class="btn btn-secondary" id="twitchOAuthBtn" title="Génère un token avec toutes les permissions requises">&#128273; OAuth Twitch</button>
                     <button class="btn btn-success" id="connectBtn">Connecter</button>
                     <button class="btn btn-danger" id="disconnectBtn">D&eacute;connecter</button>
                 </div>
@@ -796,6 +797,7 @@
                 <div class="form-group"><label>OAuth Token</label><input type="password" id="config-token" placeholder="oauth:xxx"></div>
                 <div class="form-group"><label>Client ID</label><input type="text" id="config-twitchClientId"></div>
                 <div class="form-group span-2"><label>App Token</label><input type="password" id="config-twitchAppToken"></div>
+                <div class="form-group span-2"><label>Redirect URI <span class="config-label-hint">(cliquer pour copier, puis coller dans la console dev Twitch)</span></label><code class="chat-widget-url copy-on-click" id="twitchRedirectDisplay" title="Cliquer pour copier" style="cursor:pointer">...</code></div>
             </div>
         </div>
 
@@ -857,6 +859,16 @@
                 <div class="form-group"><label>Token Streamlabs</label><input type="password" id="config-streamlabsSocketToken"></div>
                 <div class="form-group"><label>SteamGridDB API Key</label><input type="password" id="config-steamGridDbApiKey"></div>
                 <div class="form-group span-2"><label>Discord Webhook</label><input type="text" id="config-discordWebhookUrl" placeholder="https://discord.com/api/webhooks/..."></div>
+                <div class="form-group span-2" style="border-top:1px solid var(--border,#2a2a30); padding-top:10px; margin-top:4px;">
+                    <label style="display:flex; align-items:center; gap:8px;">
+                        <input type="checkbox" id="config-obsWebsocketEnabled" checked>
+                        Rafra&icirc;chir automatiquement les sources OBS
+                        <span class="config-label-hint" id="obsStatusBadge" style="margin-left:auto;">&mdash;</span>
+                    </label>
+                </div>
+                <div class="form-group"><label>OBS WebSocket URL</label><input type="text" id="config-obsWebsocketUrl" placeholder="ws://127.0.0.1:4455"></div>
+                <div class="form-group"><label>OBS WebSocket Mot de passe</label><input type="password" id="config-obsWebsocketPassword"></div>
+                <div class="form-group span-2"><button class="btn btn-secondary" id="obsRefreshBtn">&#128260; Rafra&icirc;chir les sources OBS maintenant</button></div>
             </div>
         </div>
 

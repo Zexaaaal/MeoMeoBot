@@ -7,16 +7,29 @@ const os = require('os');
 let bonjourInstance = null;
 let lastCastDevice = null;
 
+// Adapters that are never the route to a Chromecast on the local network.
+const VIRTUAL_ADAPTER_RE = /virtualbox|vmware|hyper-v|vethernet|wsl|docker|loopback|tailscale|zerotier|tap-|tun-|npcap/i;
+
 function getLocalIp() {
     const interfaces = os.networkInterfaces();
+    const candidates = [];
+
     for (const name of Object.keys(interfaces)) {
-        for (const iface of interfaces[name]) {
-            if (iface.family === 'IPv4' && !iface.internal) {
-                return iface.address;
-            }
+        if (VIRTUAL_ADAPTER_RE.test(name)) continue;
+        for (const iface of interfaces[name] || []) {
+            if (iface.family !== 'IPv4' || iface.internal) continue;
+            // 169.254.x.x is a link-local address handed out when DHCP failed.
+            if (iface.address.startsWith('169.254.')) continue;
+            candidates.push(iface.address);
         }
     }
-    return '127.0.0.1';
+
+    // Prefer a normal home/LAN range over anything more exotic.
+    const preferred = candidates.find(a => /^192\.168\./.test(a))
+        || candidates.find(a => /^10\./.test(a))
+        || candidates.find(a => /^172\.(1[6-9]|2\d|3[01])\./.test(a));
+
+    return preferred || candidates[0] || '127.0.0.1';
 }
 
 function registerHandlers(mainWindow, mediaServerModule) {

@@ -9,6 +9,7 @@
     "dev": "electron . --dev",
     "build": "electron-builder",
     "build:portable": "electron-builder --win portable",
+    "test": "node scripts/check.js && node scripts/smoke.js",
     "publish": "node publish.js"
   },
   "dependencies": {
@@ -22,7 +23,6 @@
     "html2canvas": "^1.4.1",
     "pusher-js": "^8.5.0",
     "socket.io-client": "^4.8.1",
-    "tmi.js": "^1.8.5",
     "ws": "^8.18.3",
     "youtube-chat": "^2.2.0"
   },

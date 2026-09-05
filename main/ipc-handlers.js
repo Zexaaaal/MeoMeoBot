@@ -3,6 +3,30 @@ const path = require('path');
 const fs = require('fs');
 const log = require('./logger').tagged('IPC');
 const { sendPlanningToDiscord } = require('./DiscordSync');
+const twitchAuth = require('./twitch-auth');
+
+// OBS sits on the same machine as the app, so the copied source URLs use
+// loopback: it survives DHCP renewals, VPN adapters and wifi/ethernet swaps
+// that used to silently invalidate every browser source.
+const OBS_HOST = '127.0.0.1';
+
+function buildLanUrls(ip, servers) {
+    if (!ip || ip === '127.0.0.1') return null;
+    return {
+        chat: servers.chatServer ? servers.chatServer.getUrl(ip, 'chat') : '',
+        dock: servers.chatServer ? servers.chatServer.getUrl(ip, 'dock') : '',
+        spotify: servers.spotifyServer ? servers.spotifyServer.getUrl(ip) : '',
+        emoteWall: servers.chatServer ? servers.chatServer.getUrl(ip, 'emote-wall') : '',
+        subgoals: servers.subgoalsServer ? servers.subgoalsServer.getUrl(ip) : '',
+        subgoalsList: servers.subgoalsServer ? servers.subgoalsServer.getUrl(ip, 'subgoals-list') : '',
+        dailySubs: servers.subgoalsServer ? servers.subgoalsServer.getUrl(ip, 'daily-subs') : '',
+        lastSub: servers.subgoalsServer ? servers.subgoalsServer.getUrl(ip, 'last-sub') : '',
+        lastFollow: servers.subgoalsServer ? servers.subgoalsServer.getUrl(ip, 'last-follow') : '',
+        lastDonation: servers.subgoalsServer ? servers.subgoalsServer.getUrl(ip, 'last-donation') : '',
+        roulette: servers.rouletteServer ? servers.rouletteServer.getUrl(ip) : '',
+        goals: servers.goalsServer ? servers.goalsServer.getUrl(ip) : ''
+    };
+}
 
 function registerHandlers(deps) {
     const {
@@ -54,13 +78,62 @@ function registerHandlers(deps) {
             servers.spotifyServer.startPolling();
         }
 
-        if (config.channel || config.username || config.token) setTimeout(() => bot.connect(), 500);
+        if (config.obsWebsocketUrl !== undefined
+            || config.obsWebsocketPassword !== undefined
+            || config.obsWebsocketEnabled !== undefined) {
+            const obs = deps.getObsControl && deps.getObsControl();
+            if (obs) obs.restart();
+        }
+
+        if (config.channel || config.token) setTimeout(() => bot.connect(), 500);
         if (deps.kickBot && config.kickChannel) setTimeout(() => deps.kickBot.connect(config.kickChannel), 500);
         if (deps.youtubeBot && config.youtubeChannel) setTimeout(() => deps.youtubeBot.connect(config.youtubeChannel), 500);
         return { success: true };
     });
 
     ipcMain.handle('is-dev', () => !app.isPackaged || process.argv.includes('--dev'));
+
+    ipcMain.handle('start-twitch-auth', async () => {
+        const servers = getServers();
+        const port = servers.chatServer ? servers.chatServer.getPort() : 0;
+        const built = twitchAuth.buildAuthUrl(bot, port);
+        if (built.error) return { success: false, error: built.error };
+
+        await shell.openExternal(built.url);
+        return { success: true, redirectUri: built.redirectUri };
+    });
+
+    ipcMain.handle('get-twitch-redirect-uri', () => {
+        const servers = getServers();
+        const port = servers.chatServer ? servers.chatServer.getPort() : 0;
+        return twitchAuth.getRedirectUri(port);
+    });
+
+    ipcMain.handle('get-eventsub-status', () => {
+        return bot.eventSubHandler ? bot.eventSubHandler.getSubscriptionStatus() : [];
+    });
+
+    ipcMain.handle('obs-get-status', () => {
+        const obs = deps.getObsControl && deps.getObsControl();
+        const cfg = bot.getConfig();
+        return {
+            enabled: cfg.obsWebsocketEnabled !== false,
+            connected: !!(obs && obs.isConnected())
+        };
+    });
+
+    ipcMain.handle('obs-refresh-sources', async () => {
+        const obs = deps.getObsControl && deps.getObsControl();
+        if (!obs || !obs.isConnected()) {
+            return { success: false, error: 'OBS non connecté' };
+        }
+        try {
+            const result = await obs.refreshWidgetSources();
+            return { success: true, ...result };
+        } catch (e) {
+            return { success: false, error: e.message };
+        }
+    });
 
     ipcMain.handle('get-commands', () => ({ commands: bot.getCommands() }));
 
@@ -81,6 +154,8 @@ function registerHandlers(deps) {
     ipcMain.handle('draw-winner', () => ({ success: true, winner: bot.drawWinner() }));
     ipcMain.handle('clear-participants', () => { bot.clearParticipants(); return { success: true }; });
     ipcMain.handle('get-participants', () => bot.getParticipants());
+    ipcMain.handle('get-participants-count', () => bot.getParticipantsCount());
+    ipcMain.handle('get-sub-count', () => bot.getSubCount());
     ipcMain.handle('is-giveaway-active', () => bot.isGiveawayActive());
 
     ipcMain.handle('get-banned-words', () => ({ bannedWords: bot.getBannedWords() }));
@@ -159,7 +234,7 @@ function registerHandlers(deps) {
     });
 
     ipcMain.handle('get-widget-url', async (event, widgetName = 'chat') => {
-        const localIp = getLocalIp();
+        const localIp = OBS_HOST;
         const servers = getServers();
         if (widgetName === 'spotify' && servers.spotifyServer) return servers.spotifyServer.getUrl(localIp);
         if (widgetName === 'subgoals' && servers.subgoalsServer) return servers.subgoalsServer.getUrl(localIp);
@@ -169,7 +244,7 @@ function registerHandlers(deps) {
     });
 
     ipcMain.handle('get-widget-urls', async () => {
-        const localIp = getLocalIp();
+        const localIp = OBS_HOST;
         const servers = getServers();
         return {
             chat: servers.chatServer ? servers.chatServer.getUrl(localIp, 'chat') : '',
@@ -185,6 +260,9 @@ function registerHandlers(deps) {
             lastDonation: servers.subgoalsServer ? servers.subgoalsServer.getUrl(localIp, 'last-donation') : '',
             roulette: servers.rouletteServer ? servers.rouletteServer.getUrl(localIp) : '',
             goals: servers.goalsServer ? servers.goalsServer.getUrl(localIp) : '',
+            // Same widgets addressed over the network, for an OBS running on
+            // another machine. Not what the OBS buttons copy by default.
+            lan: buildLanUrls(getLocalIp(), servers)
         };
     });
 

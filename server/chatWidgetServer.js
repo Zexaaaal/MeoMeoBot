@@ -1,6 +1,61 @@
 const BaseWidgetServer = require('./BaseWidgetServer');
 const log = require('../main/logger').tagged('Chat');
 
+// Maps a widget path to the config key its server publishes its live port to.
+const GO_ROUTES = {
+    'chat': 'chatWidgetPort',
+    'dock': 'chatWidgetPort',
+    'emote-wall': 'chatWidgetPort',
+    'spotify': 'spotifyWidgetPort',
+    'subgoals': 'subgoalsWidgetPort',
+    'subgoals-list': 'subgoalsWidgetPort',
+    'daily-subs': 'subgoalsWidgetPort',
+    'last-sub': 'subgoalsWidgetPort',
+    'last-follow': 'subgoalsWidgetPort',
+    'last-donation': 'subgoalsWidgetPort',
+    'roulette': 'rouletteWidgetPort',
+    'goals': 'goalsWidgetPort',
+    'alerts': 'alertsWidgetPort'
+};
+
+const TWITCH_CALLBACK_PAGE = `<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>MeoMeoBot</title></head>
+<body style="background:#0a0a0c;color:#e5e7eb;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;flex-direction:column">
+<h2 id="msg">Connexion en cours...</h2>
+<p id="sub" style="color:#9ca3af"></p>
+<script>
+(function () {
+    var params = new URLSearchParams(location.hash.replace(/^#/, ''));
+    var token = params.get('access_token');
+    var msg = document.getElementById('msg');
+    var sub = document.getElementById('sub');
+
+    if (!token) {
+        msg.textContent = 'Echec de la connexion';
+        msg.style.color = '#ef4444';
+        sub.textContent = params.get('error_description') || 'Aucun token recu.';
+        return;
+    }
+
+    fetch('/twitch/token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ access_token: token })
+    }).then(function () {
+        msg.textContent = 'Connexion Twitch reussie !';
+        msg.style.color = '#10b981';
+        sub.textContent = 'Cette fenetre se fermera automatiquement.';
+        history.replaceState(null, '', location.pathname);
+        setTimeout(function () { window.close(); }, 2500);
+    }).catch(function (e) {
+        msg.textContent = 'Erreur';
+        msg.style.color = '#ef4444';
+        sub.textContent = String(e);
+    });
+})();
+</script>
+</body></html>`;
+
 class ChatWidgetServer extends BaseWidgetServer {
     constructor(bot, defaultPort, kickBot) {
         super(bot, defaultPort, 'chat');
@@ -62,6 +117,38 @@ class ChatWidgetServer extends BaseWidgetServer {
             this.serveDock(req, res);
             return true;
         }
+        // Twitch hands the token back in the URL fragment, which never
+        // reaches the server, so the callback page posts it back to us.
+        if (url.pathname === '/twitch/callback') {
+            res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+            res.end(TWITCH_CALLBACK_PAGE);
+            return true;
+        }
+
+        if (url.pathname === '/twitch/token' && req.method === 'POST') {
+            let body = '';
+            req.on('data', chunk => {
+                body += chunk;
+                if (body.length > 8192) req.destroy();
+            });
+            req.on('end', () => {
+                let token = null;
+                try {
+                    token = JSON.parse(body).access_token;
+                } catch (e) { /* malformed, handled below */ }
+
+                if (token) {
+                    this.bot.emit('twitch-oauth-token', token);
+                    res.writeHead(200, { 'Content-Type': 'application/json' });
+                    res.end('{"ok":true}');
+                } else {
+                    res.writeHead(400, { 'Content-Type': 'application/json' });
+                    res.end('{"ok":false}');
+                }
+            });
+            return true;
+        }
+
         if (url.pathname === '/kick/callback') {
             const code = url.searchParams.get('code');
             const error = url.searchParams.get('error');
@@ -78,6 +165,33 @@ class ChatWidgetServer extends BaseWidgetServer {
             }
         }
         return false;
+    }
+
+    // Stable gateway: /go/{widget} looks the widget's live port up in config
+    // and redirects, so a URL kept in OBS survives a port change.
+    _handleGoRedirect(req, res, widgetName) {
+        const name = decodeURIComponent(widgetName).replace(/\/+$/, '');
+        const portKey = GO_ROUTES[name];
+
+        if (!portKey) {
+            res.statusCode = 404;
+            res.end('Unknown widget');
+            return true;
+        }
+
+        const cfg = this.bot.getConfig ? this.bot.getConfig() : {};
+        const port = cfg[portKey];
+
+        if (!port) {
+            res.statusCode = 503;
+            res.end('Widget server not ready');
+            return true;
+        }
+
+        const search = req.url.includes('?') ? req.url.slice(req.url.indexOf('?')) : '';
+        res.writeHead(302, { Location: `http://127.0.0.1:${port}/widget/${name}${search}` });
+        res.end();
+        return true;
     }
 
     serveEmoteWall(req, res) {

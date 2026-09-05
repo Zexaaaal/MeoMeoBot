@@ -22,19 +22,21 @@ const ALLOWED_INVOKE_CHANNELS = [
     'get-reward-folders', 'save-reward-folders',
     'twitch-get-steamgriddb-image', 'twitch-get-schedule', 'twitch-create-schedule-segment',
     'twitch-update-schedule-segment', 'twitch-delete-schedule-segment', 'save-planning-base64',
-    'is-dev', 'trigger-mock-redemption', 'update-config', 'get-system-fonts', 'store-kick-verifier',
-    'sync-planning-discord', 'read-file-base64', 'kick-auth-oauth'
+    'is-dev', 'trigger-mock-redemption', 'get-system-fonts', 'store-kick-verifier',
+    'sync-planning-discord', 'read-file-base64', 'kick-auth-oauth',
+    'obs-get-status', 'obs-refresh-sources', 'get-eventsub-status',
+    'start-twitch-auth', 'get-twitch-redirect-uri'
 ];
 
 const ALLOWED_SEND_CHANNELS = [
-    'start-download', 'quit-and-install', 'window-control'
+    'start-download', 'quit-and-install', 'window-control', 'check-for-updates'
 ];
 
 const ALLOWED_ON_CHANNELS = [
     'notification', 'bot-status', 'participants-updated', 'participant-added',
     'device-discovery-status', 'cast-devices-found', 'cast-status', 'update-status-check',
     'update-available', 'update-downloaded', 'refresh-widget-urls', 'load-css-editor',
-    'sub-count-updated', 'widget-ports-changed'
+    'sub-count-updated', 'widget-ports-changed', 'eventsub-status', 'config-updated'
 ];
 
 contextBridge.exposeInMainWorld('api', {

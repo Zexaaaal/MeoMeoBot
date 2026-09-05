@@ -1,4 +1,3 @@
-const tmi = require('tmi.js');
 const EventEmitter = require('events');
 const configManager = require('./config/configManager');
 const log = require('./main/logger').tagged('Bot');
@@ -7,12 +6,35 @@ const EventSubHandler = require('./main/EventSubHandler');
 const TwitchAPI = require('./main/TwitchAPI');
 const RewardsManager = require('./main/RewardsManager');
 const AlertManager = require('./main/AlertManager');
+const chatMapper = require('./main/chat-mapper');
+
+// Twitch asks applications to validate the user token at least once an hour.
+const TOKEN_VALIDATE_INTERVAL_MS = 45 * 60 * 1000;
+const TOKEN_EXPIRY_WARNING_S = 7 * 24 * 60 * 60;
+
+// Everything the app subscribes to or calls. A missing entry here is the usual
+// reason a feature silently does nothing (channel points above all).
+const REQUIRED_SCOPES = [
+    // Chat now runs over EventSub + Helix rather than IRC, so chat:read and
+    // chat:edit are replaced by these two.
+    'user:read:chat',
+    'user:write:chat',
+    'channel:read:redemptions',
+    'channel:manage:redemptions',
+    'channel:read:subscriptions',
+    'channel:read:hype_train',
+    'moderator:read:followers',
+    'moderator:manage:chat_messages',
+    'moderator:manage:banned_users',
+    'bits:read',
+    'clips:edit',
+    'channel:manage:schedule'
+];
 
 class TwitchBot extends EventEmitter {
     constructor() {
         super();
         this.configManager = configManager;
-        this.client = null;
         this.isConnected = false;
         this.messageCount = 0;
         this.currentAutoMessageIndex = 0;
@@ -22,6 +44,8 @@ class TwitchBot extends EventEmitter {
         this.badgesWarningLogged = false;
         this.userId = null;
         this.clientId = null;
+        this.tokenScopes = [];
+        this.tokenWatchTimer = null;
         this.clipCooldown = (this.getConfig().clipCooldown || 30) * 1000;
         this.onCooldown = false;
         this.currentSubCount = this.getWidgetConfig('subgoals')?.currentCount || 0;
@@ -62,16 +86,9 @@ class TwitchBot extends EventEmitter {
 
     async connect() {
         const config = this.getConfig();
-        if (!config.channel || !config.username || !config.token) {
+        if (!config.channel || !config.token) {
             log.error('BOT_MISSING_CONFIG');
             return;
-        }
-
-        if (this.client) {
-            this.client.removeAllListeners();
-            if (this.isConnected) {
-                this.client.disconnect().catch(err => log.error('BOT_DISCONNECT_ERROR', { error: err.message || err }));
-            }
         }
 
         const token = config.token.startsWith('oauth:') ? config.token : `oauth:${config.token}`;
@@ -80,67 +97,172 @@ class TwitchBot extends EventEmitter {
         if (validation) {
             this.clientId = validation.clientId;
             this.userId = validation.userId;
+            this.tokenScopes = validation.scopes || [];
+            this.reportScopeGaps();
+            this.reportTokenExpiry(validation.expiresIn);
+            this.startTokenWatch();
+        } else {
+            log.error('BOT_TOKEN_INVALID');
+            this.emit('token-invalid');
         }
 
-        await this.ensureAppAccessToken();
+        try {
+            await this.ensureAppAccessToken();
+        } catch (err) {
+            // Only affects chat badges; never block the connection over it.
+            log.error('BOT_APP_TOKEN_ERROR', { error: err.message || err });
+        }
 
-        this.client = new tmi.Client({
-            options: { debug: false },
-            connection: { secure: true, reconnect: true },
-            identity: { username: config.username, password: token },
-            channels: [config.channel]
-        });
-
-        this.client.on('message', (channel, tags, message, self) => {
-            this.handleMessage(channel, tags, message);
-        });
-
-        this.client.on('messagedeleted', (channel, username, deletedMessage, userstate) => {
-            log.info('BOT_MESSAGE_DELETED', { id: userstate['target-msg-id'] });
-            this.emit('message-deleted', userstate['target-msg-id']);
-        });
-
-        this.client.on('clearchat', (channel, username) => {
-            if (username) {
-                log.info('BOT_USER_CLEARED', { username });
-                this.emit('clear-user', username);
-            } else {
-                log.info('BOT_CHAT_CLEARED');
-                this.emit('clear-chat');
-            }
-        });
-
-        this.client.on('usernotice', (channel, id, username, state, message) => {
-            this.handleUserNotice(channel, id, username, state, message);
-        });
-
-        this.client.on('connected', () => {
-            this.isConnected = true;
-            this.emit('connected');
-        });
-
-        this.client.on('disconnected', () => {
-            this.isConnected = false;
-            this.emit('disconnected');
-        });
-
-        this.client.connect().then(() => {
-            this.fetchSubCount();
-            this.eventSubHandler.connect();
-            this.checkStreamStatusAndResetDaily();
-        }).catch(err => log.error('BOT_CONNECTION_ERROR', { error: err.message || err }));
+        // Chat now arrives through the same EventSub socket as every other
+        // event, so there is a single connection to keep alive instead of two.
+        this.eventSubHandler.connect();
+        this.fetchSubCount();
+        this.checkStreamStatusAndResetDaily();
     }
 
     disconnect() {
-        if (this.client) {
-            this.client.disconnect();
-        }
+        this.stopTokenWatch();
         this.eventSubHandler.close();
+        if (this.isConnected) {
+            this.isConnected = false;
+            this.emit('disconnected');
+        }
     }
 
-    async handleMessage(channel, tags, message, self) {
-        if (self) return; 
-        
+    // Called by EventSubHandler once the chat subscriptions are live.
+    setChatConnected(connected) {
+        if (this.isConnected === connected) return;
+        this.isConnected = connected;
+        this.emit(connected ? 'connected' : 'disconnected');
+    }
+
+    /**
+     * Sends a chat message through Helix. Replaces tmi's client.say().
+     * The app already assumes the configured token belongs to the broadcaster
+     * (every other Helix call uses this.userId as broadcaster_id), so sender
+     * and broadcaster are the same account here.
+     */
+    async say(text) {
+        if (!text) return false;
+        if (!this.userId || !this.clientId) {
+            log.warn('BOT_SAY_NOT_READY');
+            return false;
+        }
+
+        const config = this.getConfig();
+        const token = (config.token || '').replace('oauth:', '');
+        if (!token) return false;
+
+        try {
+            const response = await fetch('https://api.twitch.tv/helix/chat/messages', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Client-Id': this.clientId,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    broadcaster_id: this.userId,
+                    sender_id: this.userId,
+                    // Twitch truncates past 500 characters.
+                    message: String(text).slice(0, 500)
+                })
+            });
+
+            if (!response.ok) {
+                log.error('BOT_SAY_ERR', { status: response.status, body: await response.text() });
+                return false;
+            }
+
+            const data = await response.json();
+            const sent = data && data.data && data.data[0];
+            // Twitch answers 200 with is_sent:false when AutoMod holds it.
+            if (sent && sent.is_sent === false) {
+                const reason = sent.drop_reason || {};
+                log.warn('BOT_SAY_DROPPED', { reason: reason.message || reason.code || 'inconnu' });
+                return false;
+            }
+            return true;
+        } catch (e) {
+            log.error('BOT_SAY_ERR', { status: '-', body: e.message || e });
+            return false;
+        }
+    }
+
+    startTokenWatch() {
+        this.stopTokenWatch();
+        this.tokenWatchTimer = setInterval(() => {
+            this.revalidateToken().catch(e =>
+                log.error('BOT_TOKEN_WATCH_ERR', { error: e.message || e }));
+        }, TOKEN_VALIDATE_INTERVAL_MS);
+    }
+
+    stopTokenWatch() {
+        if (this.tokenWatchTimer) {
+            clearInterval(this.tokenWatchTimer);
+            this.tokenWatchTimer = null;
+        }
+    }
+
+    // An expired token used to fail silently: every Helix call just started
+    // throwing "Missing credentials" with nothing shown in the UI.
+    async revalidateToken() {
+        const config = this.getConfig();
+        if (!config.token) return false;
+
+        const validation = await this.twitchAPI.validateToken(config.token);
+        if (!validation) {
+            log.error('BOT_TOKEN_INVALID');
+            this.emit('token-invalid');
+            return false;
+        }
+
+        this.clientId = validation.clientId;
+        this.userId = validation.userId;
+        this.tokenScopes = validation.scopes || [];
+        this.reportTokenExpiry(validation.expiresIn);
+        return true;
+    }
+
+    getRequiredScopes() {
+        return REQUIRED_SCOPES.slice();
+    }
+
+    getMissingScopes() {
+        const granted = new Set(this.tokenScopes || []);
+        return REQUIRED_SCOPES.filter(s => !granted.has(s));
+    }
+
+    reportScopeGaps() {
+        const missing = this.getMissingScopes();
+        if (missing.length === 0) return;
+        log.warn('BOT_SCOPES_MISSING', { scopes: missing.join(', ') });
+        this.emit('scopes-missing', missing);
+    }
+
+    reportTokenExpiry(expiresIn) {
+        // expires_in is 0 for tokens that never expire.
+        if (!expiresIn || expiresIn <= 0) return;
+        if (expiresIn < TOKEN_EXPIRY_WARNING_S) {
+            const days = Math.max(1, Math.round(expiresIn / 86400));
+            log.warn('BOT_TOKEN_EXPIRING', { days });
+            this.emit('token-expiring', days);
+        }
+    }
+
+    /** Entry point for channel.chat.message notifications. */
+    async handleChatMessage(event) {
+        // Our own messages come back over EventSub like anyone else's.
+        if (event.chatter_user_id && event.chatter_user_id === this.userId) return;
+
+        const tags = chatMapper.toTags(event);
+        const message = (event.message && event.message.text) || '';
+        const messageData = chatMapper.toWidgetMessage(event);
+
+        return this.handleMessage(tags, message, messageData);
+    }
+
+    async handleMessage(tags, message, messageData) {
         if (this.containsBannedWords(message)) {
             if (this.userId && this.clientId && tags['room-id'] && tags['user-id']) {
                 await this.twitchAPI.deleteMessage(tags['room-id'], tags.id);
@@ -156,23 +278,11 @@ class TwitchBot extends EventEmitter {
 
         const config = this.getConfig();
 
-        const messageData = {
-            type: 'chat',
-            username: tags.username,
-            displayName: tags['display-name'] || tags.username,
-            text: message,
-            id: tags.id,
-            color: tags.color || '#FFFFFF',
-            badgesRaw: tags['badges-raw'] || '',
-            badgesObj: tags.badges || null,
-            emotes: tags.emotes || null,
-            roomId: tags['room-id'] || null,
-            apiAuth: {
-                clientId: process.env.TWITCH_CLIENT_ID,
-                token: this.appAccessToken
-            },
-            isWidgetHidden: !!tags['custom-reward-id']
+        messageData.apiAuth = {
+            clientId: this.appClientId || this.clientId || process.env.TWITCH_CLIENT_ID,
+            token: this.appAccessToken
         };
+
         const isCommand = message.startsWith('!');
         const autoMessages = config.autoMessages || [];
         const isAutoMessage = autoMessages.some(am => message === am.message);
@@ -193,56 +303,48 @@ class TwitchBot extends EventEmitter {
             const targetInterval = currentTarget.interval || 40;
 
             if (this.messageCount >= targetInterval) {
-                this.client.say(channel, currentTarget.message);
+                this.say(currentTarget.message);
                 this.messageCount = 0;
                 this.currentAutoMessageIndex = (this.currentAutoMessageIndex + 1) % autoMessages.length;
             }
         }
 
         if (isCommand) {
-            this.handleCommand(channel, tags, message);
+            this.handleCommand(tags, message);
         }
     }
 
     isAuthorized(tags) {
-        const isModerator = tags.mod || tags['user-type'] === 'mod' || (tags.badges && tags.badges.broadcaster);
-        const isOwner = tags.username && tags.username.toLowerCase() === 'zexaaaal';
-        return isOwner && isModerator;
+        const channel = (this.getConfig().channel || '').toLowerCase().replace(/^#/, '');
+        const username = (tags.username || '').toLowerCase();
+        const isBroadcaster = !!(tags.badges && tags.badges.broadcaster) || (!!channel && username === channel);
+        const isModerator = !!tags.mod || tags['user-type'] === 'mod';
+        return isBroadcaster || isModerator;
     }
 
-    async handleUserNotice(channel, id, username, state, message) {
-        const msgId = state['msg-id'];
-        log.info('BOT_USER_NOTICE', { id: msgId, username });
-        if (msgId === 'view-streak-share-v2' || msgId === 'announcement') {
-            try {
-                await this.ensureAppAccessToken();
-            } catch (err) {
-                log.error('BOT_APP_TOKEN_ERROR', { error: err.message || err });
-            }
+    /** Entry point for channel.chat.notification (the old IRC USERNOTICE). */
+    async handleChatNotification(event) {
+        const noticeType = event.notice_type;
+        log.info('BOT_USER_NOTICE', { id: noticeType, username: event.chatter_user_login });
 
-            const messageData = {
-                type: 'chat',
-                username: username,
-                displayName: state['display-name'] || username,
-                text: message || state['system-msg'] || '',
-                id: state.id,
-                color: state.color || '#FFFFFF',
-                badgesRaw: state['badges-raw'] || '',
-                badgesObj: state.badges || null,
-                emotes: state.emotes || null,
-                roomId: state['room-id'] || null,
-                apiAuth: {
-                    clientId: process.env.TWITCH_CLIENT_ID,
-                    token: this.appAccessToken
-                },
-                isWidgetHidden: false
-            };
+        if (!chatMapper.shouldForwardNotice(noticeType)) return;
 
-            this.emit('chat-message', messageData);
+        try {
+            await this.ensureAppAccessToken();
+        } catch (err) {
+            log.error('BOT_APP_TOKEN_ERROR', { error: err.message || err });
         }
+
+        const messageData = chatMapper.noticeToWidgetMessage(event);
+        messageData.apiAuth = {
+            clientId: this.appClientId || this.clientId || process.env.TWITCH_CLIENT_ID,
+            token: this.appAccessToken
+        };
+
+        this.emit('chat-message', messageData);
     }
 
-    handleCommand(channel, tags, message) {
+    handleCommand(tags, message) {
         const command = message.split(' ')[0].toLowerCase();
         const config = this.getConfig();
 
@@ -284,14 +386,14 @@ class TwitchBot extends EventEmitter {
                 this.twitchAPI.createClip(tags['room-id'])
                     .then((clipData) => {
                         if (clipData) {
-                            this.client.say(channel, `🎬 Clip créé ! https://clips.twitch.tv/${clipData.id}`);
+                            this.say(`🎬 Clip créé ! https://clips.twitch.tv/${clipData.id}`);
                         } else {
-                            this.client.say(channel, `Erreur: Impossible de créer le clip.`);
+                            this.say(`Erreur: Impossible de créer le clip.`);
                         }
                     })
                     .catch(err => {
                         log.error('BOT_CLIP_ERROR', { error: err.message });
-                        this.client.say(channel, `Erreur lors de la création du clip: ${err.message}`);
+                        this.say(`Erreur lors de la création du clip: ${err.message}`);
                     });
                 this.onCooldown = true;
                 setTimeout(() => { this.onCooldown = false; }, this.clipCooldown);
@@ -312,7 +414,7 @@ class TwitchBot extends EventEmitter {
 
         const commands = this.getCommands();
         if (commands[command]) {
-            this.client.say(channel, commands[command]);
+            this.say(commands[command]);
         }
     }
 
@@ -341,9 +443,12 @@ class TwitchBot extends EventEmitter {
         const configAppToken = cfg.twitchAppToken;
 
         if (configClientId && configAppToken) {
+            // We cannot know when a pasted app token expires, so trust it only
+            // briefly. A 401 clears it and we fall back to the user token,
+            // which needs no scope for the endpoints that use this.
             this.appAccessToken = configAppToken;
             this.appClientId = configClientId;
-            this.tokenExpiry = Date.now() + (24 * 60 * 60 * 1000);
+            this.tokenExpiry = Date.now() + (60 * 60 * 1000);
             return;
         }
 
@@ -379,12 +484,13 @@ class TwitchBot extends EventEmitter {
     }
 
     async fetchSubCount() {
+        // null means the call failed; 0 is a real value and must propagate.
         const count = await this.twitchAPI.fetchSubCount();
-        if (count > 0) {
+        if (count !== null && count !== undefined) {
             this.currentSubCount = count;
             if (this.onSubCountUpdate) this.onSubCountUpdate(this.currentSubCount);
         }
-        return count;
+        return this.currentSubCount;
     }
 
     incrementSubCount(amount = 1) {
@@ -396,8 +502,10 @@ class TwitchBot extends EventEmitter {
     incrementDailySubCount(amount = 1) {
         const config = this.getWidgetConfig('subgoals') || {};
         let newCount = (config.dailyCurrentCount || 0) + amount;
-        let goal = config.dailyGoalCount || 10;
-        let baseGoal = config.baseDailyGoalCount || 10;
+        // Guard against a stored goal of 0 or a negative value, which used to
+        // spin this loop forever.
+        let goal = Math.max(1, parseInt(config.dailyGoalCount, 10) || 10);
+        let baseGoal = Math.max(1, parseInt(config.baseDailyGoalCount, 10) || 10);
 
         while (newCount >= goal) {
             goal += 5;
@@ -541,20 +649,10 @@ class TwitchBot extends EventEmitter {
         const startMsg = config.giveawayStartMessage !== undefined
             ? config.giveawayStartMessage
             : 'Le giveaway commence ! Tapez !giveaway pour participer.';
-        if (startMsg && this.client && this.isConnected) {
-            this.client.say(config.channel, startMsg);
+        if (startMsg && this.isConnected) {
+            this.say(startMsg);
         }
         this.emit('participants-updated');
-    }
-
-    say(text) {
-        const config = this.getConfig();
-        if (this.client && this.isConnected && config.channel) {
-            this.client.say(config.channel, text);
-            return true;
-        }
-        log.warn('Cannot send Twitch message: not connected');
-        return false;
     }
 
     stopGiveaway() {
@@ -563,8 +661,8 @@ class TwitchBot extends EventEmitter {
         const stopMsg = config.giveawayStopMessage !== undefined
             ? config.giveawayStopMessage
             : 'Le giveaway est terminé !';
-        if (stopMsg && this.client && this.isConnected) {
-            this.client.say(config.channel, stopMsg);
+        if (stopMsg && this.isConnected) {
+            this.say(stopMsg);
         }
     }
 
@@ -576,10 +674,10 @@ class TwitchBot extends EventEmitter {
         const winMsgTemplate = config.giveawayWinMessage !== undefined
             ? config.giveawayWinMessage
             : 'Félicitations {winner} !';
-        if (winMsgTemplate && this.client && this.isConnected) {
+        if (winMsgTemplate && this.isConnected) {
             const winMessage = winMsgTemplate.replace('{winner}', winner);
             setTimeout(() => {
-                this.client.say(config.channel, winMessage);
+                this.say(winMessage);
             }, 3000);
         }
         return winner;

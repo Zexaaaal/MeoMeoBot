@@ -98,13 +98,13 @@ class GoalsWidgetServer extends BaseWidgetServer {
         }
     }
 
-    getGoalUrl(localIp, goalId) {
+    getGoalUrl(host, goalId) {
         if (!goalId) {
             const config = this.bot.getWidgetConfig('goals') || {};
             const goals = config.goals || [];
             goalId = goals.length > 0 ? goals[0].id : '1';
         }
-        return `http://${localIp}:${this.port}/widget/goals?id=${goalId}`;
+        return `http://${host || '127.0.0.1'}:${this.port}/widget/goals?id=${goalId}`;
     }
 
     stop() {

@@ -34,11 +34,29 @@ const LOG_MESSAGES = {
 
     // EVENTSUB
     EVENTSUB_CONNECTING: "Connexion à {url}...",
-    EVENTSUB_DISCONNECTED: "Déconnecté (code: {code}). Reconnexion dans 5s...",
+    EVENTSUB_DISCONNECTED: "Déconnecté (code: {code}).",
     EVENTSUB_SESSION_WELCOME: "Session {sessionId}",
     EVENTSUB_NOTIFICATION_RECEIVED: "Notification : {type}",
     EVENTSUB_RECONNECT_REQUESTED: "Reconnexion demandée vers {url}",
     EVENTSUB_SUBSCRIPTION_SENT: "Souscription envoyée : {type}",
+    EVENTSUB_WS_ERR: "Erreur WebSocket : {error}",
+    EVENTSUB_PARSE_ERR: "Erreur parsing message : {error}",
+    EVENTSUB_CLOSE_ERR: "Erreur fermeture socket : {error}",
+    EVENTSUB_PENDING_CLOSED: "Socket de remplacement fermée (code {code}), on garde l'ancienne.",
+    EVENTSUB_RECONNECT_SCHEDULED: "Reconnexion dans {delay} ms",
+    EVENTSUB_KEEPALIVE_LOST: "Aucun keepalive depuis {ms} ms : reconnexion forcée.",
+    EVENTSUB_RECONNECT_PROMOTED: "Nouvelle session promue : {sessionId}",
+    EVENTSUB_REVOKED: "Souscription révoquée : {type} ({status})",
+    EVENTSUB_NO_USER: "userId Twitch inconnu, souscriptions ignorées.",
+    EVENTSUB_NO_TOKEN: "Token Twitch manquant, souscriptions impossibles.",
+    EVENTSUB_SUB_FAILED: "Échec souscription {type} : {error}",
+    EVENTSUB_CHAT_ERR: "Erreur traitement message de tchat : {error}",
+    BOT_SAY_ERR: "Envoi du message échoué (HTTP {status}) : {body}",
+    BOT_SAY_DROPPED: "Message bloqué par Twitch : {reason}",
+    BOT_SAY_NOT_READY: "Impossible d'envoyer : bot non connecté.",
+    EVENTSUB_SUBSCRIBED: "Souscriptions : {ok} OK, {failed} en échec",
+    EVENTSUB_BASELINE_ERR: "Erreur synchro baseline subs : {error}",
+    EVENTSUB_STREAM_OFFLINE: "Stream hors ligne — reset des subs quotidiens",
 
     // MAIN APP
     MAIN_MSG_DELETED: "Message supprimé : {messageId}",
@@ -56,7 +74,32 @@ const LOG_MESSAGES = {
 
     // SERVER / WIDGETS
     SERVER_START: "Serveur lancé sur le port {port}",
-    SERVER_PORT_IN_USE: "Port {port} déjà utilisé, chargement d'un port aléatoire...",
+    SERVER_PORT_IN_USE: "Port {port} occupé par un autre programme. Widget indisponible.",
+    SERVER_PORT_RETRY: "Port {port} occupé, nouvelle tentative {attempt}/{max}...",
+
+    // OBS
+    OBS_DISABLED: "Rafraîchissement automatique des sources OBS désactivé.",
+    OBS_CONNECTED: "Connecté à OBS.",
+    OBS_DISCONNECTED: "Déconnecté d'OBS.",
+    OBS_AUTH_REQUIRED: "OBS exige un mot de passe WebSocket : renseigne-le dans Configuration > Intégrations.",
+    OBS_REFRESH_ERR: "Erreur rafraîchissement OBS : {error}",
+    OBS_REFRESH_SOURCE_ERR: "Impossible de rafraîchir la source {name} : {error}",
+    OBS_SOURCE_REPAIRED: "URL corrigée pour la source {name} (port {port})",
+    OBS_REPAIR_ERR: "Impossible de corriger la source {name} : {error}",
+    OBS_SOURCES_REFRESHED: "{refreshed} source(s) rafraîchie(s), {repaired} URL corrigée(s)",
+
+    // TOKEN
+    AUTH_REAUTH_NEEDED: "Reconnexion {service} requise ({reason})",
+    AUTH_REAUTH_ERR: "Erreur lancement reconnexion {service} : {error}",
+    SPOTIFY_REAUTH_REQUIRED: "Refresh token Spotify invalide (HTTP {status}) : reconnexion requise.",
+    BOT_TOKEN_INVALID: "Token Twitch invalide ou expiré.",
+    BOT_TOKEN_WATCH_ERR: "Erreur revalidation du token : {error}",
+    BOT_TOKEN_EXPIRING: "Le token Twitch expire dans {days} jour(s).",
+    BOT_SCOPES_MISSING: "Permissions Twitch manquantes : {scopes}",
+    MAIN_SECOND_INSTANCE: "Une instance de MeoMeoBot est déjà lancée.",
+    TWITCH_OAUTH_TOKEN_OK: "Token Twitch reçu via OAuth.",
+    REWARDS_MANAGEABLE_ERR: "Impossible de déterminer les récompenses modifiables : {error}",
+    REWARDS_EXTERNAL_COUNT: "{count} récompense(s) créée(s) hors MeoMeoBot (non modifiables).",
     SERVER_ERROR: "Erreur serveur :",
     SERVER_REQUEST: "Requête : {method} {url}",
     SERVER_TTS_PROXY: 'Proxy TTS pour : "{text}"',
@@ -268,6 +311,12 @@ function formatMessage(messageId, params = {}) {
     return msg;
 }
 
+// Polling code (Spotify every 5s, goals every 60s) has plenty worth logging
+// while developing and nothing worth logging in a live run.
+const DEBUG_ENABLED = (typeof process !== 'undefined' && process.argv)
+    ? (process.argv.includes('--dev') || process.env.MEOMEO_DEBUG === '1')
+    : false;
+
 function emit(tag, msgStr, ...args) {
     const prefix = `[${tag}]`;
     console.log(prefix, msgStr, ...args);
@@ -275,6 +324,18 @@ function emit(tag, msgStr, ...args) {
 
 function tagged(tag) {
     return {
+        debug: (messageId, params = {}, ...args) => {
+            if (!DEBUG_ENABLED) return;
+            const msgStr = typeof params === 'object' && params !== null && !Array.isArray(params)
+                ? formatMessage(messageId, params)
+                : formatMessage(messageId);
+
+            if (typeof params !== 'object' || Array.isArray(params) || params === null) {
+                emit(tag, msgStr, params, ...args);
+            } else {
+                emit(tag, msgStr, ...args);
+            }
+        },
         info: (messageId, params = {}, ...args) => {
             const msgStr = typeof params === 'object' && params !== null && !Array.isArray(params)
                 ? formatMessage(messageId, params)

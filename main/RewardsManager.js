@@ -1,5 +1,7 @@
 const log = require('./logger').tagged('Rewards');
 
+const REWARDS_URL = 'https://api.twitch.tv/helix/channel_points/custom_rewards';
+
 class RewardsManager {
     constructor(bot) {
         this.bot = bot;
@@ -31,7 +33,8 @@ class RewardsManager {
                 background_color: '#b665f8ff',
                 is_enabled: true,
                 global_cooldown_setting: { is_enabled: true, global_cooldown_seconds: 60 },
-                should_redemptions_skip_request_queue: false
+                should_redemptions_skip_request_queue: false,
+                is_manageable: true
             },
             {
                 id: 'mock-reward-2',
@@ -40,7 +43,8 @@ class RewardsManager {
                 background_color: '#1aa5aaff',
                 is_enabled: true,
                 global_cooldown_setting: { is_enabled: false, global_cooldown_seconds: 0 },
-                should_redemptions_skip_request_queue: false
+                should_redemptions_skip_request_queue: false,
+                is_manageable: true
             },
             {
                 id: 'mock-reward-emote-rain',
@@ -49,11 +53,59 @@ class RewardsManager {
                 background_color: '#FF00FF',
                 is_enabled: true,
                 global_cooldown_setting: { is_enabled: false, global_cooldown_seconds: 0 },
-                should_redemptions_skip_request_queue: false
+                should_redemptions_skip_request_queue: false,
+                is_manageable: true
             }
         ];
     }
 
+    // Single entry point for every channel points call: the four methods below
+    // used to repeat this token/client-id/fetch/error block verbatim.
+    async request(method, { query = {}, body = null } = {}) {
+        if (!this.bot.userId || !this.bot.clientId) {
+            throw new Error('Bot non connecté (userId ou clientId manquant)');
+        }
+
+        const config = this.bot.getConfig();
+        const token = (config.token || '').replace('oauth:', '');
+        if (!token) throw new Error('Token Twitch manquant');
+
+        const params = new URLSearchParams({ broadcaster_id: this.bot.userId, ...query });
+        const options = {
+            method,
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Client-Id': this.bot.clientId
+            }
+        };
+        if (body) {
+            options.headers['Content-Type'] = 'application/json';
+            options.body = JSON.stringify(body);
+        }
+
+        const response = await fetch(`${REWARDS_URL}?${params}`, options);
+
+        if (!response.ok) {
+            const text = await response.text();
+            let detail = text;
+            try {
+                const parsed = JSON.parse(text);
+                detail = parsed.message || text;
+            } catch (e) { /* keep the raw body */ }
+            throw new Error(`API Error: ${response.status} ${detail}`);
+        }
+
+        if (response.status === 204) return null;
+        return response.json();
+    }
+
+    /**
+     * Twitch only lets an app edit or delete the rewards it created itself:
+     * anything made in the Twitch dashboard or by another bot answers 403 on
+     * PATCH/DELETE. We therefore fetch the full list (so everything is still
+     * visible and bindable to a sound) plus the manageable subset, and tag each
+     * reward so the UI can show the rest as read-only instead of failing later.
+     */
     async getCustomRewards() {
         if (process.argv.includes('--dev')) {
             log.info('REWARDS_MOCK_RET');
@@ -61,27 +113,29 @@ class RewardsManager {
         }
 
         if (!this.bot.userId || !this.bot.clientId) return [];
-        const config = this.bot.getConfig();
-        const token = config.token.replace('oauth:', '');
 
         try {
-            const response = await fetch(
-                `https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=${this.bot.userId}`,
-                {
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Client-Id': this.bot.clientId
-                    }
-                }
-            );
+            const all = await this.request('GET');
+            const rewards = (all && all.data) || [];
 
-            if (!response.ok) {
-                const text = await response.text();
-                throw new Error(`API Error: ${response.status} ${text}`);
+            let manageableIds = new Set();
+            try {
+                const manageable = await this.request('GET', {
+                    query: { only_manageable_rewards: 'true' }
+                });
+                manageableIds = new Set(((manageable && manageable.data) || []).map(r => r.id));
+            } catch (e) {
+                log.warn('REWARDS_MANAGEABLE_ERR', { error: e.message });
+                // Fall back to assuming everything is editable rather than
+                // locking the whole UI on a secondary call failing.
+                manageableIds = new Set(rewards.map(r => r.id));
             }
 
-            const data = await response.json();
-            return data.data || [];
+            const tagged = rewards.map(r => ({ ...r, is_manageable: manageableIds.has(r.id) }));
+            const external = tagged.filter(r => !r.is_manageable).length;
+            if (external > 0) log.info('REWARDS_EXTERNAL_COUNT', { count: external });
+
+            return tagged;
         } catch (error) {
             if (error.message.includes('403')) {
                 log.warn('REWARDS_FETCH_FORBIDDEN', { reason: 'Broadcaster does not have partner or affiliate status.' });
@@ -102,6 +156,7 @@ class RewardsManager {
                 is_enabled: true,
                 is_paused: false,
                 is_in_stock: true,
+                is_manageable: true,
                 should_redemptions_skip_request_queue: false,
                 redemptions_redeemed_current_stream: null,
                 cooldown_expires_at: null,
@@ -114,34 +169,10 @@ class RewardsManager {
             return newReward;
         }
 
-        if (!this.bot.userId || !this.bot.clientId) {
-            throw new Error('Bot not connected or user ID missing');
-        }
-
-        const config = this.bot.getConfig();
-        const token = config.token.replace('oauth:', '');
-
         try {
-            const response = await fetch(
-                `https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=${this.bot.userId}`,
-                {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Client-Id': this.bot.clientId,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(data)
-                }
-            );
-
-            if (!response.ok) {
-                const text = await response.text();
-                throw new Error(`API Error: ${response.status} ${text}`);
-            }
-
-            const resData = await response.json();
-            return resData.data[0];
+            const resData = await this.request('POST', { body: data });
+            const created = resData.data[0];
+            return { ...created, is_manageable: true };
         } catch (error) {
             log.error('REWARDS_CRE_ERR', error);
             throw error;
@@ -168,34 +199,9 @@ class RewardsManager {
             throw new Error('Reward not found in mock store');
         }
 
-        if (!this.bot.userId || !this.bot.clientId) {
-            throw new Error('Bot not connected');
-        }
-
-        const config = this.bot.getConfig();
-        const token = config.token.replace('oauth:', '');
-
         try {
-            const response = await fetch(
-                `https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=${this.bot.userId}&id=${id}`,
-                {
-                    method: 'PATCH',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Client-Id': this.bot.clientId,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(data)
-                }
-            );
-
-            if (!response.ok) {
-                const text = await response.text();
-                throw new Error(`API Error: ${response.status} ${text}`);
-            }
-
-            const resData = await response.json();
-            return resData.data[0];
+            const resData = await this.request('PATCH', { query: { id }, body: data });
+            return { ...resData.data[0], is_manageable: true };
         } catch (error) {
             log.error('REWARDS_UPD_ERR', error);
             throw error;
@@ -209,30 +215,8 @@ class RewardsManager {
             return true;
         }
 
-        if (!this.bot.userId || !this.bot.clientId) {
-            throw new Error('Bot not connected');
-        }
-
-        const config = this.bot.getConfig();
-        const token = config.token.replace('oauth:', '');
-
         try {
-            const response = await fetch(
-                `https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=${this.bot.userId}&id=${id}`,
-                {
-                    method: 'DELETE',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Client-Id': this.bot.clientId
-                    }
-                }
-            );
-
-            if (!response.ok) {
-                const text = await response.text();
-                throw new Error(`API Error: ${response.status} ${text}`);
-            }
-
+            await this.request('DELETE', { query: { id } });
             return true;
         } catch (error) {
             log.error('REWARDS_DEL_ERR', error);
@@ -247,8 +231,6 @@ class RewardsManager {
         const rewardFunctions = config.rewardFunctions || {};
 
         const boundFunction = rewardFunctions[rewardId];
-        log.info('REWARDS_BINDINGS', { bindings: JSON.stringify(rewardFunctions) });
-        log.info('REWARDS_FUNC', { func: boundFunction || 'NONE' });
 
         const sound = config.rewardSounds ? config.rewardSounds[rewardId] : null;
         let volume = config.pointsGlobalVolume !== undefined ? config.pointsGlobalVolume : 0.5;

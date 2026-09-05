@@ -284,6 +284,20 @@ function renderRewardCard(reward) {
     const cooldownTxt = cooldownSetting.is_enabled ? `${cooldownSetting.global_cooldown_seconds}s` : 'Aucun';
     sub.textContent = `Cooldown: ${cooldownTxt} | Status: ${reward.is_enabled ? 'Activé' : 'Désactivé'}`;
 
+    // Twitch only lets the app that created a reward modify it. Anything made
+    // in the Twitch dashboard or by another bot answers 403, so mark it here
+    // instead of letting the user hit the error on save.
+    const isLocked = reward.is_manageable === false;
+    if (isLocked) {
+        card.classList.add('reward-external');
+        card.title = "Récompense créée en dehors de MeoMeoBot : Twitch interdit sa modification. Le son et les fonctions restent configurables.";
+        const lockBadge = document.createElement('span');
+        lockBadge.textContent = ' 🔒 externe';
+        lockBadge.style.color = 'var(--text-secondary)';
+        lockBadge.style.fontSize = '0.85em';
+        sub.appendChild(lockBadge);
+    }
+
     details.appendChild(title);
     details.appendChild(sub);
 
@@ -303,6 +317,10 @@ function renderRewardCard(reward) {
     const toggleInput = document.createElement('input');
     toggleInput.type = 'checkbox';
     toggleInput.checked = reward.is_enabled;
+    if (isLocked) {
+        toggleInput.disabled = true;
+        toggleSwitch.title = 'Récompense externe : non modifiable via l\'API';
+    }
     toggleInput.addEventListener('change', async (e) => {
         e.stopPropagation();
         const newState = toggleInput.checked;
@@ -464,9 +482,15 @@ async function saveReward() {
         background_color: color,
         is_user_input_required: userInput,
         prompt: promptText,
-        is_global_cooldown_enabled: cooldown > 0,
-        global_cooldown_seconds: cooldown > 0 ? cooldown : undefined
+        is_global_cooldown_enabled: cooldown > 0
     };
+
+    // Twitch rejects global_cooldown_seconds below 1, so it has to be omitted
+    // entirely when the cooldown is off - sending 0 used to 400 every
+    // no-cooldown reward on both create and update.
+    if (cooldown > 0) {
+        data.global_cooldown_seconds = cooldown;
+    }
 
     if (isEditing) {
         const currentReward = currentRewards.find(r => r.id === editingId);
@@ -475,24 +499,6 @@ async function saveReward() {
         }
     } else {
         data.is_enabled = true;
-    }
-
-
-    if (cooldown > 0) {
-        data.is_global_cooldown_enabled = true;
-        data.global_cooldown_seconds = cooldown;
-    } else {
-        data.is_global_cooldown_enabled = false;
-        data.global_cooldown_seconds = 0;
-    }
-
-
-    if (cooldown > 0) {
-        data.is_global_cooldown_enabled = true;
-        data.global_cooldown_seconds = cooldown;
-    } else {
-        data.is_global_cooldown_enabled = false;
-        data.global_cooldown_seconds = 0;
     }
 
     try {

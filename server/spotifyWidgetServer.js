@@ -161,6 +161,7 @@ class SpotifyWidgetServer extends BaseWidgetServer {
                 expiresIn: tokenData.expires_in || 3600
             });
             log.info('SPOTIFY_AUTH_SUCCESS');
+            this.bot.emit('auth-restored', { service: 'spotify' });
             this.startPolling();
             res.writeHead(200, { 'Content-Type': 'text/html' });
             res.end(`
@@ -185,7 +186,7 @@ class SpotifyWidgetServer extends BaseWidgetServer {
         const creds = this.getCredentials();
         const tokens = this.getStoredTokens();
         if (!creds.clientId || !creds.clientSecret || !tokens.refreshToken) {
-            log.info('SPOTIFY_MISSING_CREDENTIALS_OR_TOKEN', {
+            log.debug('SPOTIFY_MISSING_CREDENTIALS_OR_TOKEN', {
                 hasClientId: !!creds.clientId,
                 hasClientSecret: !!creds.clientSecret,
                 hasRefreshToken: !!tokens.refreshToken
@@ -194,7 +195,7 @@ class SpotifyWidgetServer extends BaseWidgetServer {
         }
         if (tokens.accessToken && tokens.expiry && tokens.expiry > Date.now()) {
             const expiresIn = Math.round((tokens.expiry - Date.now()) / 1000);
-            log.info('SPOTIFY_TOKEN_VALID', { expiresIn });
+            log.debug('SPOTIFY_TOKEN_VALID', { expiresIn });
             return tokens.accessToken;
         }
 
@@ -212,7 +213,18 @@ class SpotifyWidgetServer extends BaseWidgetServer {
             },
             body
         });
-        if (!resp.ok) throw new Error(`Spotify refresh failed: ${resp.status}`);
+        if (!resp.ok) {
+            const body = await resp.text().catch(() => '');
+            // invalid_grant means the refresh token was revoked or expired:
+            // polling can never recover on its own, the user must re-authorise.
+            if (resp.status === 400 || resp.status === 401) {
+                log.error('SPOTIFY_REAUTH_REQUIRED', { status: resp.status });
+                this.bot.updateConfig({ spotifyAccessToken: '', spotifyRefreshToken: '' });
+                this.stopPolling();
+                this.bot.emit('auth-expired', { service: 'spotify' });
+            }
+            throw new Error(`Spotify refresh failed: ${resp.status} ${body}`);
+        }
         const data = await resp.json();
         this.storeTokens({
             accessToken: data.access_token,
@@ -346,7 +358,7 @@ class SpotifyWidgetServer extends BaseWidgetServer {
         }
 
         if (!token) {
-            log.info('SPOTIFY_NO_TOKEN');
+            log.debug('SPOTIFY_NO_TOKEN');
             return this.getLocalTrackFromWindow();
         }
 
@@ -355,10 +367,10 @@ class SpotifyWidgetServer extends BaseWidgetServer {
                 headers: { Authorization: `Bearer ${token}` }
             });
 
-            log.info('SPOTIFY_API_RESPONSE', { status: resp.status, statusText: resp.statusText });
+            log.debug('SPOTIFY_API_RESPONSE', { status: resp.status, statusText: resp.statusText });
 
             if (resp.status === 204) {
-                log.info('SPOTIFY_204_NO_CONTENT');
+                log.debug('SPOTIFY_204_NO_CONTENT');
                 return this.getLocalTrackFromWindow();
             }
 
@@ -378,7 +390,7 @@ class SpotifyWidgetServer extends BaseWidgetServer {
 
             const data = await resp.json();
             if (!data || !data.item) {
-                log.info('SPOTIFY_DATA_NO_ITEM');
+                log.debug('SPOTIFY_DATA_NO_ITEM');
                 return this.getLocalTrackFromWindow();
             }
 
@@ -438,6 +450,7 @@ class SpotifyWidgetServer extends BaseWidgetServer {
 
     stopPolling() {
         if (this.spotifyPollTimer) clearInterval(this.spotifyPollTimer);
+        this.spotifyPollTimer = null;
     }
 
     broadcastConfig(config) {

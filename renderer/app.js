@@ -11,9 +11,11 @@ import { setupCast } from './cast.js';
 import { initPlanning } from './planning.js';
 
 
-window.editWidgetCss = (widgetName) => {
+// Kept only for the widgets tab's "Thèmes" buttons, which are bound by
+// delegation in setupEventListeners() rather than an inline onclick.
+function editWidgetCss(widgetName) {
     API.widgets.openCssEditor(widgetName);
-};
+}
 
 
 
@@ -34,6 +36,9 @@ async function initializeApp() {
     updateUpdaterStatus('checking');
 
     loadWidgetUrls();
+    loadTwitchRedirectUri();
+    refreshObsStatus();
+    setInterval(refreshObsStatus, 15000);
     loadEmoteWallConfig();
     loadBadgePrefs();
     setupSubgoalsConfig();
@@ -130,6 +135,8 @@ function setupEventListeners() {
     el('saveClipConfig')?.addEventListener('click', saveClipConfig);
 
     el('spotifyAuthBtn')?.addEventListener('click', startSpotifyAuth);
+    el('obsRefreshBtn')?.addEventListener('click', refreshObsSources);
+    el('twitchOAuthBtn')?.addEventListener('click', startTwitchAuth);
 
     el('saveBadgePrefs')?.addEventListener('click', saveBadgePrefs);
 
@@ -166,6 +173,31 @@ function setupEventListeners() {
     window.api.on('notification', (msg, type) => showNotification(msg, type));
     window.api.on('participants-updated', () => loadParticipants());
     window.api.on('refresh-widget-urls', () => loadWidgetUrls());
+    window.api.on('eventsub-status', (status) => handleEventSubStatus(status));
+    window.api.on('config-updated', async () => {
+        try { updateConfigForm(await API.getConfig()); } catch (e) { /* ignore */ }
+    });
+
+    // "Thèmes" buttons across the widgets tab.
+    document.addEventListener('click', (e) => {
+        const target = e.target.closest && e.target.closest('[data-edit-css]');
+        if (!target) return;
+        editWidgetCss(target.dataset.editCss);
+    });
+
+    // Any <code class="copy-on-click"> copies its own text.
+    document.addEventListener('click', async (e) => {
+        const target = e.target.closest && e.target.closest('.copy-on-click');
+        if (!target) return;
+        const text = (target.textContent || '').trim();
+        if (!text || text === '...') return;
+        try {
+            await navigator.clipboard.writeText(text);
+            showNotification('Copié : ' + text, 'success');
+        } catch (err) {
+            showNotification('Impossible de copier', 'error');
+        }
+    });
 
     document.getElementById('widgets-tab').addEventListener('click', async (e) => {
         if (e.target.classList.contains('copy-source-btn')) {
@@ -226,6 +258,9 @@ async function saveConfig() {
         streamlabsSocketToken: document.getElementById('config-streamlabsSocketToken').value,
         steamGridDbApiKey: document.getElementById('config-steamGridDbApiKey').value,
         discordWebhookUrl: document.getElementById('config-discordWebhookUrl').value,
+        obsWebsocketEnabled: document.getElementById('config-obsWebsocketEnabled').checked,
+        obsWebsocketUrl: document.getElementById('config-obsWebsocketUrl').value.trim(),
+        obsWebsocketPassword: document.getElementById('config-obsWebsocketPassword').value,
         kickChannel: document.getElementById('config-kickChannel').value,
         kickClientId: document.getElementById('config-kickClientId').value,
         kickClientSecret: document.getElementById('config-kickClientSecret').value,
@@ -258,6 +293,9 @@ function updateConfigForm(config) {
     document.getElementById('config-streamlabsSocketToken').value = config.streamlabsSocketToken || '';
     document.getElementById('config-steamGridDbApiKey').value = config.steamGridDbApiKey || '';
     document.getElementById('config-discordWebhookUrl').value = config.discordWebhookUrl || '';
+    document.getElementById('config-obsWebsocketEnabled').checked = config.obsWebsocketEnabled !== false;
+    document.getElementById('config-obsWebsocketUrl').value = config.obsWebsocketUrl || 'ws://127.0.0.1:4455';
+    document.getElementById('config-obsWebsocketPassword').value = config.obsWebsocketPassword || '';
     document.getElementById('config-kickChannel').value = config.kickChannel || '';
     document.getElementById('config-kickClientId').value = config.kickClientId || '';
     document.getElementById('config-kickClientSecret').value = config.kickClientSecret || '';
@@ -279,6 +317,78 @@ function updateBotStatus(status) {
 
     el.className = 'sidebar-status ' + status;
     if (label) label.textContent = status === 'connected' ? 'Connecté' : 'Déconnecté';
+}
+
+async function startTwitchAuth() {
+    try {
+        const res = await window.api.invoke('start-twitch-auth');
+        if (!res.success) {
+            showNotification(res.error, 'error');
+            return;
+        }
+        showNotification('Autorise MeoMeoBot dans le navigateur qui vient de s\'ouvrir.', 'success');
+    } catch (e) {
+        showNotification('Erreur OAuth Twitch: ' + e, 'error');
+    }
+}
+
+async function loadTwitchRedirectUri() {
+    const el = document.getElementById('twitchRedirectDisplay');
+    if (!el) return;
+    try {
+        el.textContent = await window.api.invoke('get-twitch-redirect-uri');
+    } catch (e) { /* leave the placeholder */ }
+}
+
+async function refreshObsStatus() {
+    const badge = document.getElementById('obsStatusBadge');
+    if (!badge) return;
+    try {
+        const status = await window.api.invoke('obs-get-status');
+        if (!status.enabled) {
+            badge.textContent = 'désactivé';
+            badge.style.color = 'var(--text-secondary)';
+        } else if (status.connected) {
+            badge.textContent = '● connecté';
+            badge.style.color = '#10b981';
+        } else {
+            badge.textContent = '○ en attente d\'OBS';
+            badge.style.color = '#f59e0b';
+        }
+    } catch (e) {
+        badge.textContent = '—';
+    }
+}
+
+async function refreshObsSources() {
+    try {
+        const res = await window.api.invoke('obs-refresh-sources');
+        if (res.success) {
+            showNotification(`${res.refreshed} source(s) OBS rafraîchie(s)` +
+                (res.repaired ? `, ${res.repaired} URL corrigée(s)` : ''), 'success');
+        } else {
+            showNotification('OBS: ' + res.error, 'error');
+        }
+    } catch (e) {
+        showNotification('Erreur OBS: ' + e, 'error');
+    }
+    refreshObsStatus();
+}
+
+// A failed EventSub subscription used to be invisible - the feature just did
+// not work. Surface the missing scope instead.
+function handleEventSubStatus(status) {
+    if (!Array.isArray(status) || status.length === 0) return;
+    const failed = status.filter(s => !s.ok);
+    if (failed.length === 0) return;
+
+    const scopes = [...new Set(failed.map(s => s.scope).filter(Boolean))];
+    const detail = scopes.length
+        ? `Scopes manquants probables : ${scopes.join(', ')}`
+        : failed.map(s => s.type).join(', ');
+
+    console.warn('[EventSub] Souscriptions échouées:', failed);
+    showNotification(`${failed.length} événement(s) Twitch non souscrit(s). ${detail}`, 'error');
 }
 
 async function loadWidgetUrls() {

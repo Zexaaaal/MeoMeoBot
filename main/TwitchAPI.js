@@ -24,7 +24,11 @@ class TwitchAPI {
             const data = await response.json();
             return {
                 clientId: data.client_id,
-                userId: data.user_id
+                userId: data.user_id,
+                login: data.login,
+                scopes: data.scopes || [],
+                // Seconds until the token expires. 0 means it never does.
+                expiresIn: data.expires_in
             };
         } catch (error) {
             log.error('TWITCH_AUTH_ERR', error);
@@ -120,14 +124,15 @@ class TwitchAPI {
     }
 
     async fetchSubCount() {
-        if (!this.bot.userId || !this.bot.clientId) return 0;
+        // Returns null on failure so callers can tell "API down" from "0 subs".
+        if (!this.bot.userId || !this.bot.clientId) return null;
         try {
             const data = await this.helixRequest('subscriptions');
-            return data ? data.total : 0;
+            return data ? data.total : null;
         } catch (e) {
             log.error('TWITCH_SUB_COUNT_ERR', e);
         }
-        return 0;
+        return null;
     }
 
     /**
@@ -198,9 +203,14 @@ class TwitchAPI {
             if (response.status === 401) {
                 if (retryCount < 1 && usingAppToken) {
                     log.warn('TWITCH_EMOTES_401');
+                    // Drop only the expired app token. twitchClientId must
+                    // survive: it is also the client ID the OAuth flow needs,
+                    // and a packaged build has no .env fallback for it.
                     this.bot.appAccessToken = null;
                     this.bot.appClientId = null;
-                    this.bot.updateConfig({ twitchAppToken: null, twitchClientId: null });
+                    this.bot.tokenExpiry = null;
+                    this.bot.updateConfig({ twitchAppToken: null });
+                    // Retry on the user token, which needs no scope here.
                     return this.fetchChannelEmotes(retryCount + 1);
                 }
             }

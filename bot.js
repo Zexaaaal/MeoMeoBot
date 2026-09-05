@@ -38,6 +38,7 @@ class TwitchBot extends EventEmitter {
         this.isConnected = false;
         this.messageCount = 0;
         this.currentAutoMessageIndex = 0;
+        this.botSentMessageIds = new Set();
         this.appAccessToken = null;
         this.appClientId = null;
         this.tokenExpiry = null;
@@ -176,6 +177,10 @@ class TwitchBot extends EventEmitter {
 
             const data = await response.json();
             const sent = data && data.data && data.data[0];
+            if (sent && sent.message_id) {
+                this.botSentMessageIds.add(sent.message_id);
+                setTimeout(() => this.botSentMessageIds.delete(sent.message_id), 30000);
+            }
             // Twitch answers 200 with is_sent:false when AutoMod holds it.
             if (sent && sent.is_sent === false) {
                 const reason = sent.drop_reason || {};
@@ -252,8 +257,11 @@ class TwitchBot extends EventEmitter {
 
     /** Entry point for channel.chat.message notifications. */
     async handleChatMessage(event) {
-        // Our own messages come back over EventSub like anyone else's.
-        if (event.chatter_user_id && event.chatter_user_id === this.userId) return;
+        // Only ignore messages programmatically sent by the bot's own say() call.
+        if (event.message_id && this.botSentMessageIds && this.botSentMessageIds.has(event.message_id)) {
+            this.botSentMessageIds.delete(event.message_id);
+            return;
+        }
 
         const tags = chatMapper.toTags(event);
         const message = (event.message && event.message.text) || '';

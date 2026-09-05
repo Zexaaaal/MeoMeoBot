@@ -333,7 +333,14 @@ function renderRewardCard(reward) {
         } catch (err) {
             console.error(err);
             toggleInput.checked = !newState;
-            showNotification('Erreur lors du changement de statut', 'error');
+            const msg = err.message || String(err);
+            if (msg.includes('403') || msg.includes('Client-Id')) {
+                reward.is_manageable = false;
+                showNotification('Impossible de modifier : récompense externe (créée hors du bot ou avec un autre Client ID)', 'error');
+                refreshUI();
+            } else {
+                showNotification('Erreur lors du changement de statut', 'error');
+            }
         }
     });
 
@@ -738,7 +745,13 @@ function createRewardChip(reward, folderId) {
     chip.dataset.rewardId = reward.id;
     chip.style.borderLeftColor = reward.background_color;
 
-    chip.innerHTML = `<strong>${reward.title}</strong> <span class="chip-cost">${reward.cost}</span>`;
+    const isLocked = reward.is_manageable === false;
+    const lockBadge = isLocked ? ' <span title="Récompense externe : non modifiable via l\'API" style="opacity:0.75; font-size: 0.9em;">🔒</span>' : '';
+    chip.innerHTML = `<strong>${reward.title}</strong> <span class="chip-cost">${reward.cost}</span>${lockBadge}`;
+    if (isLocked) {
+        chip.title = "Récompense externe : créée en dehors de MeoMeoBot ou avec un autre Client ID.";
+        chip.style.opacity = '0.85';
+    }
 
     chip.onclick = () => openEditor(reward);
 
@@ -751,7 +764,7 @@ function createRewardChip(reward, folderId) {
     });
 
     chip.addEventListener('dragend', () => {
-        chip.style.opacity = '1';
+        chip.style.opacity = isLocked ? '0.85' : '1';
     });
 
     return chip;
@@ -759,18 +772,44 @@ function createRewardChip(reward, folderId) {
 
 async function toggleFolder(folder) {
     const newState = folder.is_enabled;
+    let updatedCount = 0;
+    let skippedLockedCount = 0;
+    let errorCount = 0;
+
     for (const rid of folder.rewardIds) {
         const reward = currentRewards.find(r => r.id === rid);
-        if (reward && reward.is_enabled !== newState) {
-            try {
-                await API.points.updateReward(reward.id, { is_enabled: newState });
-                reward.is_enabled = newState;
-            } catch (e) {
-                console.error(`Failed to toggle reward ${reward.title}`, e);
+        if (reward) {
+            if (reward.is_manageable === false) {
+                skippedLockedCount++;
+                continue;
+            }
+            if (reward.is_enabled !== newState) {
+                try {
+                    await API.points.updateReward(reward.id, { is_enabled: newState });
+                    reward.is_enabled = newState;
+                    updatedCount++;
+                } catch (e) {
+                    console.error(`Failed to toggle reward ${reward.title}`, e);
+                    const msg = e.message || String(e);
+                    if (msg.includes('403') || msg.includes('Client-Id')) {
+                        reward.is_manageable = false;
+                    }
+                    errorCount++;
+                }
             }
         }
     }
     refreshUI();
+
+    if (skippedLockedCount > 0 && updatedCount === 0 && errorCount === 0) {
+        showNotification(`${skippedLockedCount} récompense(s) externe(s) ignorée(s) (créées hors du bot ou avec un autre Client ID)`, 'warning');
+    } else if (errorCount > 0) {
+        showNotification(`Erreur API Twitch sur ${errorCount} récompense(s) (Client ID incompatible ou droits manquants)`, 'error');
+    } else if (skippedLockedCount > 0) {
+        showNotification(`${updatedCount} récompense(s) mise(s) à jour (${skippedLockedCount} externe(s) ignorée(s))`, 'info');
+    } else if (updatedCount > 0) {
+        showNotification(`Dossier ${newState ? 'activé' : 'désactivé'} (${updatedCount} récompense(s))`, 'success');
+    }
 }
 
 document.addEventListener('DOMContentLoaded', init);

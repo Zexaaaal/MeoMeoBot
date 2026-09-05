@@ -256,14 +256,14 @@
             ws = connectWidget(async (data) => {
                 if (data.type === 'config' || data.type === 'config-update') {
                     const cfg = data.config || data;
-                    if (bgVideo) {
-                    }
                     if (cfg.maxMessages) {
                         MAX_MESSAGES = parseInt(cfg.maxMessages, 10) || 10;
                     }
                     if (cfg.customCSS) {
                         const style = document.getElementById('custom-css');
                         if (style) style.textContent = cfg.customCSS;
+                        updateSnow();
+                        updatePro();
                     }
                 } else if (data.type === 'chat') {
                     if (!shouldShowPlatform(data.platform)) return;

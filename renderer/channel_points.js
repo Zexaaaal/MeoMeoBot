@@ -382,8 +382,10 @@ function renderRewardCard(reward) {
         const triggerBtn = document.createElement('button');
         triggerBtn.className = 'btn btn-primary btn-sm';
         triggerBtn.innerHTML = '⚡';
-        triggerBtn.title = 'Déclencher (Test / Démo)';
-        triggerBtn.onclick = () => API.points.triggerMockRedemption(reward.id);
+        triggerBtn.onclick = async () => {
+            await API.points.triggerMockRedemption(reward.id);
+            showNotification(`Test déclenché : ${reward.title}`, 'info');
+        };
         actions.appendChild(triggerBtn);
     }
 
@@ -424,7 +426,11 @@ function openEditor(reward = null) {
     soundInput.value = stripPrefix(soundVal);
     soundInput.dataset.path = soundVal;
 
-    const functionVal = (reward && savedRewardFunctions[reward.id]) ? savedRewardFunctions[reward.id] : '';
+    let functionVal = (reward && savedRewardFunctions[reward.id]) ? savedRewardFunctions[reward.id] : '';
+    if (!functionVal && reward) {
+        if (reward.id === 'mock-reward-bat-rain') functionVal = 'bat_rain';
+        else if (reward.id === 'mock-reward-emote-rain') functionVal = 'emote_rain';
+    }
     const funcBtn = document.getElementById('rewardFunctionBtn');
     const funcOptions = document.querySelectorAll('.custom-picker-option');
 

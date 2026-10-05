@@ -187,7 +187,7 @@
     padding-right: 5px;
     letter-spacing: 4px;
     font-size: 14px;
-    font-family: 'Road Rage', cursive !important;
+    font-family: 'Road Rage', cursive;
     color: yellow;
     text-shadow: 3px 3px #000;
 }

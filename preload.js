@@ -36,7 +36,8 @@ const ALLOWED_ON_CHANNELS = [
     'notification', 'bot-status', 'participants-updated', 'participant-added',
     'device-discovery-status', 'cast-devices-found', 'cast-status', 'update-status-check',
     'update-available', 'update-downloaded', 'refresh-widget-urls', 'load-css-editor',
-    'sub-count-updated', 'widget-ports-changed', 'eventsub-status', 'config-updated'
+    'sub-count-updated', 'widget-ports-changed', 'eventsub-status', 'config-updated',
+    'widget-config-updated'
 ];
 
 contextBridge.exposeInMainWorld('api', {

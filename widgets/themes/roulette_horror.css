@@ -1,0 +1,66 @@
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@800;900&family=Special+Elite&display=swap');
+
+#wheel-container {
+    border-radius: 50% !important;
+    border: 6px solid #4a0208 !important;
+    outline: 2px solid #ff1a2e !important;
+    box-shadow: 0 0 50px rgba(180, 0, 20, 0.7), 0 0 100px rgba(0, 0, 0, 0.95) !important;
+    background: radial-gradient(circle, #200003 0%, #050001 100%) !important;
+}
+
+canvas#wheel,
+canvas {
+    border-radius: 50% !important;
+    filter: contrast(1.4) brightness(0.65) sepia(0.4) hue-rotate(320deg) saturate(2.2) drop-shadow(0 0 15px rgba(255, 0, 20, 0.4)) !important;
+}
+
+#pointer {
+    top: -26px !important;
+    border-top: 52px solid #8b0000 !important;
+    border-left: 18px solid transparent !important;
+    border-right: 18px solid transparent !important;
+    filter: drop-shadow(0 0 14px #ff0022) drop-shadow(0 4px 8px #000000) !important;
+}
+
+#hub {
+    width: 80px !important;
+    height: 80px !important;
+    background: radial-gradient(circle, #500005 0%, #150002 70%, #000000 100%) !important;
+    color: #ff3344 !important;
+    font-family: 'Cinzel', serif !important;
+    font-size: 15px !important;
+    font-weight: 900 !important;
+    letter-spacing: 2px !important;
+    border: 3px solid #8b0000 !important;
+    box-shadow: 0 0 25px rgba(255, 0, 30, 0.8), inset 0 0 15px #ff0022 !important;
+    text-shadow: 0 0 8px #ff0022, 0 0 15px #000000 !important;
+}
+
+#winner-display {
+    font-family: 'Cinzel', serif !important;
+    font-weight: 900 !important;
+    background: rgba(10, 0, 2, 0.95) !important;
+    border: 2px solid #8b0000 !important;
+    color: #ff2233 !important;
+    text-shadow: 0 0 10px #ff0000, 0 0 20px #8b0000, 0 2px 4px #000000 !important;
+    box-shadow: 0 0 35px rgba(139, 0, 0, 0.8), 0 10px 40px #000000 !important;
+    border-radius: 8px !important;
+    letter-spacing: 3px !important;
+    font-size: 28px !important;
+    padding: 16px 36px !important;
+}
+
+.list-center-marker {
+    border-top: 2px solid #ff1a2e !important;
+    border-bottom: 2px solid #ff1a2e !important;
+    box-shadow: 0 0 15px #ff0022 !important;
+}
+
+.list-item {
+    font-family: 'Special Elite', monospace !important;
+    background: linear-gradient(90deg, #1f0104, #080001) !important;
+    color: #f2e9e8 !important;
+    border-left: 4px solid #8b0000 !important;
+    border-bottom: 1px solid rgba(139, 0, 0, 0.25) !important;
+    text-shadow: 0 0 4px rgba(255, 0, 30, 0.5) !important;
+}

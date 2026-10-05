@@ -271,195 +271,149 @@
     <div class="tab-content" id="widgets-tab">
         <div class="card full-height-card">
             <div class="widget-list-container">
-                <div class="widget-columns-wrapper">
-                    <div class="widget-col-container">
-                        <div class="widget-row" data-widget="chat">
-                            <div class="widget-col-name">
-                                <strong>Tchat</strong>
-                                <button class="btn btn-sm btn-secondary copy-source-btn" id="btnCopyChatUrl">📄
-                                    Source</button>
-                                <button class="btn btn-sm btn-secondary copy-source-btn" id="btnCopyDockUrl" title="Dock OBS">📄
-                                    Global</button>
-                            </div>
-                            <div class="widget-col-config" id="badgePrefs">
-                            </div>
-                            <div class="widget-col-config">
-                                <div class="badge-grid" style="grid-template-columns: repeat(2, 1fr); gap: 4px;">
-                                    <label title="Afficher Kick dans le widget"><input type="checkbox" id="chatPlatformKick"> Kick</label>
-                                    <label title="Afficher YouTube dans le widget"><input type="checkbox" id="chatPlatformYoutube"> YouTube</label>
-                                </div>
-                            </div>
-                            <div class="widget-col-actions">
-                                <button class="btn btn-secondary btn-sm" data-edit-css="chat">Thèmes</button>
-                                <button class="btn btn-primary btn-sm" id="saveBadgePrefs"
-                                    title="Sauvegarder">Sauvegarder</button>
+                <div class="widget-list">
+                    <div class="widget-row" data-widget="chat">
+                        <div class="widget-col-name">
+                            <strong>Tchat</strong>
+                            <button class="btn btn-sm btn-secondary copy-source-btn" id="btnCopyChatUrl" title="Copier Source OBS">📄 Source</button>
+                            <button class="btn btn-sm btn-secondary copy-source-btn" id="btnCopyDockUrl" title="Dock OBS">📄 Global</button>
+                        </div>
+                        <div class="widget-col-config">
+                            <div id="badgePrefs"></div>
+                            <div class="badge-grid" style="grid-template-columns: repeat(2, 1fr); gap: 4px; width: auto;">
+                                <label title="Afficher Kick dans le widget"><input type="checkbox" id="chatPlatformKick"> Kick</label>
+                                <label title="Afficher YouTube dans le widget"><input type="checkbox" id="chatPlatformYoutube"> YouTube</label>
                             </div>
                         </div>
-
-                        <div class="widget-row" data-widget="subgoals">
-                            <div class="widget-col-name">
-                                <strong>Subgoals</strong>
-                                <button class="btn btn-sm btn-secondary copy-source-btn" id="btnCopySubgoalsUrl">📄
-                                    Source</button>
-                            </div>
-                            <div class="widget-col-actions">
-                                <button class="btn btn-primary btn-sm" id="configureSubgoalsBtn">Configurer</button>
-                                <button class="btn btn-secondary btn-sm"
-                                    data-edit-css="subgoals">Thèmes</button>
-                            </div>
-                        </div>
-
-                        <div class="widget-row" data-widget="subgoals-list">
-                            <div class="widget-col-name">
-                                <strong>Liste Subgoals</strong>
-                                <button class="btn btn-sm btn-secondary copy-source-btn" id="btnCopySubgoalsListUrl">📄
-                                    Source</button>
-                            </div>
-                            <div class="widget-col-actions">
-                                <button class="btn btn-secondary btn-sm"
-                                    data-edit-css="subgoals-list">Thèmes</button>
-                            </div>
-                        </div>
-
-                    </div>
-
-                    <div class="widget-col-container">
-                        <div class="widget-row" data-widget="emote-wall">
-                            <div class="widget-col-name">
-                                <strong>Mur d'Emotes</strong>
-                                <button class="btn btn-sm btn-secondary copy-source-btn" id="btnCopyEmoteWallUrl">📄
-                                    Source</button>
-                            </div>
-                            <div class="widget-col-config">
-                                <div class="config-inline-grid">
-                                    <div class="form-group">
-                                        <label>Taille Min (px)</label>
-                                        <input type="number" id="emoteWallMinSize" value="24" class="inline-input">
-                                    </div>
-                                    <div class="form-group">
-                                        <label>Taille Max (px)</label>
-                                        <input type="number" id="emoteWallMaxSize" value="64" class="inline-input">
-                                    </div>
-                                    <div class="form-group">
-                                        <label>Intervalle (ms)</label>
-                                        <input type="number" id="emoteWallSpawnInterval" value="100"
-                                            class="inline-input">
-                                    </div>
-                                    <div class="form-group">
-                                        <label>Durée (ms)</label>
-                                        <input type="number" id="emoteWallDuration" value="5000" class="inline-input">
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="widget-col-actions">
-                                <button class="btn btn-primary btn-sm" id="saveEmoteWallConfig"
-                                    title="Sauvegarder">Sauvegarder</button>
-                            </div>
-                        </div>
-
-                        <div class="widget-row" data-widget="daily-subs">
-                            <div class="widget-col-name">
-                                <strong>Daily Subs</strong>
-                                <button class="btn btn-sm btn-secondary copy-source-btn" id="btnCopyDailySubsUrl">📄
-                                    Source</button>
-                            </div>
-                            <div class="widget-col-config">
-                                <div class="form-group">
-                                    <label>Objectif</label>
-                                    <input type="number" id="dailyGoalCount" class="inline-input" value="10">
-                                </div>
-                                <div class="badge-grid" style="grid-template-columns: repeat(2, 1fr);">
-                                    <label>
-                                        <input type="checkbox" id="countRegularSubs" checked> Subs
-                                    </label>
-                                    <label>
-                                        <input type="checkbox" id="countSubGifts"> Gifts
-                                    </label>
-                                </div>
-                            </div>
-                            <div class="widget-col-actions">
-                                <button class="btn btn-primary btn-sm" id="saveDailySubsBtn">Sauvegarder</button>
-                            </div>
+                        <div class="widget-col-actions">
+                            <button class="btn btn-secondary btn-sm" data-edit-css="chat">Thèmes</button>
+                            <button class="btn btn-primary btn-sm" id="saveBadgePrefs" title="Sauvegarder">Sauvegarder</button>
                         </div>
                     </div>
 
-                    <div class="widget-col-container">
-                        <div class="widget-row" data-widget="goals">
-                            <div class="widget-col-name">
-                                <strong>Goals</strong>
-                                <button class="btn btn-sm btn-secondary copy-source-btn" id="btnCopyGoalsUrl">📄
-                                    Source</button>
-                            </div>
-                            <div class="widget-col-actions">
-                                <button class="btn btn-primary btn-sm" id="configureGoalsBtn">Configurer</button>
-                                <button class="btn btn-secondary btn-sm"
-                                    data-edit-css="goals">Thèmes</button>
+                    <div class="widget-row" data-widget="subgoals">
+                        <div class="widget-col-name">
+                            <strong>Subgoals</strong>
+                            <button class="btn btn-sm btn-secondary copy-source-btn" id="btnCopySubgoalsUrl" title="Copier Source OBS">📄 Source</button>
+                        </div>
+                        <div class="widget-col-config"></div>
+                        <div class="widget-col-actions">
+                            <button class="btn btn-primary btn-sm" id="configureSubgoalsBtn">Configurer</button>
+                            <button class="btn btn-secondary btn-sm" data-edit-css="subgoals">Thèmes</button>
+                        </div>
+                    </div>
+
+                    <div class="widget-row" data-widget="subgoals-list">
+                        <div class="widget-col-name">
+                            <strong>Liste Subgoals</strong>
+                            <button class="btn btn-sm btn-secondary copy-source-btn" id="btnCopySubgoalsListUrl" title="Copier Source OBS">📄 Source</button>
+                        </div>
+                        <div class="widget-col-config"></div>
+                        <div class="widget-col-actions">
+                            <button class="btn btn-secondary btn-sm" data-edit-css="subgoals-list">Thèmes</button>
+                        </div>
+                    </div>
+
+                    <div class="widget-row" data-widget="goals">
+                        <div class="widget-col-name">
+                            <strong>Goals</strong>
+                            <button class="btn btn-sm btn-secondary copy-source-btn" id="btnCopyGoalsUrl" title="Copier Source OBS">📄 Source</button>
+                        </div>
+                        <div class="widget-col-config"></div>
+                        <div class="widget-col-actions">
+                            <button class="btn btn-primary btn-sm" id="configureGoalsBtn">Configurer</button>
+                            <button class="btn btn-secondary btn-sm" data-edit-css="goals">Thèmes</button>
+                        </div>
+                    </div>
+
+                    <div class="widget-row" data-widget="emote-wall">
+                        <div class="widget-col-name">
+                            <strong>Mur d'Emotes</strong>
+                            <button class="btn btn-sm btn-secondary copy-source-btn" id="btnCopyEmoteWallUrl" title="Copier Source OBS">📄 Source</button>
+                        </div>
+                        <div class="widget-col-config">
+                            <div class="config-inline-grid" style="grid-template-columns: repeat(4, 1fr); gap: 6px;">
+                                <div class="form-group"><label>Min (px)</label><input type="number" id="emoteWallMinSize" value="24" class="inline-input"></div>
+                                <div class="form-group"><label>Max (px)</label><input type="number" id="emoteWallMaxSize" value="64" class="inline-input"></div>
+                                <div class="form-group"><label>Intervalle (ms)</label><input type="number" id="emoteWallSpawnInterval" value="100" class="inline-input"></div>
+                                <div class="form-group"><label>Durée (ms)</label><input type="number" id="emoteWallDuration" value="5000" class="inline-input"></div>
                             </div>
                         </div>
+                        <div class="widget-col-actions">
+                            <button class="btn btn-secondary btn-sm" data-edit-css="emote-wall">Thèmes</button>
+                            <button class="btn btn-primary btn-sm" id="saveEmoteWallConfig" title="Sauvegarder">Sauvegarder</button>
+                        </div>
+                    </div>
 
-                        <div class="widget-row" data-widget="spotify">
-                            <div class="widget-col-name">
-                                <strong>Spotify</strong>
-                                <button class="btn btn-sm btn-secondary copy-source-btn" id="btnCopySpotifyUrl">📄
-                                    Source</button>
+                    <div class="widget-row" data-widget="daily-subs">
+                        <div class="widget-col-name">
+                            <strong>Daily Subs</strong>
+                            <button class="btn btn-sm btn-secondary copy-source-btn" id="btnCopyDailySubsUrl" title="Copier Source OBS">📄 Source</button>
+                        </div>
+                        <div class="widget-col-config" style="display: flex; align-items: center; gap: 12px;">
+                            <div class="form-group" style="margin-bottom: 0; display: flex; align-items: center; gap: 6px;">
+                                <label style="margin-bottom: 0; white-space: nowrap;">Objectif :</label>
+                                <input type="number" id="dailyGoalCount" class="inline-input" value="10" style="width: 70px;">
                             </div>
-                            <div class="widget-col-config">
-                                <p style="margin-bottom:6px;font-size:12px;color:var(--text-secondary);">
-                                    <code class="copy-on-click" title="Cliquer pour copier" style="cursor:pointer" id="spotifyRedirectDisplay">http://127.0.0.1:8090/auth/spotify/callback</code>
-                                </p>
-                                <div id="spotify-device-picker" class="hidden">
-                                    <select id="spotify-devices" class="form-select"></select>
-                                    <button class="btn btn-primary btn-sm" id="confirm-device">Valider</button>
-                                </div>
-                            </div>
-                            <div class="widget-col-actions">
-                                <button class="btn btn-secondary btn-sm"
-                                    data-edit-css="spotify">Thèmes</button>
+                            <div class="badge-grid" style="grid-template-columns: repeat(2, 1fr); width: auto; gap: 6px;">
+                                <label><input type="checkbox" id="countRegularSubs" checked> Subs</label>
+                                <label><input type="checkbox" id="countSubGifts"> Gifts</label>
                             </div>
                         </div>
+                        <div class="widget-col-actions">
+                            <button class="btn btn-primary btn-sm" id="saveDailySubsBtn">Sauvegarder</button>
+                        </div>
+                    </div>
 
-                        <div class="widget-row" data-widget="roulette">
-                            <div class="widget-col-name">
-                                <strong>Roulette</strong>
-                                <button class="btn btn-sm btn-secondary copy-source-btn" id="btnCopyRouletteUrl">📄
-                                    Source</button>
-                            </div>
-                            <div class="widget-col-actions">
-                                <button class="btn btn-primary btn-sm" id="configureRouletteBtn">Configurer</button>
-                                <button class="btn btn-secondary btn-sm"
-                                    data-edit-css="roulette">Thèmes</button>
-                                <button class="btn btn-success btn-sm" id="spinRouletteBtn"
-                                    title="Lancer la roulette">Lancer</button>
+                    <div class="widget-row" data-widget="roulette">
+                        <div class="widget-col-name">
+                            <strong>Roulette</strong>
+                            <button class="btn btn-sm btn-secondary copy-source-btn" id="btnCopyRouletteUrl" title="Copier Source OBS">📄 Source</button>
+                        </div>
+                        <div class="widget-col-config"></div>
+                        <div class="widget-col-actions">
+                            <button class="btn btn-primary btn-sm" id="configureRouletteBtn">Configurer</button>
+                            <button class="btn btn-secondary btn-sm" data-edit-css="roulette">Thèmes</button>
+                            <button class="btn btn-success btn-sm" id="spinRouletteBtn" title="Lancer la roulette">Lancer</button>
+                        </div>
+                    </div>
+
+                    <div class="widget-row" data-widget="spotify">
+                        <div class="widget-col-name">
+                            <strong>Spotify</strong>
+                            <button class="btn btn-sm btn-secondary copy-source-btn" id="btnCopySpotifyUrl" title="Copier Source OBS">📄 Source</button>
+                        </div>
+                        <div class="widget-col-config" style="display: flex; align-items: center; gap: 12px;">
+                            <code class="copy-on-click" title="Cliquer pour copier" style="cursor: pointer; font-size: 11px;" id="spotifyRedirectDisplay">http://127.0.0.1:8090/auth/spotify/callback</code>
+                            <div id="spotify-device-picker" class="hidden" style="display: inline-flex; align-items: center; gap: 6px;">
+                                <select id="spotify-devices" class="form-select" style="height: 28px; font-size: 12px;"></select>
+                                <button class="btn btn-primary btn-sm" id="confirm-device">Valider</button>
                             </div>
                         </div>
+                        <div class="widget-col-actions">
+                            <button class="btn btn-secondary btn-sm" data-edit-css="spotify">Thèmes</button>
+                        </div>
+                    </div>
 
-                        <div class="widget-group-card">
-                            <div class="widget-row compact-widget-row" data-widget="last-sub">
-                                <div class="widget-col-name">
-                                    <strong>Dernier Sub</strong>
-                                    <button class="btn btn-sm btn-secondary copy-source-btn" id="btnCopyLastSubUrl">📄
-                                        Source</button>
-                                </div>
+                    <div class="widget-row" data-widget="last-events">
+                        <div class="widget-col-name">
+                            <strong>Événements</strong>
+                        </div>
+                        <div class="widget-col-config" style="display: flex; flex-direction: row; gap: 16px; flex-wrap: wrap; align-items: center;">
+                            <div class="compact-event-item" data-widget="last-sub">
+                                <span style="font-size: 12px; font-weight: 600; color: var(--text-secondary);">Dernier Sub :</span>
+                                <button class="btn btn-sm btn-secondary copy-source-btn" id="btnCopyLastSubUrl" title="Copier Source OBS">📄 Source</button>
                             </div>
-
-                            <div class="widget-row compact-widget-row" data-widget="last-follow">
-                                <div class="widget-col-name">
-                                    <strong>Dernier Follow</strong>
-                                    <button class="btn btn-sm btn-secondary copy-source-btn"
-                                        id="btnCopyLastFollowUrl">📄
-                                        Source</button>
-                                </div>
+                            <div class="compact-event-item" data-widget="last-follow">
+                                <span style="font-size: 12px; font-weight: 600; color: var(--text-secondary);">Dernier Follow :</span>
+                                <button class="btn btn-sm btn-secondary copy-source-btn" id="btnCopyLastFollowUrl" title="Copier Source OBS">📄 Source</button>
                             </div>
-
-                            <div class="widget-row compact-widget-row" data-widget="last-donation">
-                                <div class="widget-col-name">
-                                    <strong>Dernier Don</strong>
-                                    <button class="btn btn-sm btn-secondary copy-source-btn"
-                                        id="btnCopyLastDonationUrl">📄
-                                        Source</button>
-                                </div>
+                            <div class="compact-event-item" data-widget="last-donation">
+                                <span style="font-size: 12px; font-weight: 600; color: var(--text-secondary);">Dernier Don :</span>
+                                <button class="btn btn-sm btn-secondary copy-source-btn" id="btnCopyLastDonationUrl" title="Copier Source OBS">📄 Source</button>
                             </div>
                         </div>
+                        <div class="widget-col-actions"></div>
                     </div>
                 </div>
             </div>
@@ -550,6 +504,15 @@
 
 
                     <div id="alert-theme-editor" class="alert-config-group">
+                        <div class="alert-theme-picker-row" style="display:flex; align-items:center; gap:10px; margin-bottom:10px; width:100%;">
+                            <label for="alert-theme-select" style="font-weight:600; font-size:13px; color:var(--text-secondary); white-space:nowrap;">Thème :</label>
+                            <select id="alert-theme-select" class="form-select" style="flex:1;">
+                                <option value="">Défaut</option>
+                                <option value="alerts_christmas.css">Noël</option>
+                                <option value="alerts_halloween.css">Halloween</option>
+                                <option value="alerts_horror.css">Horreur</option>
+                            </select>
+                        </div>
                         <textarea id="alert-theme-css" class="css-editor-textarea"></textarea>
                         <div class="theme-controls" style="display:flex; gap:10px; margin-bottom:10px;">
                             <button id="alert-theme-reset-btn" class="btn btn-danger" style="flex:1;">Réinitialiser
@@ -632,6 +595,7 @@
                             <div class="custom-picker-dropdown" id="rewardFunctionDropdown">
                                 <div class="custom-picker-option" data-value="">Aucune</div>
                                 <div class="custom-picker-option" data-value="emote_rain">Pluie d'emotes</div>
+                                <div class="custom-picker-option" data-value="bat_rain">Pluie de chauves-souris 🦇</div>
                             </div>
                         </div>
                     </div>

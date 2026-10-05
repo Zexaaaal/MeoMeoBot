@@ -1,10 +1,10 @@
 @import url('https://fonts.googleapis.com/css2?family=Mountains+of+Christmas:wght@400;700&display=swap');
 
 body {
-    width: 500px;
-    height: 750px;
-    box-sizing: border-box;
+    background-color: transparent;
     overflow: hidden;
+    margin: 0;
+    padding: 0;
 }
 
 #bg-video {
@@ -16,6 +16,12 @@ body {
 }
 
 #chat-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    height: 100vh;
+    width: 100vw;
+    box-sizing: border-box;
     mask-image: linear-gradient(to bottom, transparent 0%, black 35%, black 100%);
     -webkit-mask-image: linear-gradient(to bottom, transparent 10%, black 15%, black 100%);
     padding-bottom: 20px;

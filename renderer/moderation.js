@@ -97,7 +97,7 @@ function updateAutoMessagesList(messages) {
 
         div.innerHTML = `
             <div class="form-group" style="flex: 1; margin-bottom: 0;">
-                <textarea class="auto-msg-input" rows="1" style="width:100%; resize:vertical; min-height: 38px; background: var(--bg-tertiary); border: 1px solid var(--border); border-radius: 4px; padding: 8px; color: var(--text-primary); font-family: inherit;" placeholder="Votre message ici...">${item.message}</textarea>
+                <textarea class="auto-msg-input" rows="1" style="width:100%; resize:vertical; min-height: 38px; background: var(--bg-tertiary); border: 1px solid var(--border); border-radius: 4px; padding: 8px; color: var(--text-primary); font-family: inherit;" placeholder="Votre message ici..."></textarea>
             </div>
             
             <div class="form-group" style="width: 80px; margin-bottom: 0;">
@@ -116,6 +116,8 @@ function updateAutoMessagesList(messages) {
         const saveBtn = div.querySelector('.save-btn');
         const msgInput = div.querySelector('.auto-msg-input');
         const intervalInput = div.querySelector('.auto-msg-interval');
+        msgInput.value = item.message || '';
+        intervalInput.value = item.interval || 40;
 
         const deleteControl = createDeleteControl(() => removeAutoMessage(index));
         controlsWrapper.appendChild(deleteControl);

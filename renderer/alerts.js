@@ -32,6 +32,7 @@ const els = {
     volumeInput: null,
     volumeVal: null,
     durationInput: null,
+    themeSelect: null,
     themeCss: null,
     themeResetBtn: null,
     themeConfirmBtn: null,
@@ -60,7 +61,7 @@ async function init() {
     els.volumeVal = document.getElementById('alert-volume-val');
     els.durationInput = document.getElementById('alert-duration-input');
     els.isVodInput = document.getElementById('alert-isvod-input');
-
+    els.themeSelect = document.getElementById('alert-theme-select');
     els.themeCss = document.getElementById('alert-theme-css');
     els.themeResetBtn = document.getElementById('alert-theme-reset-btn');
     els.themeConfirmBtn = document.getElementById('alert-theme-confirm-btn');
@@ -184,6 +185,28 @@ function setupEventListeners() {
         }, 500);
     });
 
+    if (els.themeSelect) {
+        els.themeSelect.addEventListener('change', async (e) => {
+            const val = e.target.value;
+            if (!val) {
+                currentConfig.customCSS = '';
+                currentConfig.currentTheme = '';
+                els.themeCss.value = DEFAULT_CSS;
+                updateGlobalThemePreview(DEFAULT_CSS);
+                return;
+            }
+            try {
+                const content = await window.api.invoke('get-theme-content', val);
+                currentConfig.customCSS = content || '';
+                currentConfig.currentTheme = val;
+                els.themeCss.value = content || '';
+                updateGlobalThemePreview(content || '');
+            } catch (err) {
+                console.error(err);
+            }
+        });
+    }
+
     els.themeResetBtn.onclick = () => {
         els.themeResetBtn.style.display = 'none';
         els.themeConfirmBtn.style.display = 'inline-block';
@@ -200,9 +223,9 @@ function setupEventListeners() {
         try {
             await API.widgets.resetConfig('alerts');
 
-
-
             currentConfig.customCSS = '';
+            currentConfig.currentTheme = '';
+            if (els.themeSelect) els.themeSelect.value = '';
             els.themeCss.value = DEFAULT_CSS;
             updateGlobalThemePreview(DEFAULT_CSS);
 
@@ -222,7 +245,9 @@ function updateUI() {
     if (currentType === 'themes') {
         els.standardConfig.style.display = 'none';
         els.themeEditor.style.display = 'flex';
-
+        if (els.themeSelect) {
+            els.themeSelect.value = currentConfig.currentTheme || '';
+        }
         els.themeCss.value = currentConfig.customCSS || DEFAULT_CSS;
     } else {
         els.themeEditor.style.display = 'none';
@@ -329,7 +354,7 @@ const DEFAULT_CSS = `
     padding-right: 8px;
     letter-spacing: 6px;
     font-size: 22px;
-    font-family: 'Road Rage', cursive !important;
+    font-family: 'Road Rage', cursive;
     color: yellow;
     text-shadow: 4px 4px #000000;
 }
@@ -408,10 +433,20 @@ function updatePreview(type) {
 }
 
 function updateGlobalThemePreview(css) {
+    let style = document.getElementById('alert-preview-custom-css');
+    if (!style) {
+        style = document.createElement('style');
+        style.id = 'alert-preview-custom-css';
+        document.head.appendChild(style);
+    }
+    style.textContent = css || '';
 }
 
 async function saveConfig() {
     try {
+        if (els.themeSelect) {
+            currentConfig.currentTheme = els.themeSelect.value;
+        }
         await API.widgets.saveConfig('alerts', currentConfig);
         showNotification(NOTIFICATIONS.SUCCESS.SAVED, 'success');
         return true;

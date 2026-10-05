@@ -27,7 +27,9 @@ const defaultCss = {
 #chat-container {
     display: flex;
     flex-direction: column;
+    justify-content: flex-end;
     height: 100vh;
+    width: 100vw;
     box-sizing: border-box;
 }
 
@@ -224,6 +226,113 @@ const defaultCss = {
 
 .subgoal-label {
     color: white;
+}`,
+    goals: `body {
+    margin: 0;
+    overflow: hidden;
+    font-family: sans-serif;
+    background: transparent;
+}
+#widget-container {
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    box-sizing: border-box;
+}
+.progress-container {
+    position: relative;
+    width: 100%;
+    max-width: 800px;
+    height: 40px;
+    background: rgba(0, 0, 0, 0.5);
+    border-radius: 20px;
+    overflow: hidden;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    margin-bottom: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.progress-bar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    background: linear-gradient(90deg, #ff00cc, #333399);
+    width: 65%;
+    border-radius: 18px;
+}
+.progress-content {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px;
+    box-sizing: border-box;
+    z-index: 10;
+    pointer-events: none;
+}
+.progress-value {
+    position: relative;
+    color: white;
+    font-weight: 800;
+    font-size: 1.3rem;
+    white-space: nowrap;
+}
+.widget-label {
+    position: relative;
+    color: white;
+    font-weight: 800;
+    font-size: 1.3rem;
+    text-transform: uppercase;
+    white-space: nowrap;
+}`,
+    'emote-wall': `body {
+    margin: 0;
+    overflow: hidden;
+    background: transparent;
+    width: 100vw;
+    height: 100vh;
+}`,
+    alerts: `body {
+    margin: 0;
+    overflow: hidden;
+    background: transparent;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+.alert-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 20px;
+}
+.alert-text {
+    font-size: 24px;
+    font-weight: 900;
+    color: white;
+}
+.alert-username {
+    color: yellow;
+    font-size: 26px;
+}
+.alert-message {
+    font-size: 20px;
+    font-weight: 700;
+    color: #eee;
+    margin-top: 10px;
 }`
 };
 
@@ -418,7 +527,9 @@ async function loadWidgetConfig(widgetName) {
                 currentWidget === 'subgoals' ? 'du Subgoals' :
                     currentWidget === 'subgoals-list' ? 'de la Liste Subgoals' :
                         currentWidget === 'roulette' ? 'de la Roulette' :
-                            'du mur d\'emotes';
+                            currentWidget === 'goals' ? 'des Goals' :
+                                currentWidget === 'alerts' ? 'des Alertes' :
+                                    'du Mur d\'Emotes';
     }
 
     const maxRow = document.getElementById('maxMessagesRow');
@@ -706,6 +817,12 @@ function renderPreview() {
         html = getSubgoalsListPreviewHtml(css);
     } else if (currentWidget === 'roulette') {
         html = getRoulettePreviewHtml(css);
+    } else if (currentWidget === 'goals') {
+        html = getGoalsPreviewHtml(css);
+    } else if (currentWidget === 'emote-wall') {
+        html = getEmoteWallPreviewHtml(css);
+    } else if (currentWidget === 'alerts') {
+        html = getAlertsPreviewHtml(css);
     } else {
         html = `<!DOCTYPE html><html><head><style>${defaultCss[currentWidget] || ''}</style><style id="custom-css">${css}</style></head><body><div style="color:white;padding:20px;">Aperçu non disponible pour ce widget</div></body></html>`;
     }
@@ -908,6 +1025,82 @@ function getSubgoalsPreviewHtml(customCss) {
                     </div>
                     <div class="progress-bar" style="width: 50%"></div>
                     <div class="progress-text">50 / 100 Subs</div>
+                </div>
+            </div>
+        </body>
+    </html>`;
+}
+
+function getGoalsPreviewHtml(customCss) {
+    return `<!DOCTYPE html>
+    <html>
+        <head>
+            <style>
+                @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800&display=swap');
+                body { margin: 0; overflow: hidden; font-family: 'Montserrat', sans-serif; background: transparent; }
+                #widget-container { width: 100vw; height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box; }
+                .progress-container { position: relative; width: 100%; max-width: 800px; height: 40px; background: rgba(0, 0, 0, 0.5); border-radius: 20px; overflow: hidden; border: 2px solid rgba(255, 255, 255, 0.2); margin-bottom: 5px; display: flex; align-items: center; justify-content: center; }
+                .progress-bar { position: absolute; top: 0; left: 0; height: 100%; background: linear-gradient(90deg, #ff00cc, #333399); width: 65%; border-radius: 18px; transition: width 0.8s ease; box-shadow: 0 0 10px rgba(255, 0, 204, 0.5); z-index: 1; }
+                .progress-content { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: space-between; padding: 0 20px; box-sizing: border-box; z-index: 10; pointer-events: none; }
+                .progress-value { position: relative; color: white; font-weight: 800; font-size: 1.3rem; text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8); white-space: nowrap; font-family: 'Montserrat', sans-serif; }
+                .widget-label { position: relative; color: white; font-weight: 800; font-size: 1.3rem; text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8); text-transform: uppercase; white-space: nowrap; font-family: 'Montserrat', sans-serif; }
+            </style>
+            <style id="custom-css">${customCss}</style>
+        </head>
+        <body>
+            <div id="widget-container">
+                <div class="progress-container">
+                    <div class="progress-bar" id="progress-bar" style="width: 65%;"></div>
+                    <div class="progress-content">
+                        <span class="widget-label" id="widget-label">Sub Goal</span>
+                        <span class="progress-value" id="progress-value">65 / 100</span>
+                    </div>
+                </div>
+            </div>
+        </body>
+    </html>`;
+}
+
+function getEmoteWallPreviewHtml(customCss) {
+    return `<!DOCTYPE html>
+    <html>
+        <head>
+            <style>
+                body { margin: 0; overflow: hidden; background: transparent; width: 100vw; height: 100vh; position: relative; }
+                .floating-emote { position: absolute; font-size: 48px; user-select: none; animation: floatUp 3s infinite ease-in-out; }
+                @keyframes floatUp { 0% { transform: translateY(20px) rotate(0deg); opacity: 0; } 50% { opacity: 1; } 100% { transform: translateY(-40px) rotate(15deg); opacity: 0; } }
+            </style>
+            <style id="custom-css">${customCss}</style>
+        </head>
+        <body>
+            <div class="floating-emote" style="left: 20%; top: 40%; animation-delay: 0s;">✨</div>
+            <div class="floating-emote" style="left: 45%; top: 50%; animation-delay: 0.5s;">🎉</div>
+            <div class="floating-emote" style="left: 70%; top: 35%; animation-delay: 1s;">🔥</div>
+            <div class="floating-emote" style="left: 35%; top: 60%; animation-delay: 1.5s;">💜</div>
+        </body>
+    </html>`;
+}
+
+function getAlertsPreviewHtml(customCss) {
+    return `<!DOCTYPE html>
+    <html>
+        <head>
+            <style>
+                body { margin: 0; overflow: hidden; background: transparent; display: flex; justify-content: center; align-items: center; height: 100vh; font-family: sans-serif; }
+                .alert-box { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px; }
+                .alert-image { font-size: 64px; margin-bottom: 12px; }
+                .alert-text { font-size: 24px; font-weight: 900; color: white; line-height: 1.2; text-shadow: 0 2px 4px #000; }
+                .alert-username { color: yellow; font-size: 26px; }
+                .alert-message { font-size: 20px; font-weight: 700; color: #eee; margin-top: 10px; text-shadow: 0 2px 4px #000; }
+            </style>
+            <style id="custom-css">${customCss}</style>
+        </head>
+        <body>
+            <div class="alert-box">
+                <div class="alert-image">🔔</div>
+                <div id="alert-text-wrapper">
+                    <div class="alert-text"><span class="alert-username">Pseudo</span> vient de s'abonner !</div>
+                    <div class="alert-message">Merci pour le soutien !</div>
                 </div>
             </div>
         </body>
@@ -1187,6 +1380,12 @@ api.on('load-css-editor', ({ widgetName }) => {
         loadWidgetConfig(widgetName);
     } else {
         currentWidget = widgetName;
+    }
+});
+
+api.on('widget-config-updated', ({ widgetName }) => {
+    if (widgetName === currentWidget) {
+        loadWidgetConfig(currentWidget);
     }
 });
 

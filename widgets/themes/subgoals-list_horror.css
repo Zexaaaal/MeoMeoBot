@@ -1,0 +1,28 @@
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@800&family=Special+Elite&display=swap');
+
+.subgoals-list {
+    gap: 12px !important;
+}
+
+.subgoal-item {
+    font-family: 'Special Elite', monospace !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 4px 0 !important;
+}
+
+.subgoal-count {
+    font-family: 'Cinzel', serif !important;
+    font-weight: 800 !important;
+    font-size: 1.35rem !important;
+    letter-spacing: 1.5px !important;
+    color: #ff2b3c !important;
+    text-shadow: 0 0 10px #ff0022, 0 0 20px #8b0000, 0 2px 4px #000000 !important;
+}
+
+.subgoal-label {
+    color: #f2e9e8 !important;
+    font-size: 1.15rem !important;
+    text-shadow: 0 0 8px rgba(255, 43, 60, 0.6), 0 2px 4px #000000 !important;
+}

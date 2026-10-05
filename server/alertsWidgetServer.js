@@ -53,7 +53,7 @@ class AlertsWidgetServer extends BaseWidgetServer {
                 padding-right: 8px;
                 letter-spacing: 6px;
                 font-size: 22px;
-                font-family: 'Road Rage', cursive !important;
+                font-family: 'Road Rage', cursive;
                 color: yellow;
                 text-shadow: 4px 4px #000000;
             }

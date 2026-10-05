@@ -37,7 +37,9 @@
             z-index: -1;
         }
     </style>
-    <script src="themes/pro_gradient.js"></script>
+    <script src="/widget/themes/pro_gradient.js"></script>
+    <script src="/widget/themes/halloween_decor.js"></script>
+    <script src="/widget/themes/horror_decor.js"></script>
 </head>
 
 <body>
@@ -263,6 +265,7 @@
                         const style = document.getElementById('custom-css');
                         if (style) style.textContent = cfg.customCSS;
                         updateSnow();
+                        updateHalloween();
                         updatePro();
                     }
                 } else if (data.type === 'chat') {
@@ -541,8 +544,28 @@
         }
 
 
+        let halloweenEnabled = false;
+
+        function updateHalloween() {
+            const enable = getComputedStyle(document.body).getPropertyValue('--enable-halloween').trim() === '1';
+            if (enable === halloweenEnabled) return;
+            halloweenEnabled = enable;
+            if (window.HalloweenDecor) window.HalloweenDecor.setChatDecor(enable);
+        }
+
+        let horrorEnabled = false;
+
+        function updateHorror() {
+            const enable = getComputedStyle(document.body).getPropertyValue('--enable-horror').trim() === '1';
+            if (enable === horrorEnabled) return;
+            horrorEnabled = enable;
+            if (window.HorrorDecor) window.HorrorDecor.setChatDecor(enable);
+        }
+
         const styleObserver = new MutationObserver(() => {
             requestAnimationFrame(updateSnow);
+            requestAnimationFrame(updateHalloween);
+            requestAnimationFrame(updateHorror);
             requestAnimationFrame(updatePro);
         });
         const customCssEl = document.getElementById('custom-css');
@@ -552,6 +575,8 @@
 
         connectWebSocket();
         updateSnow();
+        updateHalloween();
+        updateHorror();
         updatePro();
     </script>
 </body>

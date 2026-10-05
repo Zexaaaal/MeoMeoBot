@@ -1,76 +1,94 @@
 .widget-list-container {
     display: flex;
-    flex-wrap: wrap;
-    gap: 20px;
-    padding: 10px;
-    overflow-y: auto;
-    align-items: flex-start;
-}
-
-.widget-columns-wrapper {
-    display: flex;
+    flex-direction: column;
     width: 100%;
-    gap: 20px;
+    padding: 6px;
+    overflow-y: auto;
+    box-sizing: border-box;
 }
 
-.widget-col-container {
-    flex: 1;
+.widget-list {
     display: flex;
     flex-direction: column;
-    gap: 20px;
-    min-width: 0;
+    gap: 8px;
+    width: 100%;
 }
 
 .widget-row {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
     background: var(--glass-bg);
     backdrop-filter: var(--glass-blur);
     -webkit-backdrop-filter: var(--glass-blur);
     border: 1px solid var(--glass-border);
-    border-radius: var(--radius-md);
-    padding: 15px;
+    border-radius: var(--radius-sm);
+    padding: 10px 14px;
     gap: 12px;
-    height: auto;
     width: 100%;
+    box-sizing: border-box;
+    transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.widget-row:hover {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: rgba(255, 255, 255, 0.12);
 }
 
 .widget-col-name {
-    width: 100%;
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    padding-bottom: 0;
-    margin-bottom: 5px;
-    font-size: 14px;
+    gap: 8px;
+    width: 220px;
+    flex: 0 0 220px;
+    margin-bottom: 0;
+    font-size: 13px;
     font-weight: 600;
 }
 
 .widget-col-config {
     flex: 1;
     display: flex;
-    row-gap: 20px;
-    flex-direction: column;
-    width: 100%;
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
 }
 
 .widget-col-actions {
     display: flex;
     flex-direction: row;
-    gap: 10px;
+    align-items: center;
     justify-content: flex-end;
-    margin-top: auto;
-    padding-top: 10px;
+    gap: 8px;
+    flex: 0 0 auto;
 }
 
 .widget-col-actions .btn {
-    flex: 1;
+    flex: 0 0 auto;
+    white-space: nowrap;
+    padding: 4px 10px;
+    font-size: 12px;
+}
+
+.copy-source-btn {
+    padding: 3px 8px;
+    font-size: 11px;
+    line-height: 1.2;
+    height: auto;
+    width: auto;
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-sm);
 }
 
 .badge-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 8px;
+    gap: 6px;
     width: 100%;
 }
 
@@ -78,7 +96,7 @@
     display: flex;
     align-items: center;
     background: var(--bg-surface);
-    padding: 6px 10px;
+    padding: 4px 8px;
     border-radius: var(--radius-sm);
     cursor: pointer;
     font-size: 11px;
@@ -96,7 +114,7 @@
 
 .badge-grid input[type="checkbox"] {
     width: auto;
-    margin: 0 8px 0 0;
+    margin: 0 6px 0 0;
     padding: 0;
     background: transparent;
     border: none;
@@ -118,8 +136,8 @@
 
 .config-inline-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
     width: 100%;
 }
 
@@ -130,50 +148,16 @@
 .config-inline-grid .inline-input {
     width: 100%;
     box-sizing: border-box;
-}
-
-.copy-source-btn {
-    padding: 2px 8px;
-    font-size: 11px;
-    margin-left: 10px;
-    height: auto;
-    width: auto;
-    flex: 0 0 auto;
+    font-size: 12px;
+    padding: 3px 6px;
 }
 
 .widget-row[data-widget="chat"] .widget-col-config {
     flex: 2;
 }
 
-.widget-group-card {
+.compact-event-item {
     display: flex;
-    flex-direction: column;
-    width: 100%;
-    gap: 0;
-}
-
-.widget-group-card .widget-row {
-    border-radius: 0;
-    border-bottom: none;
-    margin-bottom: 0;
-}
-
-.widget-group-card .widget-row:first-child {
-    border-top-left-radius: 12px;
-    border-top-right-radius: 12px;
-}
-
-.widget-group-card .widget-row:last-child {
-    border-bottom-left-radius: 12px;
-    border-bottom-right-radius: 12px;
-    border-bottom: 1px solid var(--glass-border);
-}
-
-.compact-widget-row {
-    padding: 10px 15px;
-    gap: 0;
-}
-
-.compact-widget-row .widget-col-name {
-    margin-bottom: 0;
+    align-items: center;
+    gap: 6px;
 }

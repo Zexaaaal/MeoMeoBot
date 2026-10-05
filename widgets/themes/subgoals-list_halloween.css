@@ -1,0 +1,27 @@
+@import url('https://fonts.googleapis.com/css2?family=Creepster&family=Inter:wght@600;700&display=swap');
+
+.subgoals-list {
+    gap: 12px !important;
+}
+
+.subgoal-item {
+    font-family: 'Inter', sans-serif !important;
+    background: linear-gradient(135deg, rgba(32, 12, 48, 0.9), rgba(16, 6, 26, 0.92)) !important;
+    border: 1px solid #ff7518 !important;
+    border-radius: 12px !important;
+    padding: 8px 16px !important;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.6), 0 0 10px rgba(255, 117, 24, 0.25) !important;
+}
+
+.subgoal-count {
+    font-family: 'Creepster', cursive !important;
+    font-size: 1.4rem !important;
+    letter-spacing: 1.5px !important;
+    color: #ffa134 !important;
+    text-shadow: 0 0 8px rgba(255, 161, 52, 0.6) !important;
+}
+
+.subgoal-label {
+    color: #fff1de !important;
+    font-weight: 600 !important;
+}

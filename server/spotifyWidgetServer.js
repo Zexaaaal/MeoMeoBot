@@ -13,10 +13,14 @@ class SpotifyWidgetServer extends BaseWidgetServer {
         this.spotifyPollTimer = null;
         this.currentSpotifyTrack = null;
         this.localCoverCache = new Map();
+        this.spotifyApiFailCount = 0;
+        this.fallbackToWindow = false;
     }
 
     async start() {
         this.currentSpotifyTrack = this.bot.getWidgetConfig('spotify') || null;
+        this.spotifyApiFailCount = 0;
+        this.fallbackToWindow = false;
 
         await super.start();
         this.startPolling();
@@ -160,6 +164,8 @@ class SpotifyWidgetServer extends BaseWidgetServer {
                 refreshToken: tokenData.refresh_token,
                 expiresIn: tokenData.expires_in || 3600
             });
+            this.spotifyApiFailCount = 0;
+            this.fallbackToWindow = false;
             log.info('SPOTIFY_AUTH_SUCCESS');
             this.bot.emit('auth-restored', { service: 'spotify' });
             this.startPolling();
@@ -235,6 +241,81 @@ class SpotifyWidgetServer extends BaseWidgetServer {
         return this.getStoredTokens().accessToken;
     }
 
+    async fetchCoverFromSources(artist, track) {
+        const query = artist ? `${artist} ${track}`.trim() : (track || '').trim();
+        if (!query) return { coverUrl: '', albumName: '' };
+
+        const cacheKey = query.toLowerCase();
+        if (this.localCoverCache.has(cacheKey)) {
+            return this.localCoverCache.get(cacheKey);
+        }
+
+        let coverUrl = '';
+        let albumName = '';
+
+        try {
+            const itunesUrl = `https://itunes.apple.com/search?term=${encodeURIComponent(query)}&entity=song&limit=1`;
+            const res = await fetch(itunesUrl);
+            if (res.ok) {
+                const data = await res.json();
+                if (data && data.results && data.results[0]) {
+                    const item = data.results[0];
+                    if (item.artworkUrl100) {
+                        coverUrl = item.artworkUrl100.replace('100x100bb.jpg', '600x600bb.jpg');
+                    }
+                    if (item.collectionName) {
+                        albumName = item.collectionName;
+                    }
+                }
+            }
+        } catch (e) {
+        }
+
+        if (!coverUrl) {
+            try {
+                const deezerUrl = `https://api.deezer.com/search?q=${encodeURIComponent(query)}&limit=1`;
+                const res = await fetch(deezerUrl);
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data && data.data && data.data[0]) {
+                        const item = data.data[0];
+                        if (item.album) {
+                            coverUrl = item.album.cover_xl || item.album.cover_big || item.album.cover_medium || '';
+                            if (!albumName && item.album.title) {
+                                albumName = item.album.title;
+                            }
+                        }
+                    }
+                }
+            } catch (e) {
+            }
+        }
+
+        if (!coverUrl && artist && track) {
+            try {
+                const deezerTrackUrl = `https://api.deezer.com/search?q=${encodeURIComponent(track)}&limit=1`;
+                const res = await fetch(deezerTrackUrl);
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data && data.data && data.data[0] && data.data[0].album) {
+                        const album = data.data[0].album;
+                        coverUrl = album.cover_xl || album.cover_big || album.cover_medium || '';
+                        if (!albumName && album.title) {
+                            albumName = album.title;
+                        }
+                    }
+                }
+            } catch (e) {
+            }
+        }
+
+        const result = { coverUrl, albumName };
+        if (coverUrl) {
+            this.localCoverCache.set(cacheKey, result);
+        }
+        return result;
+    }
+
     getLocalTrackFromWindow() {
         return new Promise((resolve) => {
             const isWin = process.platform === 'win32';
@@ -243,112 +324,85 @@ class SpotifyWidgetServer extends BaseWidgetServer {
             }
 
             const { execFile } = require('child_process');
-            const args = [
-                '-NoProfile',
-                '-ExecutionPolicy', 'Bypass',
-                '-Command',
-                `$OutputEncoding = [Console]::OutputEncoding = [System.Text.Encoding]::UTF8; Get-Process -Name Spotify -ErrorAction SilentlyContinue | Where-Object {$_.MainWindowTitle} | Select-Object -ExpandProperty MainWindowTitle`
-            ];
-            
-            execFile('powershell.exe', args, { encoding: 'buffer' }, (err, stdout) => {
-                if (err || !stdout) {
-                    return resolve({ isPlaying: false, trackTitle: '', trackArtist: '', trackAlbum: '', coverUrl: '' });
-                }
-                
-                const title = stdout.toString('utf8').trim();
-                if (!title || ['spotify', 'spotify free', 'spotify premium'].includes(title.toLowerCase())) {
-                    return resolve({ isPlaying: false, trackTitle: '', trackArtist: '', trackAlbum: '', coverUrl: '' });
-                }
+            execFile('tasklist.exe', ['/v', '/fi', 'imagename eq spotify.exe', '/fo', 'csv'], { encoding: 'buffer' }, async (err, stdout) => {
+                let title = '';
+                if (!err && stdout) {
+                    const raw = stdout.toString('utf8');
+                    const lines = raw.split(/\r?\n/).filter(l => l.trim().length > 0);
+                    const ignoreList = ['spotify', 'spotify free', 'spotify premium', 'n/a', 'olemainthreadwndname', 'angle hidden window', 'default ime', 'msctls_statusbar32'];
 
-                const separatorIndex = title.indexOf(' - ');
-                if (separatorIndex !== -1) {
-                    const artist = title.substring(0, separatorIndex).trim();
-                    const track = title.substring(separatorIndex + 3).trim();
-                    
-                    const cacheKey = `${artist} - ${track}`.toLowerCase();
-                    if (this.localCoverCache.has(cacheKey)) {
-                        return resolve({
-                            isPlaying: true,
-                            trackTitle: track,
-                            trackArtist: artist,
-                            trackAlbum: 'Spotify Local',
-                            coverUrl: this.localCoverCache.get(cacheKey)
-                        });
+                    for (const line of lines) {
+                        if (!line.includes('","')) continue;
+                        const parts = line.split('","').map(p => p.replace(/^"+|"+$/g, '').trim());
+                        if (!parts[0].toLowerCase().includes('spotify')) continue;
+                        const candidate = (parts[parts.length - 1] || '').replace(/^"+|"+$/g, '').trim();
+                        if (!candidate) continue;
+                        const lower = candidate.toLowerCase();
+                        if (ignoreList.includes(lower)) continue;
+                        title = candidate;
+                        break;
                     }
-
-                    const query = encodeURIComponent(`${artist} ${track}`);
-                    fetch(`https://itunes.apple.com/search?term=${query}&entity=song&limit=1`)
-                        .then(res => res.json())
-                        .then(data => {
-                            let coverUrl = '';
-                            if (data && data.results && data.results[0]) {
-                                const item = data.results[0];
-                                coverUrl = item.artworkUrl100 ? item.artworkUrl100.replace('100x100bb.jpg', '600x600bb.jpg') : '';
-                            }
-                            this.localCoverCache.set(cacheKey, coverUrl);
-                            resolve({
-                                isPlaying: true,
-                                trackTitle: track,
-                                trackArtist: artist,
-                                trackAlbum: 'Spotify Local',
-                                coverUrl: coverUrl
-                            });
-                        })
-                        .catch(e => {
-                            log.error('LOCAL_COVER_FETCH_ERROR', e.message);
-                            resolve({
-                                isPlaying: true,
-                                trackTitle: track,
-                                trackArtist: artist,
-                                trackAlbum: 'Spotify Local',
-                                coverUrl: ''
-                            });
-                        });
-                } else {
-                    const cacheKey = title.toLowerCase();
-                    if (this.localCoverCache.has(cacheKey)) {
-                        return resolve({
-                            isPlaying: true,
-                            trackTitle: title,
-                            trackArtist: '',
-                            trackAlbum: 'Spotify Local',
-                            coverUrl: this.localCoverCache.get(cacheKey)
-                        });
-                    }
-
-                    const query = encodeURIComponent(title);
-                    fetch(`https://itunes.apple.com/search?term=${query}&entity=song&limit=1`)
-                        .then(res => res.json())
-                        .then(data => {
-                            let coverUrl = '';
-                            if (data && data.results && data.results[0]) {
-                                const item = data.results[0];
-                                coverUrl = item.artworkUrl100 ? item.artworkUrl100.replace('100x100bb.jpg', '600x600bb.jpg') : '';
-                            }
-                            this.localCoverCache.set(cacheKey, coverUrl);
-                            resolve({
-                                isPlaying: true,
-                                trackTitle: title,
-                                trackArtist: '',
-                                trackAlbum: 'Spotify Local',
-                                coverUrl: coverUrl
-                            });
-                        })
-                        .catch(e => {
-                            resolve({
-                                isPlaying: true,
-                                trackTitle: title,
-                                trackArtist: '',
-                                trackAlbum: 'Spotify Local',
-                                coverUrl: ''
-                            });
-                        });
                 }
+
+                if (!title) {
+                    const args = [
+                        '-NoProfile',
+                        '-ExecutionPolicy', 'Bypass',
+                        '-Command',
+                        `[Console]::OutputEncoding = [System.Text.Encoding]::UTF8; Get-Process -Name Spotify -ErrorAction SilentlyContinue | Where-Object { $_.MainWindowTitle } | Select-Object -ExpandProperty MainWindowTitle`
+                    ];
+                    return execFile('powershell.exe', args, { encoding: 'buffer' }, async (psErr, psStdout) => {
+                        if (psErr || !psStdout) {
+                            return resolve({ isPlaying: false, trackTitle: '', trackArtist: '', trackAlbum: '', coverUrl: '' });
+                        }
+                        const psTitle = psStdout.toString('utf8').trim();
+                        if (!psTitle || ['spotify', 'spotify free', 'spotify premium'].includes(psTitle.toLowerCase())) {
+                            return resolve({ isPlaying: false, trackTitle: '', trackArtist: '', trackAlbum: '', coverUrl: '' });
+                        }
+                        await this.resolveTrackFromTitle(psTitle, resolve);
+                    });
+                }
+
+                await this.resolveTrackFromTitle(title, resolve);
             });
         });
     }
 
+    async resolveTrackFromTitle(title, resolve) {
+        const separatorIndex = title.indexOf(' - ');
+        let artist = '';
+        let track = title;
+
+        if (separatorIndex !== -1) {
+            artist = title.substring(0, separatorIndex).trim();
+            track = title.substring(separatorIndex + 3).trim();
+        }
+
+        try {
+            const { coverUrl, albumName } = await this.fetchCoverFromSources(artist, track);
+            resolve({
+                isPlaying: true,
+                trackTitle: track,
+                trackArtist: artist,
+                trackAlbum: albumName || 'Spotify Local',
+                coverUrl: coverUrl || ''
+            });
+        } catch (e) {
+            resolve({
+                isPlaying: true,
+                trackTitle: track,
+                trackArtist: artist,
+                trackAlbum: 'Spotify Local',
+                coverUrl: ''
+            });
+        }
+    }
+
     async fetchCurrentTrack() {
+        if (this.fallbackToWindow) {
+            return this.getLocalTrackFromWindow();
+        }
+
         let token;
         try {
             token = await this.ensureAccessToken();
@@ -370,6 +424,7 @@ class SpotifyWidgetServer extends BaseWidgetServer {
             log.debug('SPOTIFY_API_RESPONSE', { status: resp.status, statusText: resp.statusText });
 
             if (resp.status === 204) {
+                this.spotifyApiFailCount = 0;
                 log.debug('SPOTIFY_204_NO_CONTENT');
                 return this.getLocalTrackFromWindow();
             }
@@ -383,11 +438,14 @@ class SpotifyWidgetServer extends BaseWidgetServer {
             if (!resp.ok) {
                 log.warn('SPOTIFY_FETCH_FAILED', { status: resp.status });
                 if (resp.status === 403) {
+                    this.spotifyApiFailCount++;
+                    this.fallbackToWindow = true;
                     return this.getLocalTrackFromWindow();
                 }
                 return { isPlaying: false, trackTitle: '', trackArtist: '', trackAlbum: '', coverUrl: '' };
             }
 
+            this.spotifyApiFailCount = 0;
             const data = await resp.json();
             if (!data || !data.item) {
                 log.debug('SPOTIFY_DATA_NO_ITEM');
@@ -395,12 +453,24 @@ class SpotifyWidgetServer extends BaseWidgetServer {
             }
 
             const track = data.item;
+            let coverUrl = (track.album && track.album.images && track.album.images[0] && track.album.images[0].url) || '';
+            const trackTitle = track.name || 'Titre du morceau';
+            const trackArtist = (track.artists || []).map(a => a.name).join(', ') || 'Artiste';
+            const trackAlbum = (track.album && track.album.name) || 'Album';
+
+            if (!coverUrl) {
+                const fallbackCover = await this.fetchCoverFromSources(trackArtist, trackTitle);
+                if (fallbackCover && fallbackCover.coverUrl) {
+                    coverUrl = fallbackCover.coverUrl;
+                }
+            }
+
             return {
                 isPlaying: data.is_playing !== false,
-                trackTitle: track.name || 'Titre du morceau',
-                trackArtist: (track.artists || []).map(a => a.name).join(', ') || 'Artiste',
-                trackAlbum: (track.album && track.album.name) || 'Album',
-                coverUrl: (track.album && track.album.images && track.album.images[0] && track.album.images[0].url) || ''
+                trackTitle: trackTitle,
+                trackArtist: trackArtist,
+                trackAlbum: trackAlbum,
+                coverUrl: coverUrl
             };
         } catch (err) {
             log.error('SPOTIFY_FETCH_ERROR', err.message);
@@ -429,7 +499,7 @@ class SpotifyWidgetServer extends BaseWidgetServer {
     startPolling() {
         if (this.spotifyPollTimer) clearInterval(this.spotifyPollTimer);
         const tokens = this.getStoredTokens();
-        if (!tokens.refreshToken && !tokens.accessToken) return;
+        if (!tokens.refreshToken && !tokens.accessToken && process.platform !== 'win32') return;
 
         const pollOnce = async () => {
             if (!this.hasActiveClients()) return;

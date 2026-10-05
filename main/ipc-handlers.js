@@ -4,6 +4,7 @@ const fs = require('fs');
 const log = require('./logger').tagged('IPC');
 const { sendPlanningToDiscord } = require('./DiscordSync');
 const twitchAuth = require('./twitch-auth');
+const themeManager = require('./theme-manager');
 
 // OBS sits on the same machine as the app, so the copied source URLs use
 // loopback: it survives DHCP renewals, VPN adapters and wifi/ethernet swaps
@@ -177,7 +178,7 @@ function registerHandlers(deps) {
 
     ipcMain.handle('get-widget-config', (event, widgetName) => bot.getWidgetConfig(widgetName));
 
-    ipcMain.handle('save-widget-config', (event, widgetName, config) => {
+    ipcMain.handle('save-widget-config', async (event, widgetName, config) => {
         bot.saveWidgetConfig(widgetName, config);
         const servers = getServers();
 
@@ -189,8 +190,9 @@ function registerHandlers(deps) {
             servers.subgoalsServer.broadcastConfig(config, 'subgoals-list');
         } else if (widgetName === 'roulette' && servers.rouletteServer) {
             servers.rouletteServer.broadcastConfig(config);
-        } else if (widgetName === 'chat' && servers.chatServer) {
-            servers.chatServer.broadcastConfig(config);
+        } else if (widgetName === 'chat') {
+            if (servers.chatServer) servers.chatServer.broadcastConfig(config);
+            await themeManager.cascadeTheme(config ? config.currentTheme : '', bot, servers);
         } else if (servers.chatServer && widgetName === 'emote-wall') {
             servers.chatServer.broadcastConfig(config, widgetName);
         } else if (widgetName === 'alerts' && servers.alertsWidgetServer) {
@@ -224,8 +226,10 @@ function registerHandlers(deps) {
 
         const servers = getServers();
         const configToSend = { ...config, customCSS: '' };
-        if (widgetName === 'chat' && servers.chatServer) servers.chatServer.broadcastConfig(configToSend);
-        else if (widgetName === 'spotify' && servers.spotifyServer) servers.spotifyServer.broadcastConfig(configToSend);
+        if (widgetName === 'chat') {
+            if (servers.chatServer) servers.chatServer.broadcastConfig(configToSend);
+            await themeManager.cascadeTheme('', bot, servers);
+        } else if (widgetName === 'spotify' && servers.spotifyServer) servers.spotifyServer.broadcastConfig(configToSend);
         else if (widgetName === 'subgoals' && servers.subgoalsServer) servers.subgoalsServer.broadcastConfig(configToSend);
         else if (widgetName === 'roulette' && servers.rouletteServer) servers.rouletteServer.broadcastConfig(configToSend);
         else if (widgetName === 'goals' && servers.goalsServer) servers.goalsServer.broadcastConfig(configToSend);

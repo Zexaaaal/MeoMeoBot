@@ -573,6 +573,10 @@ function setupBotEvents() {
         if (chatServer) chatServer.broadcast({ type: 'emote-rain', emotes });
     });
 
+    bot.on('bat-rain', () => {
+        if (chatServer) chatServer.broadcast({ type: 'bat-rain' });
+    });
+
     bot.on('naporaoult', () => {
         if (chatServer) chatServer.broadcast({ type: 'naporaoult' });
     });

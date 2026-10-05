@@ -5,27 +5,194 @@ const log = require('./logger').tagged('Themes');
 
 const DEFAULT_THEME_NAMES = {
     'chat_christmas.css': 'Noël',
+    'chat_halloween.css': 'Halloween',
+    'chat_horror.css': 'Horreur',
     'chat_retro_terminal.css': 'Matrix',
     'chat_bubble_pop.css': 'meoMessage',
     'chat_neon_cyberpunk.css': 'Cyberpunk',
     'chat_soso_base.css': 'Soso Défaut',
     'spotify_soso_base.css': 'Défaut',
-    'sub_candycane.css': 'Candy Cane'
+    'sub_candycane.css': 'Candy Cane',
+    'subgoals_candycane.css': 'Candy Cane',
+    'subgoals_halloween.css': 'Halloween',
+    'subgoals_horror.css': 'Horreur',
+    'subgoals-list_halloween.css': 'Halloween',
+    'subgoals-list_horror.css': 'Horreur',
+    'goals_christmas.css': 'Noël',
+    'goals_halloween.css': 'Halloween',
+    'goals_horror.css': 'Horreur',
+    'roulette_base.css': 'Roue',
+    'roulette_list.css': 'Liste',
+    'roulette_halloween.css': 'Halloween',
+    'roulette_horror.css': 'Horreur',
+    'alerts_christmas.css': 'Noël',
+    'alerts_halloween.css': 'Halloween',
+    'alerts_horror.css': 'Horreur',
+    'emote-wall_halloween.css': 'Halloween',
+    'emote-wall_horror.css': 'Horreur'
 };
 
 function getUserThemesDir() {
+    if (!app || !app.getPath) return path.join(__dirname, '../widgets/themes');
     return path.join(app.getPath('userData'), 'themes');
 }
 
-
 function getBuiltInThemesDir() {
-    return app.isPackaged
+    return app && app.isPackaged
         ? path.join(app.getAppPath(), 'widgets/themes')
         : path.join(__dirname, '../widgets/themes');
 }
 
+const CASCADE_THEMES = {
+    'chat_christmas.css': {
+        'subgoals': 'subgoals_candycane.css',
+        'alerts': 'alerts_christmas.css',
+        'goals': 'goals_christmas.css'
+    },
+    'chat_halloween.css': {
+        'subgoals': 'subgoals_halloween.css',
+        'subgoals-list': 'subgoals-list_halloween.css',
+        'goals': 'goals_halloween.css',
+        'roulette': 'roulette_halloween.css',
+        'alerts': 'alerts_halloween.css',
+        'emote-wall': 'emote-wall_halloween.css'
+    },
+    'chat_horror.css': {
+        'subgoals': 'subgoals_horror.css',
+        'subgoals-list': 'subgoals-list_horror.css',
+        'goals': 'goals_horror.css',
+        'roulette': 'roulette_horror.css',
+        'alerts': 'alerts_horror.css',
+        'emote-wall': 'emote-wall_horror.css'
+    }
+};
+
+function getCascadeKey(theme) {
+    if (!theme || typeof theme !== 'string') return null;
+    const lower = theme.trim().toLowerCase();
+    if (lower === 'chat_christmas.css' || lower === 'chat_christmas' || lower === 'christmas' || lower === 'noël' || lower === 'noel') {
+        return 'chat_christmas.css';
+    }
+    if (lower === 'chat_halloween.css' || lower === 'chat_halloween' || lower === 'halloween') {
+        return 'chat_halloween.css';
+    }
+    if (lower === 'chat_horror.css' || lower === 'chat_horror' || lower === 'horror' || lower === 'horreur') {
+        return 'chat_horror.css';
+    }
+    return null;
+}
+
+async function getThemeFileContent(filename) {
+    const userThemesDir = getUserThemesDir();
+    const builtInThemesDir = getBuiltInThemesDir();
+    const userPath = path.join(userThemesDir, filename);
+    const builtInPath = path.join(builtInThemesDir, filename);
+    if (fs.existsSync(userPath)) {
+        return await fs.promises.readFile(userPath, 'utf8');
+    }
+    if (fs.existsSync(builtInPath)) {
+        return await fs.promises.readFile(builtInPath, 'utf8');
+    }
+    return '';
+}
+
+async function cascadeTheme(chatTheme, bot, servers) {
+    const key = getCascadeKey(chatTheme);
+    const CASCADED_WIDGETS = ['subgoals', 'subgoals-list', 'goals', 'roulette', 'alerts', 'emote-wall'];
+
+    if (!key || !CASCADE_THEMES[key]) {
+        for (const targetWidget of CASCADED_WIDGETS) {
+            const targetConfig = (bot && bot.getWidgetConfig ? bot.getWidgetConfig(targetWidget) : {}) || {};
+            targetConfig.currentTheme = '';
+            targetConfig.customCSS = '';
+            if (targetWidget === 'goals' && Array.isArray(targetConfig.goals)) {
+                targetConfig.goals = targetConfig.goals.map(g => ({
+                    ...g,
+                    customCSS: '',
+                    currentTheme: ''
+                }));
+            }
+            if (bot && bot.saveWidgetConfig) {
+                bot.saveWidgetConfig(targetWidget, targetConfig);
+            }
+            if (servers) {
+                if (targetWidget === 'subgoals' && servers.subgoalsServer) {
+                    servers.subgoalsServer.broadcastConfig(targetConfig, 'subgoals');
+                } else if (targetWidget === 'subgoals-list' && servers.subgoalsServer) {
+                    servers.subgoalsServer.broadcastConfig(targetConfig, 'subgoals-list');
+                } else if (targetWidget === 'roulette' && servers.rouletteServer) {
+                    servers.rouletteServer.broadcastConfig(targetConfig);
+                } else if (servers.chatServer && targetWidget === 'emote-wall') {
+                    servers.chatServer.broadcastConfig(targetConfig, targetWidget);
+                } else if (targetWidget === 'alerts' && servers.alertsWidgetServer) {
+                    servers.alertsWidgetServer.refresh();
+                } else if (targetWidget === 'goals' && servers.goalsServer) {
+                    servers.goalsServer.broadcastConfig(targetConfig);
+                    servers.goalsServer.broadcastCurrentCounts();
+                }
+            }
+            try {
+                const electron = require('electron');
+                if (electron && electron.BrowserWindow && typeof electron.BrowserWindow.getAllWindows === 'function') {
+                    electron.BrowserWindow.getAllWindows().forEach(win => {
+                        if (!win.isDestroyed()) {
+                            win.webContents.send('widget-config-updated', { widgetName: targetWidget, config: targetConfig });
+                        }
+                    });
+                }
+            } catch (e) { }
+        }
+        return;
+    }
+
+    const targets = CASCADE_THEMES[key];
+    for (const [targetWidget, targetThemeFile] of Object.entries(targets)) {
+        if (targetWidget === 'spotify') continue;
+        const content = await getThemeFileContent(targetThemeFile);
+        const targetConfig = (bot && bot.getWidgetConfig ? bot.getWidgetConfig(targetWidget) : {}) || {};
+        targetConfig.currentTheme = targetThemeFile;
+        targetConfig.customCSS = content || '';
+        if (targetWidget === 'goals' && Array.isArray(targetConfig.goals)) {
+            targetConfig.goals = targetConfig.goals.map(g => ({
+                ...g,
+                customCSS: content || '',
+                currentTheme: targetThemeFile
+            }));
+        }
+        if (bot && bot.saveWidgetConfig) {
+            bot.saveWidgetConfig(targetWidget, targetConfig);
+        }
+        if (servers) {
+            if (targetWidget === 'subgoals' && servers.subgoalsServer) {
+                servers.subgoalsServer.broadcastConfig(targetConfig, 'subgoals');
+            } else if (targetWidget === 'subgoals-list' && servers.subgoalsServer) {
+                servers.subgoalsServer.broadcastConfig(targetConfig, 'subgoals-list');
+            } else if (targetWidget === 'roulette' && servers.rouletteServer) {
+                servers.rouletteServer.broadcastConfig(targetConfig);
+            } else if (servers.chatServer && targetWidget === 'emote-wall') {
+                servers.chatServer.broadcastConfig(targetConfig, targetWidget);
+            } else if (targetWidget === 'alerts' && servers.alertsWidgetServer) {
+                servers.alertsWidgetServer.refresh();
+            } else if (targetWidget === 'goals' && servers.goalsServer) {
+                servers.goalsServer.broadcastConfig(targetConfig);
+                servers.goalsServer.broadcastCurrentCounts();
+            }
+        }
+        try {
+            const electron = require('electron');
+            if (electron && electron.BrowserWindow && typeof electron.BrowserWindow.getAllWindows === 'function') {
+                electron.BrowserWindow.getAllWindows().forEach(win => {
+                    if (!win.isDestroyed()) {
+                        win.webContents.send('widget-config-updated', { widgetName: targetWidget, config: targetConfig });
+                    }
+                });
+            }
+        } catch (e) { }
+    }
+}
+
 async function reloadThemeContent(bot) {
-    const widgets = ['chat', 'spotify', 'subgoals', 'emote-wall', 'roulette', 'alerts'];
+    const widgets = ['chat', 'spotify', 'subgoals', 'subgoals-list', 'goals', 'emote-wall', 'roulette', 'alerts'];
     const userThemesDir = getUserThemesDir();
     const builtInThemesDir = getBuiltInThemesDir();
 
@@ -47,9 +214,21 @@ async function reloadThemeContent(bot) {
 
             if (themeContent) {
                 config.customCSS = themeContent;
+                if (widget === 'goals' && Array.isArray(config.goals)) {
+                    config.goals = config.goals.map(g => ({
+                        ...g,
+                        customCSS: themeContent,
+                        currentTheme: config.currentTheme
+                    }));
+                }
                 bot.saveWidgetConfig(widget, config);
             }
         }
+    }
+
+    const chatConfig = bot.getWidgetConfig('chat');
+    if (chatConfig && chatConfig.currentTheme) {
+        await cascadeTheme(chatConfig.currentTheme, bot);
     }
 }
 
@@ -57,12 +236,17 @@ function registerHandlers(bot) {
     ipcMain.handle('get-themes', async () => {
         const userThemesDir = getUserThemesDir();
         const builtInThemesDir = getBuiltInThemesDir();
-        const themeConfigPath = path.join(app.getPath('userData'), 'themeConfig.json');
+        const configPath = path.join(userThemesDir, 'themes.json');
+        const legacyConfigPath = path.join(app.getPath('userData'), 'themeConfig.json');
 
-        let themeConfig = {};
-        if (fs.existsSync(themeConfigPath)) {
-            themeConfig = JSON.parse(await fs.promises.readFile(themeConfigPath, 'utf8'));
-        }
+        let userConfig = {};
+        try {
+            if (fs.existsSync(configPath)) {
+                userConfig = JSON.parse(await fs.promises.readFile(configPath, 'utf8'));
+            } else if (fs.existsSync(legacyConfigPath)) {
+                userConfig = JSON.parse(await fs.promises.readFile(legacyConfigPath, 'utf8'));
+            }
+        } catch (e) { }
 
         const allThemes = new Set();
         const isBuiltin = new Set();
@@ -82,11 +266,16 @@ function registerHandlers(bot) {
 
         const prefix = 'theme_';
         return {
-            themes: Array.from(allThemes).map(f => ({
-                id: f,
-                name: (themeConfig[f]?.name || f.replace(prefix, '').replace('.css', '')).replace(/_/g, ' '),
-                builtin: isBuiltin.has(f)
-            })).sort((a, b) => {
+            themes: Array.from(allThemes).map(f => {
+                const confVal = userConfig[f];
+                const customName = typeof confVal === 'object' ? confVal?.name : confVal;
+                const displayName = customName || DEFAULT_THEME_NAMES[f] || f.replace(prefix, '').replace('.css', '').replace(/_/g, ' ');
+                return {
+                    id: f,
+                    name: displayName,
+                    builtin: isBuiltin.has(f)
+                };
+            }).sort((a, b) => {
                 if (a.builtin && !b.builtin) return -1;
                 if (!a.builtin && b.builtin) return 1;
                 return a.name.localeCompare(b.name);
@@ -241,5 +430,9 @@ module.exports = {
     reloadThemeContent,
     registerHandlers,
     getUserThemesDir,
-    getBuiltInThemesDir
+    getBuiltInThemesDir,
+    cascadeTheme,
+    getCascadeKey,
+    CASCADE_THEMES,
+    getThemeFileContent
 };

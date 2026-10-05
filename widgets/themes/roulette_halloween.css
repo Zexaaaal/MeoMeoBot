@@ -1,0 +1,36 @@
+@import url('https://fonts.googleapis.com/css2?family=Creepster&family=Inter:wght@600;700&display=swap');
+
+#pointer {
+    border-top: 40px solid #ff7518 !important;
+    filter: drop-shadow(0 0 8px rgba(255, 117, 24, 0.8)) !important;
+}
+
+#hub {
+    background: linear-gradient(135deg, #ffa134, #e8590c) !important;
+    color: #1a0833 !important;
+    font-family: 'Creepster', cursive !important;
+    font-size: 16px !important;
+    letter-spacing: 1px !important;
+    border: 2px solid #2a0f00 !important;
+    box-shadow: 0 0 14px rgba(255, 117, 24, 0.7) !important;
+}
+
+#winner-display {
+    font-family: 'Creepster', cursive !important;
+    background: linear-gradient(135deg, rgba(32, 12, 48, 0.95), rgba(16, 6, 26, 0.95)) !important;
+    border: 2px solid #ff7518 !important;
+    color: #fff1de !important;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.8), 0 0 16px rgba(255, 117, 24, 0.5) !important;
+    border-radius: 16px !important;
+    letter-spacing: 2px !important;
+    font-size: 28px !important;
+}
+
+.list-item {
+    font-family: 'Inter', sans-serif !important;
+    background: linear-gradient(135deg, #ffa134, #e8590c) !important;
+    color: #1a0833 !important;
+    font-weight: 700 !important;
+    border-radius: 0 14px 14px 0 !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4) !important;
+}

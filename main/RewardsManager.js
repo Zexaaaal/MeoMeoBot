@@ -55,6 +55,16 @@ class RewardsManager {
                 global_cooldown_setting: { is_enabled: false, global_cooldown_seconds: 0 },
                 should_redemptions_skip_request_queue: false,
                 is_manageable: true
+            },
+            {
+                id: 'mock-reward-bat-rain',
+                title: 'Pluie de chauves-souris',
+                cost: 10,
+                background_color: '#FF7518',
+                is_enabled: true,
+                global_cooldown_setting: { is_enabled: false, global_cooldown_seconds: 0 },
+                should_redemptions_skip_request_queue: false,
+                is_manageable: true
             }
         ];
     }
@@ -230,7 +240,11 @@ class RewardsManager {
         const config = this.bot.getConfig();
         const rewardFunctions = config.rewardFunctions || {};
 
-        const boundFunction = rewardFunctions[rewardId];
+        let boundFunction = rewardFunctions[rewardId];
+        if (!boundFunction) {
+            if (rewardId === 'mock-reward-bat-rain') boundFunction = 'bat_rain';
+            else if (rewardId === 'mock-reward-emote-rain') boundFunction = 'emote_rain';
+        }
 
         const sound = config.rewardSounds ? config.rewardSounds[rewardId] : null;
         let volume = config.pointsGlobalVolume !== undefined ? config.pointsGlobalVolume : 0.5;
@@ -254,6 +268,8 @@ class RewardsManager {
 
         if (boundFunction === 'emote_rain') {
             this.triggerEmoteRain(rewardId);
+        } else if (boundFunction === 'bat_rain') {
+            this.triggerBatRain(rewardId);
         }
     }
 
@@ -263,6 +279,11 @@ class RewardsManager {
             log.info('REWARDS_RAIN_EMOTES', { count: emotes.length });
             this.bot.emit('emote-rain', emotes);
         }).catch(err => log.error('REWARDS_RAIN_ERR', err));
+    }
+
+    triggerBatRain(rewardId) {
+        log.info('REWARDS_BAT_RAIN', { id: rewardId });
+        this.bot.emit('bat-rain');
     }
 }
 

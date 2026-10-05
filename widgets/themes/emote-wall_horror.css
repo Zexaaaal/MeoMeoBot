@@ -1,0 +1,7 @@
+body {
+    background: transparent;
+}
+
+.emote {
+    filter: drop-shadow(0 0 8px rgba(180, 0, 25, 0.65)) !important;
+}

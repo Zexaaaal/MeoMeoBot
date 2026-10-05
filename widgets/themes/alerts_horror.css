@@ -1,0 +1,41 @@
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@800;900&family=Special+Elite&display=swap');
+
+.alert-box {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+
+#alert-text-wrapper {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+
+.alert-text {
+    font-family: 'Cinzel', serif !important;
+    font-weight: 900 !important;
+    font-size: 2.2rem !important;
+    letter-spacing: 2px !important;
+    text-transform: uppercase !important;
+    color: #f2e9e8 !important;
+    text-shadow: 0 0 10px #ff1a2e, 0 0 22px #b30015, 0 0 38px rgba(255, 26, 46, 0.8), 0 2px 6px #000000 !important;
+}
+
+.alert-username,
+.alert-box .alert-username {
+    font-family: 'Cinzel', serif !important;
+    font-weight: 900 !important;
+    font-size: 2.6rem !important;
+    letter-spacing: 3px !important;
+    text-transform: uppercase !important;
+    color: #ff1a2e !important;
+    text-shadow: 0 0 12px #ff0022, 0 0 26px #b30015, 0 0 48px #8b0000, 0 2px 6px #000000 !important;
+}
+
+.alert-message {
+    font-family: 'Special Elite', monospace !important;
+    font-size: 1.35rem !important;
+    color: #f5eceb !important;
+    text-shadow: 0 0 8px rgba(255, 26, 46, 0.85), 0 0 20px rgba(139, 0, 0, 0.7), 0 2px 4px #000000 !important;
+}

@@ -169,6 +169,7 @@ const LOG_MESSAGES = {
     REWARDS_RAIN: "Déclenchement pluie d'emotes pour récompense : {id}",
     REWARDS_RAIN_EMOTES: "Récupération de {count} emotes pour la pluie",
     REWARDS_RAIN_ERR: "Erreur déclenchement pluie d'emotes :",
+    REWARDS_BAT_RAIN: "Déclenchement pluie de chauves-souris pour récompense : {id}",
 
     MEDIA_FFMPEG_MISSING: "Binaires FFmpeg non trouvé dans node_modules",
     MEDIA_MP4_ERR: "Erreur stream MP4 : {error}",

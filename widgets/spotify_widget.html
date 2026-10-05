@@ -128,6 +128,8 @@
 
         function applyConfig(cfg) {
             const safe = cfg || {};
+            const urlParams = new URLSearchParams(window.location.search);
+            const isPreviewMode = urlParams.get('preview') === '1' || urlParams.get('preview') === 'true' || urlParams.get('demo') === '1';
             const cover = document.getElementById('spotifyCover');
             const title = document.getElementById('spotifyTitle');
             const artist = document.getElementById('spotifyArtist');
@@ -144,7 +146,7 @@
                 customCssStyle.textContent = safe.customCSS;
             }
 
-            const isPlaying = safe.isPlaying !== false && !!(safe.trackTitle || safe.trackArtist || safe.coverUrl);
+            const isPlaying = isPreviewMode || (safe.isPlaying !== false && !!(safe.trackTitle || safe.trackArtist || safe.coverUrl));
             if (wrapper) {
                 wrapper.classList.toggle('is-hidden', !isPlaying);
             }

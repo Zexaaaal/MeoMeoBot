@@ -234,8 +234,9 @@ function getPreviewHtml() {
         #widget-container { width: 100vw; height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box; }
         .progress-container { position: relative; width: 100%; max-width: 800px; height: 40px; background: rgba(0, 0, 0, 0.5); border-radius: 20px; overflow: hidden; border: 2px solid rgba(255, 255, 255, 0.2); margin-bottom: 5px; display: flex; align-items: center; justify-content: center; }
         .progress-bar { position: absolute; top: 0; left: 0; height: 100%; background: linear-gradient(90deg, #ff00cc, #333399); width: 0%; border-radius: 18px; transition: width 0.5s ease; box-shadow: 0 0 10px rgba(255, 0, 204, 0.5); z-index: 1; }
-        .progress-value { position: relative; z-index: 10; color: white; font-weight: 800; font-size: 1.3rem; text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8); white-space: nowrap; }
-        .widget-label { color: white; font-weight: 800; font-size: 1.3rem; text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8); text-transform: uppercase; }
+        .progress-content { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: ${label ? 'space-between' : 'center'}; padding: 0 20px; box-sizing: border-box; z-index: 10; pointer-events: none; }
+        .progress-value { position: relative; color: white; font-weight: 800; font-size: 1.3rem; text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8); white-space: nowrap; font-family: 'Montserrat', sans-serif; }
+        .widget-label { position: relative; color: white; font-weight: 800; font-size: 1.3rem; text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8); text-transform: uppercase; white-space: nowrap; font-family: 'Montserrat', sans-serif; }
         ${goal.customCSS || ''}
     `;
 
@@ -247,9 +248,11 @@ function getPreviewHtml() {
             <div id="widget-container">
                 <div class="progress-container">
                     <div class="progress-bar" style="width: ${percentage}%"></div>
-                    <div class="progress-value">${currentCount} / ${targetCount}</div>
+                    <div class="progress-content">
+                        ${label ? `<span class="widget-label">${label}</span>` : ''}
+                        <span class="progress-value">${currentCount} / ${targetCount}</span>
+                    </div>
                 </div>
-                <div class="widget-label">${label}</div>
             </div>
         </body>
         </html>

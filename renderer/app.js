@@ -62,6 +62,7 @@ async function loadAllData() {
 
         await loadCommands();
         await loadBannedWords();
+        await loadAutoMessages();
         await loadParticipants();
 
         const status = await API.getBotStatus();

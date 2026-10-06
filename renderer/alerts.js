@@ -131,32 +131,36 @@ function setupEventListeners() {
 
     els.imgInput.style.cursor = 'pointer';
     els.imgInput.addEventListener('click', async () => {
-        const path = await API.openFileDialog([{ name: 'Images', extensions: ['jpg', 'png', 'gif'] }]);
+        const path = await API.openFileDialog([{ name: 'Images', extensions: ['jpg', 'jpeg', 'png', 'gif', 'webp'] }]);
         if (path) {
             const val = `file://${path.replace(/\\/g, '/')}`;
             els.imgInput.value = stripPrefix(val);
             updateConfigValue(currentType, 'image', val);
+            saveConfig();
         }
     });
 
     els.imgClearBtn.addEventListener('click', () => {
         els.imgInput.value = '';
         updateConfigValue(currentType, 'image', '');
+        saveConfig();
     });
 
     els.audioInput.style.cursor = 'pointer';
     els.audioInput.addEventListener('click', async () => {
-        const path = await API.openFileDialog([{ name: 'Audio', extensions: ['mp3', 'wav', 'ogg'] }]);
+        const path = await API.openFileDialog([{ name: 'Audio', extensions: ['mp3', 'wav', 'ogg', 'flac', 'm4a', 'aac'] }]);
         if (path) {
             const val = `file://${path.replace(/\\/g, '/')}`;
             els.audioInput.value = stripPrefix(val);
             updateConfigValue(currentType, 'audio', val);
+            saveConfig();
         }
     });
 
     els.audioClearBtn.addEventListener('click', () => {
         els.audioInput.value = '';
         updateConfigValue(currentType, 'audio', '');
+        saveConfig();
     });
 
 
@@ -315,20 +319,21 @@ const DEFAULT_CSS = `
     justify-content: center;
     text-align: center;
     box-sizing: border-box;
-    padding: 20px;
+    padding: clamp(10px, 2.5vh, 24px);
+    gap: clamp(8px, 2vh, 18px);
     overflow: hidden;
     width: 100%;
     height: 100%;
 }
 .alert-image {
     width: 100%;
-    height: 70%;
+    flex: 1 1 0%;
     max-height: 70%;
+    min-height: 0;
     display: flex;
     align-items: center;
     justify-content: center;
     overflow: hidden;
-    flex-shrink: 0;
 }
 .alert-image img {
     max-width: 100%;
@@ -343,38 +348,40 @@ const DEFAULT_CSS = `
 }
 #alert-text-wrapper {
     width: 100%;
-    height: 30%;
-    max-height: 30%;
+    flex: 0 0 auto;
+    max-height: 100%;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     text-align: center;
-    overflow: hidden;
-    flex-shrink: 0;
+    gap: clamp(4px, 1vh, 10px);
+    overflow: visible;
 }
 .alert-image:empty ~ #alert-text-wrapper {
-    height: 100%;
+    flex: 0 1 auto;
     max-height: 100%;
 }
 .alert-text {
-    font-size: 28px;
+    font-size: clamp(20px, 4.5vh, 28px);
     font-weight: 900;
     color: white;
-    line-height: 1.2;
+    line-height: 1.25;
     word-wrap: break-word;
     overflow-wrap: break-word;
+    word-break: break-word;
     max-width: 100%;
     text-align: center;
 }
 .alert-message {
-    font-size: 22px;
+    font-size: clamp(15px, 3vh, 22px);
     font-weight: 700;
     color: #eee;
     text-shadow: 0 4px 8px rgba(0, 0, 0, 0.8);
-    margin-top: 6px;
+    line-height: 1.25;
     word-wrap: break-word;
     overflow-wrap: break-word;
+    word-break: break-word;
     max-width: 100%;
     text-align: center;
 }
@@ -387,6 +394,8 @@ const DEFAULT_CSS = `
     font-weight: 900;
     color: #ffeb3b;
     text-shadow: 2px 2px #000000;
+    display: inline-block;
+    line-height: inherit;
 }
 .alert-amount,
 .alert-months {
@@ -395,12 +404,18 @@ const DEFAULT_CSS = `
 }
 `;
 
+let previewTimer = null;
+let previewFadeTimer = null;
+
 function setupPreview() {
     connectPreviewWebSocket();
 }
 
 function connectPreviewWebSocket() {
     const ws = new WebSocket(`ws://127.0.0.1:${widgetPort}`);
+    ws.onopen = () => {
+        ws.send(JSON.stringify({ type: 'register-preview' }));
+    };
     ws.onmessage = (event) => {
         try {
             const data = JSON.parse(event.data);
@@ -441,11 +456,15 @@ function transformLocalPath(path) {
 }
 
 function playPreviewAlert(alert) {
+    const wrapper = document.getElementById('alert-wrapper');
     const imgContainer = document.getElementById('alert-image-container');
     const textContainer = document.getElementById('alert-text');
     const msgContainer = document.getElementById('alert-message');
 
-    if (!imgContainer) return;
+    if (!imgContainer || !wrapper) return;
+
+    if (previewTimer) clearTimeout(previewTimer);
+    if (previewFadeTimer) clearTimeout(previewFadeTimer);
 
     imgContainer.innerHTML = '';
     if (alert.image) {
@@ -462,9 +481,62 @@ function playPreviewAlert(alert) {
     if (msgContainer) {
         msgContainer.innerHTML = alert.message || '';
     }
+
+    wrapper.classList.remove('animate-out');
+    void wrapper.offsetWidth;
+    wrapper.classList.add('animate-in');
+    wrapper.style.opacity = '1';
+
+    const duration = parseInt(alert.duration) || 5000;
+    previewTimer = setTimeout(() => {
+        wrapper.classList.remove('animate-in');
+        wrapper.classList.add('animate-out');
+        previewFadeTimer = setTimeout(() => {
+            wrapper.classList.remove('animate-out');
+            updatePreview(currentType);
+        }, 500);
+    }, duration);
 }
 
-function updatePreview(type) {
+function updatePreview(type = currentType) {
+    if (type === 'themes') return;
+    const typeConfig = currentConfig[type] || {};
+    const meta = EVENT_TYPES[type] || { defaultText: '{username}' };
+
+    const imgContainer = document.getElementById('alert-image-container');
+    const textContainer = document.getElementById('alert-text');
+    const msgContainer = document.getElementById('alert-message');
+    const wrapper = document.getElementById('alert-wrapper');
+
+    if (!imgContainer || !wrapper) return;
+
+    if (previewTimer) clearTimeout(previewTimer);
+    if (previewFadeTimer) clearTimeout(previewFadeTimer);
+
+    imgContainer.innerHTML = '';
+    if (typeConfig.image) {
+        const img = document.createElement('img');
+        img.src = transformLocalPath(typeConfig.image);
+        img.onerror = (e) => console.error('[Preview] Image load failed:', e);
+        imgContainer.appendChild(img);
+    }
+
+    if (textContainer) {
+        const sampleText = (typeConfig.textTemplate || meta.defaultText)
+            .replace('{username}', '<span class="alert-username">Zexal</span>')
+            .replace('{amount}', '<span class="alert-amount">100</span>')
+            .replace('{months}', '<span class="alert-months">12</span>')
+            .replace('{s}', 's');
+        textContainer.innerHTML = sampleText;
+    }
+
+    if (msgContainer) {
+        msgContainer.innerHTML = (type === 'donation') ? 'Merci pour le don !' : '';
+    }
+
+    wrapper.classList.remove('animate-out');
+    wrapper.classList.add('animate-in');
+    wrapper.style.opacity = '1';
 }
 
 function updateGlobalThemePreview(css) {
@@ -494,24 +566,24 @@ async function saveConfig() {
 
 async function triggerTest() {
     try {
-        const savedConfig = await API.widgets.getConfig('alerts');
-        const config = (savedConfig && savedConfig[currentType]) ? savedConfig[currentType] : {};
+        const typeConfig = currentConfig[currentType] || {};
+        const meta = EVENT_TYPES[currentType] || { defaultText: '{username}' };
 
         const dummyData = {
             type: currentType,
             username: 'TestUser',
             amount: 100,
-            text: (config.textTemplate || EVENT_TYPES[currentType].defaultText)
+            text: (typeConfig.textTemplate || meta.defaultText)
                 .replace('{username}', '<span class="alert-username">Zexal</span>')
                 .replace('{amount}', '<span class="alert-amount">100</span>')
                 .replace('{months}', '<span class="alert-months">12</span>')
                 .replace('{s}', 's'),
-            image: config.image,
-            audio: config.audio,
-            volume: config.volume,
-            duration: config.duration,
-            layout: config.layout,
-            isVod: !!config.isVod
+            image: typeConfig.image || '',
+            audio: typeConfig.audio || '',
+            volume: typeConfig.volume !== undefined ? typeConfig.volume : 0.5,
+            duration: typeConfig.duration || 5000,
+            layout: typeConfig.layout,
+            isVod: !!typeConfig.isVod
         };
 
         await API.alerts.triggerTest(dummyData);

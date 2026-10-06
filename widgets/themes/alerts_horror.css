@@ -9,7 +9,8 @@
     width: 100% !important;
     height: 100% !important;
     box-sizing: border-box !important;
-    padding: 20px !important;
+    padding: clamp(10px, 2.5vh, 24px) !important;
+    gap: clamp(8px, 2vh, 18px) !important;
     overflow: hidden !important;
     background: transparent !important;
     border: none !important;
@@ -18,13 +19,13 @@
 
 .alert-image {
     width: 100% !important;
-    height: 70% !important;
+    flex: 1 1 0% !important;
     max-height: 70% !important;
+    min-height: 0 !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
     overflow: hidden !important;
-    flex-shrink: 0 !important;
 }
 
 .alert-image img {
@@ -42,34 +43,38 @@
 
 #alert-text-wrapper {
     width: 100% !important;
-    height: 30% !important;
-    max-height: 30% !important;
+    flex: 0 0 auto !important;
+    max-height: 100% !important;
     display: flex !important;
     flex-direction: column !important;
     align-items: center !important;
     justify-content: center !important;
     text-align: center !important;
-    overflow: hidden !important;
-    flex-shrink: 0 !important;
+    gap: clamp(4px, 1vh, 10px) !important;
+    overflow: visible !important;
     background: transparent !important;
     border: none !important;
     box-shadow: none !important;
 }
 
 .alert-image:empty ~ #alert-text-wrapper {
-    height: 100% !important;
+    flex: 0 1 auto !important;
     max-height: 100% !important;
 }
 
 .alert-text {
     font-family: 'Cinzel', serif !important;
     font-weight: 900 !important;
-    font-size: 1.9rem !important;
+    font-size: clamp(1.3rem, 4.2vh, 2rem) !important;
     letter-spacing: 2px !important;
     text-transform: uppercase !important;
     color: #f2e9e8 !important;
     text-shadow: 0 0 10px #ff1a2e, 0 0 22px #b30015, 0 2px 4px #000000 !important;
-    line-height: 1.2 !important;
+    line-height: 1.25 !important;
+    word-wrap: break-word !important;
+    overflow-wrap: break-word !important;
+    word-break: break-word !important;
+    max-width: 100% !important;
     text-align: center !important;
 }
 
@@ -77,20 +82,25 @@
 .alert-box .alert-username {
     font-family: 'Cinzel', serif !important;
     font-weight: 900 !important;
-    font-size: 2.2rem !important;
+    font-size: clamp(1.5rem, 4.8vh, 2.3rem) !important;
     letter-spacing: 2.5px !important;
     text-transform: uppercase !important;
     color: #ff1a2e !important;
     text-shadow: 0 0 12px #ff0022, 0 0 26px #b30015, 0 2px 4px #000000 !important;
+    display: inline-block !important;
+    line-height: inherit !important;
 }
 
 .alert-message {
     font-family: 'Special Elite', monospace !important;
-    font-size: 1.2rem !important;
+    font-size: clamp(0.95rem, 2.8vh, 1.25rem) !important;
     color: #f5eceb !important;
     text-shadow: 0 0 8px rgba(255, 26, 46, 0.85), 0 2px 4px #000000 !important;
-    margin-top: 6px !important;
-    line-height: 1.2 !important;
+    line-height: 1.25 !important;
+    word-wrap: break-word !important;
+    overflow-wrap: break-word !important;
+    word-break: break-word !important;
+    max-width: 100% !important;
     text-align: center !important;
 }
 

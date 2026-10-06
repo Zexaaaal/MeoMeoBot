@@ -102,13 +102,13 @@ class AlertManager {
             username: data.username || 'Inconnu',
             amount: data.amount,
             message: data.message || '',
-            text: typeConfig?.textTemplate || this.getDefaultText(type),
-            image: typeConfig?.image,
-            audio: typeConfig?.audio,
-            volume: typeConfig?.volume,
-            duration: typeConfig?.duration,
-            layout: typeConfig?.layout,
-            isVod: !!typeConfig?.isVod,
+            text: data.text || typeConfig?.textTemplate || this.getDefaultText(type),
+            image: data.image !== undefined ? data.image : typeConfig?.image,
+            audio: data.audio !== undefined ? data.audio : typeConfig?.audio,
+            volume: data.volume !== undefined ? data.volume : typeConfig?.volume,
+            duration: data.duration !== undefined ? data.duration : typeConfig?.duration,
+            layout: data.layout || typeConfig?.layout,
+            isVod: data.isVod !== undefined ? !!data.isVod : !!typeConfig?.isVod,
             platform: data.platform || 'twitch'
         };
 

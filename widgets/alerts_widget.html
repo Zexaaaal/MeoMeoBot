@@ -167,9 +167,8 @@
             document.body.style.display = 'none'; // Ensure no visuals on slave source
         }
 
-        function log(msg, err) {
-            console.log(`[AlertsWidget] ${msg}`, err || '');
-            if (err) console.error(err);
+        function log(...args) {
+            console.log('[AlertsWidget]', ...args);
         }
         function transformLocalPath(path) {
             if (!path) return path;

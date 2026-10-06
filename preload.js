@@ -25,7 +25,8 @@ const ALLOWED_INVOKE_CHANNELS = [
     'is-dev', 'trigger-mock-redemption', 'get-system-fonts', 'store-kick-verifier',
     'sync-planning-discord', 'read-file-base64', 'kick-auth-oauth',
     'obs-get-status', 'obs-refresh-sources', 'get-eventsub-status',
-    'start-twitch-auth', 'get-twitch-redirect-uri'
+    'start-twitch-auth', 'get-twitch-redirect-uri',
+    'apply-seasonal-theme', 'refresh-all-widgets'
 ];
 
 const ALLOWED_SEND_CHANNELS = [

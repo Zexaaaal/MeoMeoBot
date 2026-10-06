@@ -257,15 +257,17 @@
         function connectWebSocket() {
             ws = connectWidget(async (data) => {
                 if (data.type === 'config' || data.type === 'config-update') {
+                    if (data.widget && data.widget !== 'chat') return;
                     const cfg = data.config || data;
                     if (cfg.maxMessages) {
                         MAX_MESSAGES = parseInt(cfg.maxMessages, 10) || 10;
                     }
-                    if (cfg.customCSS) {
+                    if (typeof cfg.customCSS === 'string') {
                         const style = document.getElementById('custom-css');
                         if (style) style.textContent = cfg.customCSS;
                         updateSnow();
                         updateHalloween();
+                        updateHorror();
                         updatePro();
                     }
                 } else if (data.type === 'chat') {

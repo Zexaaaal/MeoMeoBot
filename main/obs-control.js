@@ -1,22 +1,13 @@
 const WebSocket = require('ws');
 const crypto = require('crypto');
 const log = require('./logger').tagged('OBS');
-
-// Minimal obs-websocket v5 client, spoken directly over `ws` so the app does
-// not pull in another dependency.
-//
-// Why this exists: an OBS browser source that loads before our HTTP server is
-// listening caches Chromium's "connection refused" page forever. There is no
-// script on that page, so the widget's own reconnect loop never runs and the
-// streamer has to right-click > Refresh by hand. Pressing the source's refresh
-// button remotely once we are actually up removes that manual step.
-
 const OP = { HELLO: 0, IDENTIFY: 1, IDENTIFIED: 2, REQUEST: 6, REQUEST_RESPONSE: 7 };
 
 const DEFAULT_URL = 'ws://127.0.0.1:4455';
 const RECONNECT_DELAY_MS = 10000;
 const REQUEST_TIMEOUT_MS = 8000;
 const LOOPBACK_HOSTS = new Set(['127.0.0.1', 'localhost', '[::1]', '::1']);
+const PRIVATE_IP_REGEX = /^(?:127\.|192\.168\.|10\.|172\.(?:1[6-9]|2[0-9]|3[0-1])\.)/;
 
 class ObsControl {
     constructor(bot, getPortForWidget) {
@@ -237,7 +228,7 @@ class ObsControl {
 
     // Recognises a source pointing at one of our widget servers and works out
     // which widget it is, so we can both refresh it and repair a stale port.
-    parseWidgetUrl(rawUrl) {
+    parseWidgetUrl(rawUrl, allowPrivate = false) {
         if (!rawUrl || typeof rawUrl !== 'string') return null;
         let parsed;
         try {
@@ -245,7 +236,7 @@ class ObsControl {
         } catch (e) {
             return null;
         }
-        if (!LOOPBACK_HOSTS.has(parsed.hostname)) return null;
+        if (!LOOPBACK_HOSTS.has(parsed.hostname) && (!allowPrivate || !PRIVATE_IP_REGEX.test(parsed.hostname))) return null;
 
         const match = parsed.pathname.match(/^\/(?:widget|go)\/([a-z0-9-]+)$/i);
         if (!match) return null;
@@ -274,21 +265,27 @@ class ObsControl {
                 continue;
             }
 
-            const info = this.parseWidgetUrl(settings.url);
+            const info = this.parseWidgetUrl(settings.url, true);
             if (!info) continue;
 
-            // If the widget moved port since this source was configured, fix
-            // the URL in place rather than making the streamer hunt for it.
             const expectedPort = this.getPortForWidget ? this.getPortForWidget(info.widget) : null;
+            let needsUpdate = false;
             if (expectedPort && expectedPort !== info.port) {
                 info.url.port = String(expectedPort);
+                needsUpdate = true;
+            }
+            if (info.url.hostname !== '127.0.0.1') {
+                info.url.hostname = '127.0.0.1';
+                needsUpdate = true;
+            }
+            if (needsUpdate) {
                 try {
                     await this.request('SetInputSettings', {
                         inputName: name,
                         inputSettings: { url: info.url.toString() }
                     });
                     repaired++;
-                    log.info('OBS_SOURCE_REPAIRED', { name, port: expectedPort });
+                    log.info('OBS_SOURCE_REPAIRED', { name, port: expectedPort || info.port, url: info.url.toString() });
                 } catch (e) {
                     log.warn('OBS_REPAIR_ERR', { name, error: e.message || e });
                 }

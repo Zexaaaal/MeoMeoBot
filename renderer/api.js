@@ -62,7 +62,9 @@ export const API = {
         createTheme: (widget, name, css) => window.api.invoke('create-theme', widget, name, css),
         importTheme: (widget) => window.api.invoke('import-theme', widget),
         deleteTheme: (widget, theme) => window.api.invoke('delete-theme', widget, theme),
-        getThemeContent: (theme) => window.api.invoke('get-theme-content', theme)
+        getThemeContent: (theme) => window.api.invoke('get-theme-content', theme),
+        applySeasonalTheme: (theme) => window.api.invoke('apply-seasonal-theme', theme),
+        refreshAllWidgets: () => window.api.invoke('refresh-all-widgets')
     },
 
     points: {
@@ -129,6 +131,16 @@ export const API = {
                         const appConfig = await window.api.invoke('get-config');
                         callback(config, appConfig);
                     } catch (e) { console.error(e); }
+                });
+
+                window.api.on('widget-config-updated', async (data) => {
+                    if (!data || !data.widgetName || data.widgetName === widgetName) {
+                        try {
+                            const config = (data && data.config) || await window.api.invoke('get-widget-config', widgetName);
+                            const appConfig = await window.api.invoke('get-config');
+                            callback(config, appConfig);
+                        } catch (e) { console.error(e); }
+                    }
                 });
             }
         };

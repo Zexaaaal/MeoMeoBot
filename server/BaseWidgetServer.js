@@ -399,9 +399,7 @@ class BaseWidgetServer {
                                 const lastRunId = sessionStorage.getItem('widget_run_id');
                                 if (!isDock && lastRunId && lastRunId !== data.runId) {
                                     sessionStorage.setItem('widget_run_id', data.runId);
-                                    const url = new URL(window.location.href);
-                                    url.searchParams.set('t', Date.now());
-                                    window.location.href = url.toString();
+                                    window.location.reload();
                                     return;
                                 }
                                 sessionStorage.setItem('widget_run_id', data.runId);
@@ -410,11 +408,9 @@ class BaseWidgetServer {
 
                             if (data.type === 'reload') {
                                 const isDock = window.location.pathname.includes('/widget/dock');
-                                if (isDock) return; // Skip auto-reload for dock
+                                if (isDock) return;
 
-                                const url = new URL(window.location.href);
-                                url.searchParams.set('t', Date.now());
-                                window.location.href = url.toString();
+                                window.location.reload();
                                 return;
                             }
                              if (data.config && typeof data.config.customCSS === 'string') {
@@ -522,6 +518,10 @@ class BaseWidgetServer {
                 log.info('SERVER_WS_BROADCAST', { data: JSON.stringify(data), count });
             }
         }
+    }
+
+    refresh() {
+        this.broadcast({ type: 'reload' });
     }
 
     hasActiveClients() {

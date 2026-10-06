@@ -173,6 +173,10 @@ class AlertsWidgetServer extends BaseWidgetServer {
     }
 
 
+    broadcastConfig(config) {
+        this.broadcast({ type: 'config-update', widget: 'alerts', config });
+    }
+
     refresh() {
         this.broadcast({ type: 'reload' });
     }

@@ -83,6 +83,7 @@ async function init() {
         } else {
             widgetPort = 8097;
         }
+        connectPreviewWebSocket();
 
         updateSidebarState();
         updateUI();
@@ -406,13 +407,31 @@ const DEFAULT_CSS = `
 
 let previewTimer = null;
 let previewFadeTimer = null;
+let previewWs = null;
+let previewWsTimer = null;
 
 function setupPreview() {
     connectPreviewWebSocket();
 }
 
 function connectPreviewWebSocket() {
+    if (previewWsTimer) {
+        clearTimeout(previewWsTimer);
+        previewWsTimer = null;
+    }
+    try {
+        if (previewWs) {
+            previewWs.onopen = null;
+            previewWs.onclose = null;
+            previewWs.onerror = null;
+            previewWs.onmessage = null;
+            previewWs.close();
+        }
+    } catch (e) { }
+
     const ws = new WebSocket(`ws://127.0.0.1:${widgetPort}`);
+    previewWs = ws;
+
     ws.onopen = () => {
         ws.send(JSON.stringify({ type: 'register-preview' }));
     };
@@ -427,6 +446,12 @@ function connectPreviewWebSocket() {
                 if (wrapper) wrapper.style.opacity = '0';
             }
         } catch (e) { console.error(e); }
+    };
+    ws.onclose = () => {
+        previewWsTimer = setTimeout(connectPreviewWebSocket, 2000);
+    };
+    ws.onerror = () => {
+        ws.close();
     };
 }
 

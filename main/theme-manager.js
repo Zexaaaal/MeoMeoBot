@@ -45,11 +45,13 @@ function getBuiltInThemesDir() {
 
 const CASCADE_THEMES = {
     'chat_christmas.css': {
+        'chat': 'chat_christmas.css',
         'subgoals': 'subgoals_candycane.css',
         'alerts': 'alerts_christmas.css',
         'goals': 'goals_christmas.css'
     },
     'chat_halloween.css': {
+        'chat': 'chat_halloween.css',
         'subgoals': 'subgoals_halloween.css',
         'subgoals-list': 'subgoals-list_halloween.css',
         'goals': 'goals_halloween.css',
@@ -58,6 +60,7 @@ const CASCADE_THEMES = {
         'emote-wall': 'emote-wall_halloween.css'
     },
     'chat_horror.css': {
+        'chat': 'chat_horror.css',
         'subgoals': 'subgoals_horror.css',
         'subgoals-list': 'subgoals-list_horror.css',
         'goals': 'goals_horror.css',
@@ -70,14 +73,14 @@ const CASCADE_THEMES = {
 function getCascadeKey(theme) {
     if (!theme || typeof theme !== 'string') return null;
     const lower = theme.trim().toLowerCase();
-    if (lower === 'chat_christmas.css' || lower === 'chat_christmas' || lower === 'christmas' || lower === 'noël' || lower === 'noel') {
-        return 'chat_christmas.css';
-    }
-    if (lower === 'chat_halloween.css' || lower === 'chat_halloween' || lower === 'halloween') {
+    if (lower.includes('halloween')) {
         return 'chat_halloween.css';
     }
-    if (lower === 'chat_horror.css' || lower === 'chat_horror' || lower === 'horror' || lower === 'horreur') {
+    if (lower.includes('horror') || lower.includes('horreur')) {
         return 'chat_horror.css';
+    }
+    if (lower.includes('christmas') || lower.includes('noël') || lower.includes('noel') || lower.includes('candycane')) {
+        return 'chat_christmas.css';
     }
     return null;
 }
@@ -96,12 +99,29 @@ async function getThemeFileContent(filename) {
     return '';
 }
 
-async function cascadeTheme(chatTheme, bot, servers) {
-    const key = getCascadeKey(chatTheme);
-    const CASCADED_WIDGETS = ['subgoals', 'subgoals-list', 'goals', 'roulette', 'alerts', 'emote-wall'];
+function refreshAllWidgets(servers, obsControl) {
+    if (servers) {
+        Object.values(servers).forEach(server => {
+            if (server && typeof server.refresh === 'function') {
+                server.refresh();
+            } else if (server && typeof server.broadcast === 'function') {
+                server.broadcast({ type: 'reload' });
+            }
+        });
+    }
+    if (obsControl && typeof obsControl.isConnected === 'function' && obsControl.isConnected()) {
+        obsControl.refreshWidgetSources().catch(err => {
+            log.warn('OBS_REFRESH_ERR', err);
+        });
+    }
+}
 
-    if (!key || !CASCADE_THEMES[key]) {
-        for (const targetWidget of CASCADED_WIDGETS) {
+async function applySeasonalTheme(theme, bot, servers, obsControl, originWidget = null, originConfig = null) {
+    const key = getCascadeKey(theme);
+    const ALL_SEASONAL_WIDGETS = ['chat', 'subgoals', 'subgoals-list', 'goals', 'roulette', 'alerts', 'emote-wall'];
+
+    if (!theme || theme === 'default' || theme === 'defaut' || theme === 'none') {
+        for (const targetWidget of ALL_SEASONAL_WIDGETS) {
             const targetConfig = (bot && bot.getWidgetConfig ? bot.getWidgetConfig(targetWidget) : {}) || {};
             targetConfig.currentTheme = '';
             targetConfig.customCSS = '';
@@ -124,8 +144,14 @@ async function cascadeTheme(chatTheme, bot, servers) {
                     servers.rouletteServer.broadcastConfig(targetConfig);
                 } else if (servers.chatServer && targetWidget === 'emote-wall') {
                     servers.chatServer.broadcastConfig(targetConfig, targetWidget);
+                } else if (servers.chatServer && targetWidget === 'chat') {
+                    servers.chatServer.broadcastConfig(targetConfig, 'chat');
                 } else if (targetWidget === 'alerts' && servers.alertsWidgetServer) {
-                    servers.alertsWidgetServer.refresh();
+                    if (typeof servers.alertsWidgetServer.broadcastConfig === 'function') {
+                        servers.alertsWidgetServer.broadcastConfig(targetConfig);
+                    } else if (typeof servers.alertsWidgetServer.broadcast === 'function') {
+                        servers.alertsWidgetServer.broadcast({ type: 'config-update', widget: 'alerts', config: targetConfig });
+                    }
                 } else if (targetWidget === 'goals' && servers.goalsServer) {
                     servers.goalsServer.broadcastConfig(targetConfig);
                     servers.goalsServer.broadcastCurrentCounts();
@@ -142,53 +168,98 @@ async function cascadeTheme(chatTheme, bot, servers) {
                 }
             } catch (e) { }
         }
-        return;
+        return { success: true, theme: 'default' };
+    }
+
+    if (!key || !CASCADE_THEMES[key]) {
+        if (servers && servers.chatServer && typeof servers.chatServer.refresh === 'function') {
+            servers.chatServer.refresh();
+        }
+        return { success: true, theme: theme };
     }
 
     const targets = CASCADE_THEMES[key];
-    for (const [targetWidget, targetThemeFile] of Object.entries(targets)) {
-        if (targetWidget === 'spotify') continue;
-        const content = await getThemeFileContent(targetThemeFile);
-        const targetConfig = (bot && bot.getWidgetConfig ? bot.getWidgetConfig(targetWidget) : {}) || {};
-        targetConfig.currentTheme = targetThemeFile;
-        targetConfig.customCSS = content || '';
-        if (targetWidget === 'goals' && Array.isArray(targetConfig.goals)) {
-            targetConfig.goals = targetConfig.goals.map(g => ({
-                ...g,
-                customCSS: content || '',
-                currentTheme: targetThemeFile
-            }));
-        }
-        if (bot && bot.saveWidgetConfig) {
-            bot.saveWidgetConfig(targetWidget, targetConfig);
-        }
-        if (servers) {
-            if (targetWidget === 'subgoals' && servers.subgoalsServer) {
-                servers.subgoalsServer.broadcastConfig(targetConfig, 'subgoals');
-            } else if (targetWidget === 'subgoals-list' && servers.subgoalsServer) {
-                servers.subgoalsServer.broadcastConfig(targetConfig, 'subgoals-list');
-            } else if (targetWidget === 'roulette' && servers.rouletteServer) {
-                servers.rouletteServer.broadcastConfig(targetConfig);
-            } else if (servers.chatServer && targetWidget === 'emote-wall') {
-                servers.chatServer.broadcastConfig(targetConfig, targetWidget);
-            } else if (targetWidget === 'alerts' && servers.alertsWidgetServer) {
-                servers.alertsWidgetServer.refresh();
-            } else if (targetWidget === 'goals' && servers.goalsServer) {
-                servers.goalsServer.broadcastConfig(targetConfig);
-                servers.goalsServer.broadcastCurrentCounts();
+        for (const targetWidget of ALL_SEASONAL_WIDGETS) {
+            const targetThemeFile = targets[targetWidget];
+            let targetConfig = (bot && bot.getWidgetConfig ? bot.getWidgetConfig(targetWidget) : {}) || {};
+
+            if (originWidget && originWidget === targetWidget && originConfig) {
+                targetConfig = { ...targetConfig, ...originConfig };
+                targetConfig.currentTheme = targetThemeFile || targetConfig.currentTheme || '';
+                if (targetWidget === 'goals' && Array.isArray(targetConfig.goals)) {
+                    targetConfig.goals = targetConfig.goals.map(g => ({
+                        ...g,
+                        customCSS: targetConfig.customCSS || '',
+                        currentTheme: targetConfig.currentTheme
+                    }));
+                }
+            } else if (targetThemeFile) {
+                const content = await getThemeFileContent(targetThemeFile);
+                targetConfig.currentTheme = targetThemeFile;
+                targetConfig.customCSS = content || '';
+                if (targetWidget === 'goals' && Array.isArray(targetConfig.goals)) {
+                    targetConfig.goals = targetConfig.goals.map(g => ({
+                        ...g,
+                        customCSS: content || '',
+                        currentTheme: targetThemeFile
+                    }));
+                }
+            } else {
+                targetConfig.currentTheme = '';
+                targetConfig.customCSS = '';
+                if (targetWidget === 'goals' && Array.isArray(targetConfig.goals)) {
+                    targetConfig.goals = targetConfig.goals.map(g => ({
+                        ...g,
+                        customCSS: '',
+                        currentTheme: ''
+                    }));
+                }
             }
-        }
-        try {
-            const electron = require('electron');
-            if (electron && electron.BrowserWindow && typeof electron.BrowserWindow.getAllWindows === 'function') {
-                electron.BrowserWindow.getAllWindows().forEach(win => {
-                    if (!win.isDestroyed()) {
-                        win.webContents.send('widget-config-updated', { widgetName: targetWidget, config: targetConfig });
+
+            if (bot && bot.saveWidgetConfig) {
+                bot.saveWidgetConfig(targetWidget, targetConfig);
+            }
+
+            if (servers) {
+                if (targetWidget === 'subgoals' && servers.subgoalsServer) {
+                    servers.subgoalsServer.broadcastConfig(targetConfig, 'subgoals');
+                } else if (targetWidget === 'subgoals-list' && servers.subgoalsServer) {
+                    servers.subgoalsServer.broadcastConfig(targetConfig, 'subgoals-list');
+                } else if (targetWidget === 'roulette' && servers.rouletteServer) {
+                    servers.rouletteServer.broadcastConfig(targetConfig);
+                } else if (servers.chatServer && targetWidget === 'emote-wall') {
+                    servers.chatServer.broadcastConfig(targetConfig, targetWidget);
+                } else if (servers.chatServer && targetWidget === 'chat') {
+                    servers.chatServer.broadcastConfig(targetConfig, 'chat');
+                } else if (targetWidget === 'alerts' && servers.alertsWidgetServer) {
+                    if (typeof servers.alertsWidgetServer.broadcastConfig === 'function') {
+                        servers.alertsWidgetServer.broadcastConfig(targetConfig);
+                    } else if (typeof servers.alertsWidgetServer.broadcast === 'function') {
+                        servers.alertsWidgetServer.broadcast({ type: 'config-update', widget: 'alerts', config: targetConfig });
                     }
-                });
+                } else if (targetWidget === 'goals' && servers.goalsServer) {
+                    servers.goalsServer.broadcastConfig(targetConfig);
+                    servers.goalsServer.broadcastCurrentCounts();
+                }
             }
-        } catch (e) { }
-    }
+
+            try {
+                const electron = require('electron');
+                if (electron && electron.BrowserWindow && typeof electron.BrowserWindow.getAllWindows === 'function') {
+                    electron.BrowserWindow.getAllWindows().forEach(win => {
+                        if (!win.isDestroyed()) {
+                            win.webContents.send('widget-config-updated', { widgetName: targetWidget, config: targetConfig });
+                        }
+                    });
+                }
+            } catch (e) { }
+        }
+
+    return { success: true, theme: key ? key : 'default' };
+}
+
+async function cascadeTheme(chatTheme, bot, servers, obsControl, originWidget = null, originConfig = null) {
+    return await applySeasonalTheme(chatTheme, bot, servers, obsControl, originWidget, originConfig);
 }
 
 async function reloadThemeContent(bot) {
@@ -432,6 +503,8 @@ module.exports = {
     getUserThemesDir,
     getBuiltInThemesDir,
     cascadeTheme,
+    applySeasonalTheme,
+    refreshAllWidgets,
     getCascadeKey,
     CASCADE_THEMES,
     getThemeFileContent

@@ -181,6 +181,14 @@ function registerHandlers(deps) {
     ipcMain.handle('save-widget-config', async (event, widgetName, config) => {
         bot.saveWidgetConfig(widgetName, config);
         const servers = getServers();
+        const obsControl = deps.getObsControl && deps.getObsControl();
+
+        if (widgetName === 'chat') {
+            if (servers.chatServer) servers.chatServer.broadcastConfig(config);
+            const chatTheme = config ? config.currentTheme : '';
+            await themeManager.cascadeTheme(chatTheme, bot, servers, obsControl, widgetName, config);
+            return { success: true };
+        }
 
         if (widgetName === 'spotify' && servers.spotifyServer) {
             servers.spotifyServer.broadcastConfig(config);
@@ -190,9 +198,6 @@ function registerHandlers(deps) {
             servers.subgoalsServer.broadcastConfig(config, 'subgoals-list');
         } else if (widgetName === 'roulette' && servers.rouletteServer) {
             servers.rouletteServer.broadcastConfig(config);
-        } else if (widgetName === 'chat') {
-            if (servers.chatServer) servers.chatServer.broadcastConfig(config);
-            await themeManager.cascadeTheme(config ? config.currentTheme : '', bot, servers);
         } else if (servers.chatServer && widgetName === 'emote-wall') {
             servers.chatServer.broadcastConfig(config, widgetName);
         } else if (widgetName === 'alerts' && servers.alertsWidgetServer) {
@@ -225,15 +230,29 @@ function registerHandlers(deps) {
         bot.saveWidgetConfig(widgetName, config);
 
         const servers = getServers();
+        const obsControl = deps.getObsControl && deps.getObsControl();
         const configToSend = { ...config, customCSS: '' };
         if (widgetName === 'chat') {
             if (servers.chatServer) servers.chatServer.broadcastConfig(configToSend);
-            await themeManager.cascadeTheme('', bot, servers);
+            await themeManager.applySeasonalTheme('', bot, servers, obsControl);
         } else if (widgetName === 'spotify' && servers.spotifyServer) servers.spotifyServer.broadcastConfig(configToSend);
         else if (widgetName === 'subgoals' && servers.subgoalsServer) servers.subgoalsServer.broadcastConfig(configToSend);
         else if (widgetName === 'roulette' && servers.rouletteServer) servers.rouletteServer.broadcastConfig(configToSend);
         else if (widgetName === 'goals' && servers.goalsServer) servers.goalsServer.broadcastConfig(configToSend);
 
+        return { success: true };
+    });
+
+    ipcMain.handle('apply-seasonal-theme', async (event, themeName) => {
+        const servers = getServers();
+        const obsControl = deps.getObsControl && deps.getObsControl();
+        return await themeManager.applySeasonalTheme(themeName, bot, servers, obsControl);
+    });
+
+    ipcMain.handle('refresh-all-widgets', async () => {
+        const servers = getServers();
+        const obsControl = deps.getObsControl && deps.getObsControl();
+        themeManager.refreshAllWidgets(servers, obsControl);
         return { success: true };
     });
 

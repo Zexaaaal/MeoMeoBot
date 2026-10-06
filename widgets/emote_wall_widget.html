@@ -252,7 +252,7 @@
                 const data = JSON.parse(event.data);
                 if ((data.type === 'config' || data.type === 'config-update') && data.widget === 'emote-wall') {
                     const cfg = data.config || data;
-                    if (cfg.customCSS) {
+                    if (typeof cfg.customCSS === 'string') {
                         const style = document.getElementById('custom-css');
                         if (style) style.textContent = cfg.customCSS;
                     }

@@ -14,48 +14,83 @@ class AlertsWidgetServer extends BaseWidgetServer {
                 justify-content: center;
                 text-align: center;
                 box-sizing: border-box;
-                padding: 15px;
+                padding: 20px;
                 overflow: hidden;
+                width: 100%;
+                height: 100%;
             }
             .alert-image {
-                margin-bottom: 10px;
+                width: 100%;
+                height: 70%;
+                max-height: 70%;
                 display: flex;
+                align-items: center;
                 justify-content: center;
-                flex-shrink: 1;
                 overflow: hidden;
+                flex-shrink: 0;
             }
             .alert-image img {
-                max-width: 80%;
-                max-height: 45vh;
+                max-width: 100%;
+                max-height: 100%;
+                width: auto;
+                height: auto;
                 object-fit: contain;
                 display: block;
             }
+            .alert-image:empty {
+                display: none;
+            }
+            #alert-text-wrapper {
+                width: 100%;
+                height: 30%;
+                max-height: 30%;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                text-align: center;
+                overflow: hidden;
+                flex-shrink: 0;
+            }
+            .alert-image:empty ~ #alert-text-wrapper {
+                height: 100%;
+                max-height: 100%;
+            }
             .alert-text {
-                font-size: 24px;
+                font-size: 28px;
                 font-weight: 900;
                 color: white;
                 line-height: 1.2;
                 word-wrap: break-word;
                 overflow-wrap: break-word;
                 max-width: 100%;
+                text-align: center;
             }
             .alert-message {
-                font-size: 32px;
+                font-size: 22px;
                 font-weight: 700;
                 color: #eee;
                 text-shadow: 0 4px 8px rgba(0, 0, 0, 0.8);
-                margin-top: 15px;
+                margin-top: 6px;
                 word-wrap: break-word;
                 overflow-wrap: break-word;
                 max-width: 100%;
+                text-align: center;
+            }
+            .alert-message:empty {
+                display: none;
             }
             .alert-username {
-                padding-right: 8px;
-                letter-spacing: 6px;
-                font-size: 22px;
-                font-family: 'Road Rage', cursive;
-                color: yellow;
-                text-shadow: 4px 4px #000000;
+                padding-right: 6px;
+                letter-spacing: 2px;
+                font-weight: 900;
+                color: #ffeb3b;
+                text-shadow: 2px 2px #000000;
+            }
+            .alert-amount,
+            .alert-months {
+                font-weight: 800;
+                color: #40c4ff;
             }
         `;
     }

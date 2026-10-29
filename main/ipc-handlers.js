@@ -346,6 +346,17 @@ function registerHandlers(deps) {
     });
 
 
+    ipcMain.handle('get-reward-volumes', () => {
+        const config = bot.getConfig();
+        return config.rewardVolumes || {};
+    });
+
+    ipcMain.handle('save-reward-volumes', (event, volumesMap) => {
+        if (!volumesMap || typeof volumesMap !== 'object') throw new Error('Invalid arguments');
+        bot.updateConfig({ rewardVolumes: volumesMap });
+        return { success: true };
+    });
+
     ipcMain.handle('get-reward-vod-flags', () => {
         const config = bot.getConfig();
         return config.rewardVodFlags || {};

@@ -247,7 +247,9 @@ class RewardsManager {
         }
 
         const sound = config.rewardSounds ? config.rewardSounds[rewardId] : null;
-        let volume = config.pointsGlobalVolume !== undefined ? config.pointsGlobalVolume : 0.5;
+        const globalVolume = config.pointsGlobalVolume !== undefined ? config.pointsGlobalVolume : 0.5;
+        const rewardVolume = config.rewardVolumes && config.rewardVolumes[rewardId] !== undefined ? config.rewardVolumes[rewardId] : 1;
+        const volume = Math.min(2, Math.max(0, globalVolume * rewardVolume));
 
         const rewardVodFlags = config.rewardVodFlags || {};
 

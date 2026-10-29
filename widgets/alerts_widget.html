@@ -212,6 +212,23 @@
             log('Audio error:', audio.error);
         };
 
+        // audio.volume caps at 1, so volumes above 100% (reward boost) go through a GainNode.
+        let audioCtx = null;
+        let gainNode = null;
+        function setAlertVolume(vol) {
+            const v = vol !== undefined ? vol : 0.5;
+            if (v > 1 && !gainNode) {
+                try {
+                    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                    gainNode = audioCtx.createGain();
+                    audioCtx.createMediaElementSource(audio).connect(gainNode).connect(audioCtx.destination);
+                } catch (e) { log('Gain setup failed', e); }
+            }
+            if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume().catch(() => {});
+            audio.volume = Math.min(1, Math.max(0, v));
+            if (gainNode) gainNode.gain.value = Math.max(1, v);
+        }
+
         let currentUtterance = null; // Prevent GC
 
         async function playAlert(alert) {
@@ -224,7 +241,7 @@
                     
                     if (alert.audio) {
                         audio.src = alert.audio;
-                        audio.volume = alert.volume !== undefined ? alert.volume : 0.5;
+                        setAlertVolume(alert.volume);
                         try {
                             if (alert.type === 'donation' && alert.message) {
                                 await new Promise((resolve) => {
@@ -264,7 +281,7 @@
 
                 if (alert.audio && playAudioHere) {
                     audio.src = alert.audio;
-                    audio.volume = alert.volume !== undefined ? alert.volume : 0.5;
+                    setAlertVolume(alert.volume);
                 } else {
                     audio.removeAttribute('src'); // Do not play
                 }

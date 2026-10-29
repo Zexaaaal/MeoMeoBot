@@ -11,6 +11,7 @@ let currentRewards = [];
 let savedRewardSounds = {};
 let savedRewardFunctions = {};
 let savedRewardVodFlags = {};
+let savedRewardVolumes = {};
 let rewardFolders = [];
 let isDevMode = false;
 
@@ -52,6 +53,11 @@ async function init() {
                 soundInput.dataset.path = val;
             }
         } catch (e) { console.error(e); }
+    });
+
+    const volumeInput = document.getElementById('rewardVolumeInput');
+    volumeInput.addEventListener('input', () => {
+        document.getElementById('rewardVolumeVal').textContent = `${Math.round(volumeInput.value * 100)}%`;
     });
 
     document.getElementById('rewardSoundClearBtn').addEventListener('click', () => {
@@ -174,11 +180,20 @@ async function loadGlobalVolume() {
     }
 }
 
+async function saveRewardVolume(rewardId, value) {
+    const newVolumes = { ...savedRewardVolumes };
+    if (value !== 1) newVolumes[rewardId] = value;
+    else delete newVolumes[rewardId];
+    await window.api.invoke('save-reward-volumes', newVolumes);
+    savedRewardVolumes = newVolumes;
+}
+
 async function loadRewardSounds() {
     try {
         savedRewardSounds = await window.api.invoke('get-reward-sounds') || {};
         savedRewardFunctions = await window.api.invoke('get-reward-functions') || {};
         savedRewardVodFlags = await window.api.invoke('get-reward-vod-flags') || {};
+        savedRewardVolumes = await window.api.invoke('get-reward-volumes') || {};
         rewardFolders = await window.api.invoke('get-reward-folders') || [];
     } catch (e) {
         console.error('Error loading reward assets:', e);
@@ -301,6 +316,47 @@ function renderRewardCard(reward) {
     details.appendChild(title);
     details.appendChild(sub);
 
+    // Per-reward volume: 0-200%, 100% (middle) = file's native level, above boosts.
+    if (hasSound) {
+        const volRow = document.createElement('div');
+        volRow.className = 'reward-volume-row';
+        volRow.style.display = 'flex';
+        volRow.style.alignItems = 'center';
+        volRow.style.gap = '8px';
+        volRow.style.marginTop = '4px';
+
+        const currentVol = savedRewardVolumes[reward.id] !== undefined ? savedRewardVolumes[reward.id] : 1;
+
+        const volSlider = document.createElement('input');
+        volSlider.type = 'range';
+        volSlider.min = '0';
+        volSlider.max = '2';
+        volSlider.step = '0.05';
+        volSlider.value = currentVol;
+        volSlider.style.width = '120px';
+        volSlider.draggable = true;
+        volSlider.addEventListener('dragstart', (e) => { e.preventDefault(); e.stopPropagation(); });
+        volSlider.addEventListener('mousedown', () => { card.draggable = false; });
+        volSlider.addEventListener('mouseup', () => { card.draggable = true; });
+
+        const volLabel = document.createElement('span');
+        volLabel.style.fontSize = '0.85em';
+        volLabel.style.color = 'var(--text-secondary)';
+        volLabel.textContent = `${Math.round(currentVol * 100)}%`;
+
+        volSlider.addEventListener('input', () => {
+            volLabel.textContent = `${Math.round(volSlider.value * 100)}%`;
+        });
+        volSlider.addEventListener('change', async () => {
+            card.draggable = true;
+            await saveRewardVolume(reward.id, parseFloat(volSlider.value));
+        });
+
+        volRow.appendChild(volSlider);
+        volRow.appendChild(volLabel);
+        details.appendChild(volRow);
+    }
+
     const actions = document.createElement('div');
     actions.className = 'reward-actions';
 
@@ -370,6 +426,11 @@ function renderRewardCard(reward) {
             await window.api.invoke('save-reward-vod-flags', newVodFlags);
             savedRewardVodFlags = newVodFlags;
 
+            const newVolumes = { ...savedRewardVolumes };
+            delete newVolumes[reward.id];
+            await window.api.invoke('save-reward-volumes', newVolumes);
+            savedRewardVolumes = newVolumes;
+
             showNotification('Récompense supprimée', 'success');
             loadRewards();
         } catch (e) {
@@ -426,6 +487,10 @@ function openEditor(reward = null) {
     soundInput.value = stripPrefix(soundVal);
     soundInput.dataset.path = soundVal;
 
+    const volumeVal = (reward && savedRewardVolumes[reward.id] !== undefined) ? savedRewardVolumes[reward.id] : 1;
+    document.getElementById('rewardVolumeInput').value = volumeVal;
+    document.getElementById('rewardVolumeVal').textContent = `${Math.round(volumeVal * 100)}%`;
+
     let functionVal = (reward && savedRewardFunctions[reward.id]) ? savedRewardFunctions[reward.id] : '';
     if (!functionVal && reward) {
         if (reward.id === 'mock-reward-bat-rain') functionVal = 'bat_rain';
@@ -474,6 +539,7 @@ async function saveReward() {
 
     const soundInput = document.getElementById('rewardSoundInput');
     const soundPath = soundInput ? (soundInput.dataset.path || '') : '';
+    const rewardVolume = parseFloat(document.getElementById('rewardVolumeInput').value);
 
     if (!title || cost < 1) {
         showNotification('Nom et coût (>0) requis', 'error');
@@ -545,6 +611,14 @@ async function saveReward() {
             await window.api.invoke('save-reward-sounds', newSounds);
             savedRewardSounds = newSounds;
 
+            const newVolumes = { ...savedRewardVolumes };
+            if (soundPath && rewardVolume !== 1) {
+                newVolumes[finalId] = rewardVolume;
+            } else {
+                delete newVolumes[finalId];
+            }
+            await window.api.invoke('save-reward-volumes', newVolumes);
+            savedRewardVolumes = newVolumes;
 
             const newFunctions = { ...savedRewardFunctions };
             const funcValue = document.getElementById('rewardFunctionBtn').dataset.value;

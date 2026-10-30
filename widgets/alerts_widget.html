@@ -162,6 +162,7 @@
         // 'vod-audio' (Slave): plays NO visuals, plays audio ONLY for isVod. NEVER sends 'alert-finished'.
         // null/default: Legacy. Plays everything and sends 'alert-finished'.
         const mode = urlParams.get('mode'); 
+        if (mode === 'preview') audio.muted = true;
 
         if (mode === 'vod-audio') {
             document.body.style.display = 'none'; // Ensure no visuals on slave source
@@ -267,10 +268,10 @@
                 textContainer.innerHTML = alert.text || '';
                 
                 if (alert.type === 'donation') {
-                    msgContainer.innerHTML = '';
+                    msgContainer.textContent = '';
                     msgContainer.style.display = 'none';
                 } else {
-                    msgContainer.innerHTML = alert.message || '';
+                    msgContainer.textContent = alert.message || '';
                     msgContainer.style.display = 'block';
                 }
 

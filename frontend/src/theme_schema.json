@@ -1,0 +1,1751 @@
+{
+ "chat": [
+  {
+   "label": "Conteneur",
+   "selector": "#chat-container",
+   "props": [
+    {
+     "key": "padding",
+     "type": "spacing",
+     "label": "Padding",
+     "default": "10px 10px 24px 10px"
+    },
+    {
+     "key": "gap",
+     "type": "slider",
+     "label": "Espacement",
+     "default": 10,
+     "min": 0,
+     "max": 40,
+     "unit": "px"
+    },
+    {
+     "key": "justify-content",
+     "type": "select",
+     "label": "Position verticale",
+     "default": "flex-end",
+     "options": [
+      {
+       "label": "En bas",
+       "value": "flex-end"
+      },
+      {
+       "label": "En haut",
+       "value": "flex-start"
+      },
+      {
+       "label": "Centré",
+       "value": "center"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "label": "Bloc de messages",
+   "selector": ".msg-group",
+   "props": [
+    {
+     "key": "background",
+     "type": "color-alpha",
+     "label": "Couleur de fond",
+     "default": "rgba(0, 0, 0, 0.3)"
+    },
+    {
+     "key": "border-radius",
+     "type": "slider",
+     "label": "Arrondi",
+     "default": 12,
+     "min": 0,
+     "max": 50,
+     "unit": "px"
+    },
+    {
+     "key": "border-style",
+     "type": "select",
+     "label": "Type de bordure",
+     "default": "solid",
+     "options": [
+      {
+       "label": "Aucune",
+       "value": "none"
+      },
+      {
+       "label": "Solide",
+       "value": "solid"
+      },
+      {
+       "label": "Pointillée",
+       "value": "dashed"
+      },
+      {
+       "label": "Points",
+       "value": "dotted"
+      },
+      {
+       "label": "Double",
+       "value": "double"
+      }
+     ]
+    },
+    {
+     "key": "border-width",
+     "type": "slider",
+     "label": "Épaisseur bordure",
+     "default": 1,
+     "min": 0,
+     "max": 10,
+     "unit": "px"
+    },
+    {
+     "key": "border-color",
+     "type": "color-alpha",
+     "label": "Couleur bordure",
+     "default": "rgba(255, 255, 255, 0.08)"
+    },
+    {
+     "key": "padding",
+     "type": "slider",
+     "label": "Padding",
+     "default": 10,
+     "min": 0,
+     "max": 40,
+     "unit": "px"
+    },
+    {
+     "key": "margin-bottom",
+     "type": "slider",
+     "label": "Marge inférieure",
+     "default": 0,
+     "min": 0,
+     "max": 30,
+     "unit": "px"
+    },
+    {
+     "key": "backdrop-filter",
+     "type": "blur",
+     "label": "Flou arrière-plan",
+     "default": 0,
+     "max": 30
+    },
+    {
+     "key": "box-shadow",
+     "type": "box-shadow",
+     "label": "Ombre",
+     "default": "none"
+    },
+    {
+     "key": "animation-name",
+     "type": "select",
+     "label": "Animation",
+     "default": "slideInBottom",
+     "options": [
+      {
+       "label": "Aucune",
+       "value": "none"
+      },
+      {
+       "label": "Glisser du bas",
+       "value": "slideInBottom"
+      },
+      {
+       "label": "Glisser du haut",
+       "value": "slideInTop"
+      },
+      {
+       "label": "Glisser de gauche",
+       "value": "slideInLeft"
+      },
+      {
+       "label": "Glisser de droite",
+       "value": "slideInRight"
+      },
+      {
+       "label": "Fondu",
+       "value": "fadeIn"
+      },
+      {
+       "label": "Zoom",
+       "value": "zoomIn"
+      },
+      {
+       "label": "Rebond",
+       "value": "bounceIn"
+      }
+     ]
+    },
+    {
+     "key": "animation-duration",
+     "type": "slider",
+     "label": "Durée animation",
+     "default": 0.3,
+     "min": 0.1,
+     "max": 2,
+     "step": 0.1,
+     "unit": "s"
+    },
+    {
+     "key": "--user-color-bg",
+     "type": "toggle",
+     "label": "Fond dépendant couleur pseudo",
+     "default": false
+    }
+   ]
+  },
+  {
+   "label": "Pseudo",
+   "selector": ".msg-username",
+   "props": [
+    {
+     "key": "font-family",
+     "type": "font",
+     "label": "Police",
+     "default": "sans-serif"
+    },
+    {
+     "key": "font-size",
+     "type": "slider",
+     "label": "Taille",
+     "default": 14,
+     "min": 10,
+     "max": 48,
+     "unit": "px"
+    },
+    {
+     "key": "font-weight",
+     "type": "select",
+     "label": "Épaisseur",
+     "default": "700",
+     "options": [
+      {
+       "label": "Léger (300)",
+       "value": "300"
+      },
+      {
+       "label": "Normal (400)",
+       "value": "400"
+      },
+      {
+       "label": "Medium (500)",
+       "value": "500"
+      },
+      {
+       "label": "Semi-gras (600)",
+       "value": "600"
+      },
+      {
+       "label": "Gras (700)",
+       "value": "700"
+      },
+      {
+       "label": "Extra-gras (800)",
+       "value": "800"
+      }
+     ]
+    },
+    {
+     "key": "color",
+     "type": "color",
+     "label": "Couleur",
+     "default": "#6dd4ff",
+     "useUserColor": true
+    },
+    {
+     "key": "margin-bottom",
+     "type": "slider",
+     "label": "Marge sous pseudo",
+     "default": 4,
+     "min": 0,
+     "max": 20,
+     "unit": "px"
+    },
+    {
+     "key": "text-shadow",
+     "type": "text-shadow",
+     "label": "Ombre du texte",
+     "default": "none"
+    },
+    {
+     "key": "text-transform",
+     "type": "select",
+     "label": "Casse",
+     "default": "none",
+     "options": [
+      {
+       "label": "Normal",
+       "value": "none"
+      },
+      {
+       "label": "MAJUSCULES",
+       "value": "uppercase"
+      },
+      {
+       "label": "minuscules",
+       "value": "lowercase"
+      },
+      {
+       "label": "Capitalize",
+       "value": "capitalize"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "label": "Messages",
+   "selector": ".msg-line",
+   "props": [
+    {
+     "key": "font-family",
+     "type": "font",
+     "label": "Police",
+     "default": "sans-serif"
+    },
+    {
+     "key": "font-size",
+     "type": "slider",
+     "label": "Taille",
+     "default": 14,
+     "min": 10,
+     "max": 48,
+     "unit": "px"
+    },
+    {
+     "key": "font-weight",
+     "type": "select",
+     "label": "Épaisseur",
+     "default": "400",
+     "options": [
+      {
+       "label": "Léger (300)",
+       "value": "300"
+      },
+      {
+       "label": "Normal (400)",
+       "value": "400"
+      },
+      {
+       "label": "Medium (500)",
+       "value": "500"
+      },
+      {
+       "label": "Semi-gras (600)",
+       "value": "600"
+      },
+      {
+       "label": "Gras (700)",
+       "value": "700"
+      },
+      {
+       "label": "Extra-gras (800)",
+       "value": "800"
+      }
+     ]
+    },
+    {
+     "key": "color",
+     "type": "color",
+     "label": "Couleur",
+     "default": "#e7eef5"
+    },
+    {
+     "key": "line-height",
+     "type": "slider",
+     "label": "Interligne",
+     "default": 1.4,
+     "min": 1,
+     "max": 3,
+     "step": 0.1,
+     "unit": ""
+    },
+    {
+     "key": "margin-bottom",
+     "type": "slider",
+     "label": "Espacement entre lignes",
+     "default": 2,
+     "min": 0,
+     "max": 20,
+     "unit": "px"
+    },
+    {
+     "key": "text-shadow",
+     "type": "text-shadow",
+     "label": "Ombre du texte",
+     "default": "none"
+    }
+   ]
+  },
+  {
+   "label": "Badges",
+   "selector": ".badge-img",
+   "props": [
+    {
+     "key": "width",
+     "type": "slider",
+     "label": "Taille",
+     "default": 18,
+     "min": 10,
+     "max": 40,
+     "unit": "px"
+    },
+    {
+     "key": "border-radius",
+     "type": "slider",
+     "label": "Arrondi",
+     "default": 0,
+     "min": 0,
+     "max": 20,
+     "unit": "px"
+    },
+    {
+     "key": "margin-right",
+     "type": "slider",
+     "label": "Marge droite",
+     "default": 2,
+     "min": 0,
+     "max": 10,
+     "unit": "px"
+    }
+   ]
+  }
+ ],
+ "spotify": [
+  {
+   "label": "Conteneur principal",
+   "selector": "#spotify-wrapper",
+   "props": [
+    {
+     "key": "justify-content",
+     "type": "select",
+     "label": "Position horizontale",
+     "default": "center",
+     "options": [
+      {
+       "label": "Centré",
+       "value": "center"
+      },
+      {
+       "label": "Gauche",
+       "value": "flex-start"
+      },
+      {
+       "label": "Droite",
+       "value": "flex-end"
+      }
+     ]
+    },
+    {
+     "key": "align-items",
+     "type": "select",
+     "label": "Position verticale",
+     "default": "center",
+     "options": [
+      {
+       "label": "Centré",
+       "value": "center"
+      },
+      {
+       "label": "Haut",
+       "value": "flex-start"
+      },
+      {
+       "label": "Bas",
+       "value": "flex-end"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "label": "Carte",
+   "selector": ".spotify-card",
+   "props": [
+    {
+     "key": "gap",
+     "type": "slider",
+     "label": "Espacement",
+     "default": 12,
+     "min": 0,
+     "max": 40,
+     "unit": "px"
+    },
+    {
+     "key": "padding",
+     "type": "slider",
+     "label": "Padding",
+     "default": 14,
+     "min": 0,
+     "max": 40,
+     "unit": "px"
+    },
+    {
+     "key": "border-radius",
+     "type": "slider",
+     "label": "Arrondi",
+     "default": 16,
+     "min": 0,
+     "max": 50,
+     "unit": "px"
+    },
+    {
+     "key": "background",
+     "type": "color-alpha",
+     "label": "Couleur de fond",
+     "default": "rgba(0, 0, 0, 0.35)"
+    },
+    {
+     "key": "border-style",
+     "type": "select",
+     "label": "Type de bordure",
+     "default": "solid",
+     "options": [
+      {
+       "label": "Aucune",
+       "value": "none"
+      },
+      {
+       "label": "Solide",
+       "value": "solid"
+      },
+      {
+       "label": "Pointillée",
+       "value": "dashed"
+      },
+      {
+       "label": "Points",
+       "value": "dotted"
+      },
+      {
+       "label": "Double",
+       "value": "double"
+      }
+     ]
+    },
+    {
+     "key": "border-width",
+     "type": "slider",
+     "label": "Épaisseur bordure",
+     "default": 1,
+     "min": 0,
+     "max": 10,
+     "unit": "px"
+    },
+    {
+     "key": "border-color",
+     "type": "color-alpha",
+     "label": "Couleur bordure",
+     "default": "rgba(255, 255, 255, 0.08)"
+    },
+    {
+     "key": "box-shadow",
+     "type": "box-shadow",
+     "label": "Ombre",
+     "default": "0px 15px 40px #000000"
+    },
+    {
+     "key": "backdrop-filter",
+     "type": "blur",
+     "label": "Flou arrière-plan",
+     "default": 8,
+     "max": 30
+    },
+    {
+     "key": "color",
+     "type": "color",
+     "label": "Couleur du texte",
+     "default": "#f5f7fb"
+    }
+   ]
+  },
+  {
+   "label": "Pochette",
+   "selector": ".spotify-cover",
+   "props": [
+    {
+     "key": "width",
+     "type": "slider",
+     "label": "Largeur",
+     "default": 140,
+     "min": 60,
+     "max": 300,
+     "unit": "px"
+    },
+    {
+     "key": "height",
+     "type": "slider",
+     "label": "Hauteur",
+     "default": 140,
+     "min": 60,
+     "max": 300,
+     "unit": "px"
+    },
+    {
+     "key": "border-radius",
+     "type": "slider",
+     "label": "Arrondi",
+     "default": 12,
+     "min": 0,
+     "max": 50,
+     "unit": "px"
+    },
+    {
+     "key": "box-shadow",
+     "type": "box-shadow",
+     "label": "Ombre",
+     "default": "0px 10px 25px #000000"
+    }
+   ]
+  },
+  {
+   "label": "Titre",
+   "selector": ".spotify-title",
+   "props": [
+    {
+     "key": "font-family",
+     "type": "font",
+     "label": "Police",
+     "default": "sans-serif"
+    },
+    {
+     "key": "font-size",
+     "type": "slider",
+     "label": "Taille",
+     "default": 20,
+     "min": 10,
+     "max": 48,
+     "unit": "px"
+    },
+    {
+     "key": "font-weight",
+     "type": "select",
+     "label": "Épaisseur",
+     "default": "700",
+     "options": [
+      {
+       "label": "Léger (300)",
+       "value": "300"
+      },
+      {
+       "label": "Normal (400)",
+       "value": "400"
+      },
+      {
+       "label": "Medium (500)",
+       "value": "500"
+      },
+      {
+       "label": "Semi-gras (600)",
+       "value": "600"
+      },
+      {
+       "label": "Gras (700)",
+       "value": "700"
+      },
+      {
+       "label": "Extra-gras (800)",
+       "value": "800"
+      }
+     ]
+    },
+    {
+     "key": "color",
+     "type": "color",
+     "label": "Couleur",
+     "default": "#f5f7fb"
+    },
+    {
+     "key": "text-shadow",
+     "type": "text-shadow",
+     "label": "Ombre du texte",
+     "default": "none"
+    }
+   ]
+  },
+  {
+   "label": "Artiste",
+   "selector": ".spotify-artist",
+   "props": [
+    {
+     "key": "font-family",
+     "type": "font",
+     "label": "Police",
+     "default": "sans-serif"
+    },
+    {
+     "key": "font-size",
+     "type": "slider",
+     "label": "Taille",
+     "default": 16,
+     "min": 10,
+     "max": 48,
+     "unit": "px"
+    },
+    {
+     "key": "font-weight",
+     "type": "select",
+     "label": "Épaisseur",
+     "default": "400",
+     "options": [
+      {
+       "label": "Léger (300)",
+       "value": "300"
+      },
+      {
+       "label": "Normal (400)",
+       "value": "400"
+      },
+      {
+       "label": "Medium (500)",
+       "value": "500"
+      },
+      {
+       "label": "Semi-gras (600)",
+       "value": "600"
+      },
+      {
+       "label": "Gras (700)",
+       "value": "700"
+      },
+      {
+       "label": "Extra-gras (800)",
+       "value": "800"
+      }
+     ]
+    },
+    {
+     "key": "color",
+     "type": "color",
+     "label": "Couleur",
+     "default": "#cdd7e5"
+    },
+    {
+     "key": "text-shadow",
+     "type": "text-shadow",
+     "label": "Ombre du texte",
+     "default": "none"
+    }
+   ]
+  },
+  {
+   "label": "Album",
+   "selector": ".spotify-album",
+   "props": [
+    {
+     "key": "display",
+     "type": "select",
+     "label": "Afficher",
+     "default": "block",
+     "options": [
+      {
+       "label": "Oui",
+       "value": "block"
+      },
+      {
+       "label": "Non",
+       "value": "none"
+      }
+     ]
+    },
+    {
+     "key": "font-family",
+     "type": "font",
+     "label": "Police",
+     "default": "sans-serif"
+    },
+    {
+     "key": "font-size",
+     "type": "slider",
+     "label": "Taille",
+     "default": 14,
+     "min": 10,
+     "max": 48,
+     "unit": "px"
+    },
+    {
+     "key": "font-weight",
+     "type": "select",
+     "label": "Épaisseur",
+     "default": "400",
+     "options": [
+      {
+       "label": "Léger (300)",
+       "value": "300"
+      },
+      {
+       "label": "Normal (400)",
+       "value": "400"
+      },
+      {
+       "label": "Medium (500)",
+       "value": "500"
+      },
+      {
+       "label": "Semi-gras (600)",
+       "value": "600"
+      },
+      {
+       "label": "Gras (700)",
+       "value": "700"
+      },
+      {
+       "label": "Extra-gras (800)",
+       "value": "800"
+      }
+     ]
+    },
+    {
+     "key": "color",
+     "type": "color",
+     "label": "Couleur",
+     "default": "#9fb4d1"
+    },
+    {
+     "key": "text-shadow",
+     "type": "text-shadow",
+     "label": "Ombre du texte",
+     "default": "none"
+    }
+   ]
+  },
+  {
+   "label": "Badge \"En lecture\"",
+   "selector": ".pill",
+   "props": [
+    {
+     "key": "display",
+     "type": "select",
+     "label": "Afficher",
+     "default": "inline-flex",
+     "options": [
+      {
+       "label": "Oui",
+       "value": "inline-flex"
+      },
+      {
+       "label": "Non",
+       "value": "none"
+      }
+     ]
+    },
+    {
+     "key": "padding",
+     "type": "spacing",
+     "label": "Padding",
+     "default": "4px 10px"
+    },
+    {
+     "key": "border-radius",
+     "type": "slider",
+     "label": "Arrondi",
+     "default": 999,
+     "min": 0,
+     "max": 50,
+     "unit": "px"
+    },
+    {
+     "key": "background",
+     "type": "color-alpha",
+     "label": "Couleur de fond",
+     "default": "rgba(255, 255, 255, 0.08)"
+    },
+    {
+     "key": "font-size",
+     "type": "slider",
+     "label": "Taille du texte",
+     "default": 12,
+     "min": 8,
+     "max": 24,
+     "unit": "px"
+    },
+    {
+     "key": "color",
+     "type": "color",
+     "label": "Couleur du texte",
+     "default": "#d3deef"
+    },
+    {
+     "key": "text-transform",
+     "type": "select",
+     "label": "Casse",
+     "default": "uppercase",
+     "options": [
+      {
+       "label": "Normal",
+       "value": "none"
+      },
+      {
+       "label": "MAJUSCULES",
+       "value": "uppercase"
+      },
+      {
+       "label": "minuscules",
+       "value": "lowercase"
+      }
+     ]
+    }
+   ]
+  }
+ ],
+ "subgoals": [
+  {
+   "label": "Conteneur",
+   "selector": "#widget-container",
+   "props": [
+    {
+     "key": "padding",
+     "type": "slider",
+     "label": "Padding",
+     "default": 20,
+     "min": 0,
+     "max": 60,
+     "unit": "px"
+    },
+    {
+     "key": "justify-content",
+     "type": "select",
+     "label": "Position verticale",
+     "default": "center",
+     "options": [
+      {
+       "label": "Centré",
+       "value": "center"
+      },
+      {
+       "label": "Haut",
+       "value": "flex-start"
+      },
+      {
+       "label": "Bas",
+       "value": "flex-end"
+      }
+     ]
+    },
+    {
+     "key": "align-items",
+     "type": "select",
+     "label": "Alignement",
+     "default": "center",
+     "options": [
+      {
+       "label": "Centré",
+       "value": "center"
+      },
+      {
+       "label": "Gauche",
+       "value": "flex-start"
+      },
+      {
+       "label": "Droite",
+       "value": "flex-end"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "label": "Barre de progression (conteneur)",
+   "selector": ".progress-container",
+   "props": [
+    {
+     "key": "height",
+     "type": "slider",
+     "label": "Hauteur",
+     "default": 40,
+     "min": 10,
+     "max": 80,
+     "unit": "px"
+    },
+    {
+     "key": "background",
+     "type": "color-alpha",
+     "label": "Couleur de fond",
+     "default": "rgba(0, 0, 0, 0.5)"
+    },
+    {
+     "key": "border-radius",
+     "type": "slider",
+     "label": "Arrondi",
+     "default": 20,
+     "min": 0,
+     "max": 40,
+     "unit": "px"
+    },
+    {
+     "key": "border-style",
+     "type": "select",
+     "label": "Type de bordure",
+     "default": "solid",
+     "options": [
+      {
+       "label": "Aucune",
+       "value": "none"
+      },
+      {
+       "label": "Solide",
+       "value": "solid"
+      },
+      {
+       "label": "Pointillée",
+       "value": "dashed"
+      },
+      {
+       "label": "Points",
+       "value": "dotted"
+      },
+      {
+       "label": "Double",
+       "value": "double"
+      }
+     ]
+    },
+    {
+     "key": "border-width",
+     "type": "slider",
+     "label": "Épaisseur bordure",
+     "default": 2,
+     "min": 0,
+     "max": 10,
+     "unit": "px"
+    },
+    {
+     "key": "border-color",
+     "type": "color-alpha",
+     "label": "Couleur bordure",
+     "default": "rgba(255, 255, 255, 0.2)"
+    }
+   ]
+  },
+  {
+   "label": "Barre de progression (remplissage)",
+   "selector": ".progress-bar",
+   "props": [
+    {
+     "key": "background",
+     "type": "gradient",
+     "label": "Dégradé",
+     "default": "linear-gradient(90deg, #ff00cc, #333399)"
+    },
+    {
+     "key": "border-radius",
+     "type": "slider",
+     "label": "Arrondi",
+     "default": 18,
+     "min": 0,
+     "max": 40,
+     "unit": "px"
+    },
+    {
+     "key": "box-shadow",
+     "type": "box-shadow",
+     "label": "Lueur",
+     "default": "none"
+    }
+   ]
+  },
+  {
+   "label": "Texte de progression",
+   "selector": ".progress-text",
+   "props": [
+    {
+     "key": "font-family",
+     "type": "font",
+     "label": "Police",
+     "default": "sans-serif"
+    },
+    {
+     "key": "font-size",
+     "type": "slider",
+     "label": "Taille",
+     "default": 1.2,
+     "min": 0.5,
+     "max": 4,
+     "step": 0.1,
+     "unit": "rem"
+    },
+    {
+     "key": "font-weight",
+     "type": "select",
+     "label": "Épaisseur",
+     "default": "800",
+     "options": [
+      {
+       "label": "Léger (300)",
+       "value": "300"
+      },
+      {
+       "label": "Normal (400)",
+       "value": "400"
+      },
+      {
+       "label": "Medium (500)",
+       "value": "500"
+      },
+      {
+       "label": "Semi-gras (600)",
+       "value": "600"
+      },
+      {
+       "label": "Gras (700)",
+       "value": "700"
+      },
+      {
+       "label": "Extra-gras (800)",
+       "value": "800"
+      }
+     ]
+    },
+    {
+     "key": "color",
+     "type": "color",
+     "label": "Couleur",
+     "default": "#ffffff"
+    },
+    {
+     "key": "text-shadow",
+     "type": "text-shadow",
+     "label": "Ombre du texte",
+     "default": "0px 2px 4px #000000"
+    }
+   ]
+  },
+  {
+   "label": "Marqueurs d'étape",
+   "selector": ".step-marker",
+   "props": [
+    {
+     "key": "width",
+     "type": "slider",
+     "label": "Épaisseur",
+     "default": 2,
+     "min": 1,
+     "max": 6,
+     "unit": "px"
+    },
+    {
+     "key": "background",
+     "type": "color-alpha",
+     "label": "Couleur",
+     "default": "rgba(255, 255, 255, 0.8)"
+    }
+   ]
+  },
+  {
+   "label": "Étiquettes d'étape",
+   "selector": ".step-label",
+   "props": [
+    {
+     "key": "background",
+     "type": "color-alpha",
+     "label": "Couleur de fond",
+     "default": "rgba(0, 0, 0, 0.8)"
+    },
+    {
+     "key": "color",
+     "type": "color",
+     "label": "Couleur du texte",
+     "default": "#ffffff"
+    },
+    {
+     "key": "font-size",
+     "type": "slider",
+     "label": "Taille",
+     "default": 0.9,
+     "min": 0.5,
+     "max": 3,
+     "step": 0.1,
+     "unit": "rem"
+    },
+    {
+     "key": "padding",
+     "type": "spacing",
+     "label": "Padding",
+     "default": "6px 10px"
+    },
+    {
+     "key": "border-radius",
+     "type": "slider",
+     "label": "Arrondi",
+     "default": 6,
+     "min": 0,
+     "max": 20,
+     "unit": "px"
+    },
+    {
+     "key": "border-style",
+     "type": "select",
+     "label": "Type de bordure",
+     "default": "solid",
+     "options": [
+      {
+       "label": "Aucune",
+       "value": "none"
+      },
+      {
+       "label": "Solide",
+       "value": "solid"
+      },
+      {
+       "label": "Pointillée",
+       "value": "dashed"
+      },
+      {
+       "label": "Points",
+       "value": "dotted"
+      },
+      {
+       "label": "Double",
+       "value": "double"
+      }
+     ]
+    },
+    {
+     "key": "border-width",
+     "type": "slider",
+     "label": "Épaisseur bordure",
+     "default": 1,
+     "min": 0,
+     "max": 5,
+     "unit": "px"
+    },
+    {
+     "key": "border-color",
+     "type": "color-alpha",
+     "label": "Couleur bordure",
+     "default": "rgba(255, 255, 255, 0.3)"
+    },
+    {
+     "key": "box-shadow",
+     "type": "box-shadow",
+     "label": "Ombre",
+     "default": "0px 4px 6px #000000"
+    }
+   ]
+  }
+ ],
+ "subgoals-list": [
+  {
+   "label": "Conteneur",
+   "selector": "#widget-container",
+   "props": [
+    {
+     "key": "padding",
+     "type": "slider",
+     "label": "Padding",
+     "default": 20,
+     "min": 0,
+     "max": 60,
+     "unit": "px"
+    },
+    {
+     "key": "justify-content",
+     "type": "select",
+     "label": "Position verticale",
+     "default": "center",
+     "options": [
+      {
+       "label": "Centré",
+       "value": "center"
+      },
+      {
+       "label": "Haut",
+       "value": "flex-start"
+      },
+      {
+       "label": "Bas",
+       "value": "flex-end"
+      }
+     ]
+    },
+    {
+     "key": "align-items",
+     "type": "select",
+     "label": "Alignement",
+     "default": "flex-start",
+     "options": [
+      {
+       "label": "Gauche",
+       "value": "flex-start"
+      },
+      {
+       "label": "Centré",
+       "value": "center"
+      },
+      {
+       "label": "Droite",
+       "value": "flex-end"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "label": "Liste",
+   "selector": ".subgoals-list",
+   "props": [
+    {
+     "key": "gap",
+     "type": "slider",
+     "label": "Espacement",
+     "default": 10,
+     "min": 0,
+     "max": 30,
+     "unit": "px"
+    }
+   ]
+  },
+  {
+   "label": "Élément",
+   "selector": ".subgoal-item",
+   "props": [
+    {
+     "key": "font-family",
+     "type": "font",
+     "label": "Police",
+     "default": "sans-serif"
+    },
+    {
+     "key": "font-size",
+     "type": "slider",
+     "label": "Taille",
+     "default": 1.2,
+     "min": 0.5,
+     "max": 4,
+     "step": 0.1,
+     "unit": "rem"
+    },
+    {
+     "key": "font-weight",
+     "type": "select",
+     "label": "Épaisseur",
+     "default": "600",
+     "options": [
+      {
+       "label": "Léger (300)",
+       "value": "300"
+      },
+      {
+       "label": "Normal (400)",
+       "value": "400"
+      },
+      {
+       "label": "Medium (500)",
+       "value": "500"
+      },
+      {
+       "label": "Semi-gras (600)",
+       "value": "600"
+      },
+      {
+       "label": "Gras (700)",
+       "value": "700"
+      },
+      {
+       "label": "Extra-gras (800)",
+       "value": "800"
+      }
+     ]
+    },
+    {
+     "key": "gap",
+     "type": "slider",
+     "label": "Espacement icône/texte",
+     "default": 10,
+     "min": 0,
+     "max": 30,
+     "unit": "px"
+    },
+    {
+     "key": "text-shadow",
+     "type": "text-shadow",
+     "label": "Ombre du texte",
+     "default": "0px 2px 4px #000000"
+    }
+   ]
+  },
+  {
+   "label": "Compteur de subs",
+   "selector": ".subgoal-count",
+   "props": [
+    {
+     "key": "font-weight",
+     "type": "select",
+     "label": "Épaisseur",
+     "default": "800",
+     "options": [
+      {
+       "label": "Léger (300)",
+       "value": "300"
+      },
+      {
+       "label": "Normal (400)",
+       "value": "400"
+      },
+      {
+       "label": "Medium (500)",
+       "value": "500"
+      },
+      {
+       "label": "Semi-gras (600)",
+       "value": "600"
+      },
+      {
+       "label": "Gras (700)",
+       "value": "700"
+      },
+      {
+       "label": "Extra-gras (800)",
+       "value": "800"
+      }
+     ]
+    },
+    {
+     "key": "color",
+     "type": "color",
+     "label": "Couleur",
+     "default": "#ff00cc"
+    }
+   ]
+  },
+  {
+   "label": "Titre de l'objectif",
+   "selector": ".subgoal-label",
+   "props": [
+    {
+     "key": "color",
+     "type": "color",
+     "label": "Couleur",
+     "default": "#ffffff"
+    }
+   ]
+  }
+ ],
+ "roulette": [
+  {
+   "label": "Conteneur de la roue",
+   "selector": "#wheel-container",
+   "props": [
+    {
+     "key": "background",
+     "type": "color-alpha",
+     "label": "Couleur de fond",
+     "default": "rgba(0, 0, 0, 0)"
+    },
+    {
+     "key": "border-radius",
+     "type": "slider",
+     "label": "Arrondi",
+     "default": 0,
+     "min": 0,
+     "max": 50,
+     "unit": "px"
+    },
+    {
+     "key": "padding",
+     "type": "slider",
+     "label": "Padding",
+     "default": 0,
+     "min": 0,
+     "max": 40,
+     "unit": "px"
+    }
+   ]
+  },
+  {
+   "label": "Conteneur de la liste",
+   "selector": "#list-container",
+   "props": [
+    {
+     "key": "background",
+     "type": "color-alpha",
+     "label": "Couleur de fond",
+     "default": "rgba(0, 0, 0, 0)"
+    },
+    {
+     "key": "border-radius",
+     "type": "slider",
+     "label": "Arrondi",
+     "default": 0,
+     "min": 0,
+     "max": 30,
+     "unit": "px"
+    },
+    {
+     "key": "border-style",
+     "type": "select",
+     "label": "Type de bordure",
+     "default": "none",
+     "options": [
+      {
+       "label": "Aucune",
+       "value": "none"
+      },
+      {
+       "label": "Solide",
+       "value": "solid"
+      },
+      {
+       "label": "Pointillée",
+       "value": "dashed"
+      },
+      {
+       "label": "Points",
+       "value": "dotted"
+      },
+      {
+       "label": "Double",
+       "value": "double"
+      }
+     ]
+    },
+    {
+     "key": "border-width",
+     "type": "slider",
+     "label": "Épaisseur bordure",
+     "default": 0,
+     "min": 0,
+     "max": 6,
+     "unit": "px"
+    },
+    {
+     "key": "border-color",
+     "type": "color-alpha",
+     "label": "Couleur bordure",
+     "default": "rgba(255, 255, 255, 0.2)"
+    }
+   ]
+  },
+  {
+   "label": "Élément de la liste",
+   "selector": ".list-item",
+   "props": [
+    {
+     "key": "font-family",
+     "type": "font",
+     "label": "Police",
+     "default": "sans-serif"
+    },
+    {
+     "key": "font-size",
+     "type": "slider",
+     "label": "Taille",
+     "default": 16,
+     "min": 10,
+     "max": 48,
+     "unit": "px"
+    },
+    {
+     "key": "font-weight",
+     "type": "select",
+     "label": "Épaisseur",
+     "default": "400",
+     "options": [
+      {
+       "label": "Léger (300)",
+       "value": "300"
+      },
+      {
+       "label": "Normal (400)",
+       "value": "400"
+      },
+      {
+       "label": "Medium (500)",
+       "value": "500"
+      },
+      {
+       "label": "Semi-gras (600)",
+       "value": "600"
+      },
+      {
+       "label": "Gras (700)",
+       "value": "700"
+      },
+      {
+       "label": "Extra-gras (800)",
+       "value": "800"
+      }
+     ]
+    },
+    {
+     "key": "color",
+     "type": "color",
+     "label": "Couleur du texte",
+     "default": "#ffffff"
+    },
+    {
+     "key": "background",
+     "type": "color-alpha",
+     "label": "Couleur de fond",
+     "default": "rgba(0, 0, 0, 0)"
+    },
+    {
+     "key": "padding",
+     "type": "spacing",
+     "label": "Padding",
+     "default": "8px 16px"
+    },
+    {
+     "key": "text-shadow",
+     "type": "text-shadow",
+     "label": "Ombre du texte",
+     "default": "none"
+    }
+   ]
+  },
+  {
+   "label": "Marqueur central",
+   "selector": ".list-center-marker",
+   "props": [
+    {
+     "key": "background",
+     "type": "color-alpha",
+     "label": "Couleur de fond",
+     "default": "rgba(255, 255, 255, 0.15)"
+    },
+    {
+     "key": "border-style",
+     "type": "select",
+     "label": "Type de bordure",
+     "default": "solid",
+     "options": [
+      {
+       "label": "Aucune",
+       "value": "none"
+      },
+      {
+       "label": "Solide",
+       "value": "solid"
+      },
+      {
+       "label": "Pointillée",
+       "value": "dashed"
+      },
+      {
+       "label": "Points",
+       "value": "dotted"
+      },
+      {
+       "label": "Double",
+       "value": "double"
+      }
+     ]
+    },
+    {
+     "key": "border-width",
+     "type": "slider",
+     "label": "Épaisseur bordure",
+     "default": 2,
+     "min": 0,
+     "max": 6,
+     "unit": "px"
+    },
+    {
+     "key": "border-color",
+     "type": "color-alpha",
+     "label": "Couleur bordure",
+     "default": "rgba(255, 255, 255, 0.5)"
+    },
+    {
+     "key": "border-radius",
+     "type": "slider",
+     "label": "Arrondi",
+     "default": 6,
+     "min": 0,
+     "max": 20,
+     "unit": "px"
+    }
+   ]
+  },
+  {
+   "label": "Affichage du gagnant",
+   "selector": "#winner-display",
+   "props": [
+    {
+     "key": "font-family",
+     "type": "font",
+     "label": "Police",
+     "default": "sans-serif"
+    },
+    {
+     "key": "font-size",
+     "type": "slider",
+     "label": "Taille",
+     "default": 32,
+     "min": 16,
+     "max": 72,
+     "unit": "px"
+    },
+    {
+     "key": "font-weight",
+     "type": "select",
+     "label": "Épaisseur",
+     "default": "700",
+     "options": [
+      {
+       "label": "Léger (300)",
+       "value": "300"
+      },
+      {
+       "label": "Normal (400)",
+       "value": "400"
+      },
+      {
+       "label": "Medium (500)",
+       "value": "500"
+      },
+      {
+       "label": "Semi-gras (600)",
+       "value": "600"
+      },
+      {
+       "label": "Gras (700)",
+       "value": "700"
+      },
+      {
+       "label": "Extra-gras (800)",
+       "value": "800"
+      }
+     ]
+    },
+    {
+     "key": "color",
+     "type": "color",
+     "label": "Couleur du texte",
+     "default": "#ffffff"
+    },
+    {
+     "key": "background",
+     "type": "color-alpha",
+     "label": "Couleur de fond",
+     "default": "rgba(0, 0, 0, 0.7)"
+    },
+    {
+     "key": "border-radius",
+     "type": "slider",
+     "label": "Arrondi",
+     "default": 12,
+     "min": 0,
+     "max": 30,
+     "unit": "px"
+    },
+    {
+     "key": "padding",
+     "type": "spacing",
+     "label": "Padding",
+     "default": "16px 32px"
+    },
+    {
+     "key": "text-shadow",
+     "type": "text-shadow",
+     "label": "Ombre du texte",
+     "default": "none"
+    },
+    {
+     "key": "box-shadow",
+     "type": "box-shadow",
+     "label": "Ombre",
+     "default": "none"
+    }
+   ]
+  }
+ ]
+}

@@ -152,11 +152,13 @@ pub async fn category_search(state: State<'_, AppState>, query: String) -> CmdRe
         return Ok(Vec::new());
     }
     let results = state.bot.helix.search_categories(query.trim()).await.map_err(err)?;
-    Ok(results.iter().map(|c| Category {
+    let mut categories: Vec<Category> = results.iter().map(|c| Category {
         id: c["id"].as_str().unwrap_or_default().to_string(),
         name: c["name"].as_str().unwrap_or_default().to_string(),
         box_art_url: c["box_art_url"].as_str().unwrap_or_default().to_string(),
-    }).collect())
+    }).collect();
+    rank_categories(&mut categories, &query);
+    Ok(categories)
 }
 
 #[tauri::command]
@@ -242,4 +244,13 @@ mod tests {
         planning.role_id = "42".into();
         assert_eq!(webhook_content(&planning, monday), "<@&42> Planning !");
     }
+}
+
+fn rank_categories(categories: &mut [Category], query: &str) {
+    let tokens: Vec<String> = query.to_lowercase().split_whitespace().map(str::to_string).collect();
+    let score = |name: &str| {
+        let words: Vec<String> = name.to_lowercase().split(|c: char| !c.is_alphanumeric()).filter(|w| !w.is_empty()).map(str::to_string).collect();
+        tokens.iter().filter(|t| words.contains(t)).count()
+    };
+    categories.sort_by_key(|c| std::cmp::Reverse(score(&c.name)));
 }

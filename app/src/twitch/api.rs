@@ -221,7 +221,7 @@ impl Helix {
     }
 
     pub async fn search_categories(&self, query: &str) -> HelixResult<Vec<Value>> {
-        let data = self.request(Method::GET, "search/categories", &[("query", query.to_string()), ("first", "10".into())], None).await?;
+        let data = self.request(Method::GET, "search/categories", &[("query", query.to_string()), ("first", "50".into())], None).await?;
         Ok(data["data"].as_array().cloned().unwrap_or_default())
     }
 

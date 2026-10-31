@@ -1,11 +1,12 @@
 use crate::components::notices;
-use crate::icons::Icon;
+use crate::icons::{Brand, Icon};
+use crate::pages::alerts::{display_path, MediaPicker};
 use crate::tauri::{call, call0, listen};
-use crate::ui::copy_text;
+use crate::ui::copy_with;
 use leptos::prelude::*;
 use leptos::task::spawn_local;
 use serde_json::json;
-use shared::{BotStatus, IntegrationSettings, ObsStatus, SubscriptionStatus, TwitchSettings};
+use shared::{BotStatus, IntegrationSettings, ObsStatus, PlanningState, SubscriptionStatus, TwitchSettings};
 
 #[derive(Clone, Copy, PartialEq)]
 enum SettingsTab {
@@ -96,15 +97,15 @@ pub fn SettingsPage(status: RwSignal<BotStatus>) -> impl IntoView {
         });
     };
 
-    let tab_button = move |value: SettingsTab, label: &'static str| view! {
-        <button class="tab" class:active=move || tab.get() == value on:click=move |_| tab.set(value)>{label}</button>
+    let tab_button = move |value: SettingsTab, label: &'static str, icon: AnyView| view! {
+        <button class="tab" class:active=move || tab.get() == value on:click=move |_| tab.set(value)>{icon}{label}</button>
     };
 
     view! {
         <div class="tabs">
-            {tab_button(SettingsTab::Twitch, "Twitch")}
-            {tab_button(SettingsTab::Spotify, "Spotify")}
-            {tab_button(SettingsTab::Integrations, "Intégrations")}
+            {tab_button(SettingsTab::Twitch, "Twitch", view! { <Brand name="twitch"/> }.into_any())}
+            {tab_button(SettingsTab::Spotify, "Spotify", view! { <Brand name="spotify"/> }.into_any())}
+            {tab_button(SettingsTab::Integrations, "Intégrations", view! { <Icon name="link"/> }.into_any())}
             <span class="spacer"></span>
             <button class="button primary" disabled=move || busy.get() on:click=save><Icon name="check"/>"Enregistrer"</button>
         </div>
@@ -134,7 +135,7 @@ pub fn SettingsPage(status: RwSignal<BotStatus>) -> impl IntoView {
                     </div>
                     <div class="field">
                         <span>"Redirect URI à déclarer dans la console Twitch"</span>
-                        <button class="url-box" title="Cliquer pour copier" on:click=move |_| copy_text(redirect.get_untracked(), "Redirect URI copiée")>{redirect}</button>
+                        <button class="url-box" title="Cliquer pour copier" on:click=move |_| copy_with(notices, redirect.get_untracked(), "Redirect URI copiée")>{redirect}</button>
                     </div>
                 </section>
                 <Show when=move || subscriptions.get().iter().any(|s| !s.ok)>
@@ -192,7 +193,7 @@ fn SpotifyTab(settings: RwSignal<IntegrationSettings>, redirect: RwSignal<String
             </div>
             <div class="field">
                 <span>"Redirect URI à déclarer dans le dashboard Spotify"</span>
-                <button class="url-box" title="Cliquer pour copier" on:click=move |_| copy_text(redirect.get_untracked(), "Redirect URI copiée")>{redirect}</button>
+                <button class="url-box" title="Cliquer pour copier" on:click=move |_| copy_with(notices, redirect.get_untracked(), "Redirect URI copiée")>{redirect}</button>
             </div>
         </section>
     }
@@ -222,6 +223,7 @@ fn IntegrationsTab(settings: RwSignal<IntegrationSettings>, obs: RwSignal<ObsSta
             </div>
             <SettingField label="Webhook Discord (planning)" placeholder="https://discord.com/api/webhooks/..." value=text_field(settings, |s| s.discord_webhook.clone(), |s, v| s.discord_webhook = v)/>
         </section>
+        <PlanningSettings/>
         <section class="panel">
             <div class="panel-header">
                 <h2>"OBS " <span class="hint" class:ok-text=move || obs.get().connected>{obs_label}</span></h2>
@@ -240,6 +242,69 @@ fn IntegrationsTab(settings: RwSignal<IntegrationSettings>, obs: RwSignal<ObsSta
                     <SettingField label="Mot de passe" secret=true value=text_field(settings, |s| s.obs_password.clone(), |s, v| s.obs_password = v)/>
                 </div>
             </Show>
+        </section>
+    }
+}
+
+#[component]
+fn PlanningSettings() -> impl IntoView {
+    let notices = notices();
+    let planning = RwSignal::new(PlanningState::default());
+    let loaded = RwSignal::new(false);
+    let generation = StoredValue::new(0u32);
+
+    spawn_local(async move {
+        if let Ok(state) = call0::<PlanningState>("planning_state").await {
+            planning.set(state);
+        }
+        loaded.set(true);
+    });
+
+    let change = move |f: Box<dyn Fn(&mut PlanningState)>| {
+        planning.update(|p| f(p));
+        generation.update_value(|g| *g += 1);
+        let current = generation.get_value();
+        set_timeout(move || {
+            if generation.get_value() != current || !loaded.get_untracked() {
+                return;
+            }
+            let edited = planning.get_untracked();
+            spawn_local(async move {
+                let mut state = call0::<PlanningState>("planning_state").await.unwrap_or_else(|_| edited.clone());
+                state.title = edited.title;
+                state.background = edited.background;
+                state.compact = edited.compact;
+                state.start_sunday = edited.start_sunday;
+                state.role_id = edited.role_id;
+                state.webhook_message = edited.webhook_message;
+                if let Err(e) = call::<()>("planning_save", json!({ "planning": state })).await {
+                    notices.error(e);
+                }
+            });
+        }, std::time::Duration::from_millis(500));
+    };
+    let (c1, c2, c3, c4, c5, c6) = (change.clone(), change.clone(), change.clone(), change.clone(), change.clone(), change);
+
+    view! {
+        <section class="panel">
+            <h2>"Planning"</h2>
+            <div class="grid-2">
+                <label class="field"><span>"Titre"</span>
+                    <input type="text" placeholder="PLANNING" prop:value=move || planning.get().title on:input=move |e| { let v = event_target_value(&e); c1(Box::new(move |p| p.title = v.clone())) }/>
+                </label>
+                <MediaPicker label="Image de fond" kind="image" value=Signal::derive(move || display_path(&planning.get().background))
+                    on_change=Callback::new(move |v: String| { let v = v.trim_start_matches("file://").to_string(); c2(Box::new(move |p| p.background = v.clone())) })/>
+                <label class="field"><span>"Rôle Discord à mentionner " <em class="hint">"(optionnel)"</em></span>
+                    <input type="text" placeholder="ex : 123456789012345678" prop:value=move || planning.get().role_id on:input=move |e| { let v = event_target_value(&e); c3(Box::new(move |p| p.role_id = v.clone())) }/>
+                </label>
+                <label class="field"><span>"Message Discord " <em class="hint">"{roleid} · **gras** · __souligné__"</em></span>
+                    <input type="text" placeholder="{roleid} Planning de la semaine !" prop:value=move || planning.get().webhook_message on:input=move |e| { let v = event_target_value(&e); c4(Box::new(move |p| p.webhook_message = v.clone())) }/>
+                </label>
+            </div>
+            <div class="form-inline">
+                <label class="check"><input type="checkbox" prop:checked=move || planning.get().compact on:change=move |e| { let v = event_target_checked(&e); c5(Box::new(move |p| p.compact = v)) }/><span>"Affichage compact"</span></label>
+                <label class="check"><input type="checkbox" prop:checked=move || planning.get().start_sunday on:change=move |e| { let v = event_target_checked(&e); c6(Box::new(move |p| p.start_sunday = v)) }/><span>"Commencer la semaine le dimanche"</span></label>
+            </div>
         </section>
     }
 }

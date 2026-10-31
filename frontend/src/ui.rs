@@ -4,8 +4,7 @@ use leptos::prelude::*;
 use leptos::task::spawn_local;
 use shared::WidgetUrl;
 
-pub fn copy_text(text: String, label: &'static str) {
-    let notices = notices();
+pub fn copy_with(notices: crate::components::Notices, text: String, label: &'static str) {
     spawn_local(async move {
         let clipboard = web_sys::window().map(|w| w.navigator().clipboard());
         match clipboard {
@@ -28,9 +27,16 @@ pub fn url_for(urls: &[WidgetUrl], key: &str) -> String {
 
 #[component]
 pub fn CopyLink(label: &'static str, url: Signal<String>) -> impl IntoView {
+    let notices = notices();
+    let copied = RwSignal::new(false);
+    let click = move |_| {
+        copy_with(notices, url.get_untracked(), "URL copiée");
+        copied.set(true);
+        set_timeout(move || copied.set(false), std::time::Duration::from_millis(1500));
+    };
     view! {
-        <button class="card-title" title="Copier l'URL de la source navigateur OBS" on:click=move |_| copy_text(url.get_untracked(), "URL copiée")>
-            {label}<Icon name="link"/>
+        <button class="card-title" class:copied=copied title="Copier l'URL de la source navigateur OBS" on:click=click>
+            {label}{move || if copied.get() { view! { <Icon name="check"/> } } else { view! { <Icon name="link"/> } }}
         </button>
     }
 }

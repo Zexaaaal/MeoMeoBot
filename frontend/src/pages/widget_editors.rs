@@ -1,7 +1,7 @@
 use crate::components::{notices, ConfirmDelete, Toolbar};
 use crate::icons::Icon;
 use crate::tauri::{call, call0};
-use crate::ui::{copy_text, url_for, widget_urls};
+use crate::ui::{copy_with, url_for, widget_urls};
 use leptos::prelude::*;
 use leptos::task::spawn_local;
 use serde_json::{json, Value};
@@ -190,7 +190,7 @@ pub fn GoalsEditor(on_back: Callback<()>) -> impl IntoView {
     let copy_url = move |id: String| {
         spawn_local(async move {
             match call::<String>("goal_url", json!({ "id": id })).await {
-                Ok(url) => copy_text(url, "URL du goal copiée"),
+                Ok(url) => copy_with(notices, url, "URL du goal copiée"),
                 Err(e) => notices.error(e),
             }
         });

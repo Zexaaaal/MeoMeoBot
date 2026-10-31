@@ -24,10 +24,41 @@ fn bindings(state: &AppState) -> BTreeMap<String, RewardBinding> {
     }).collect()
 }
 
+const LOCAL_KEY: &str = "devRewards";
+
+async fn local_mode(state: &AppState) -> bool {
+    cfg!(debug_assertions) && (!state.bot.helix.is_ready() || matches!(state.bot.helix.rewards(false).await, Err(e) if e.status == 403))
+}
+
+fn local_rewards(state: &AppState) -> Vec<Value> {
+    state.store.get(LOCAL_KEY).as_array().cloned().unwrap_or_default()
+}
+
+fn local_save(state: &AppState, id: Option<&str>, patch: Value) -> CmdResult<Value> {
+    let mut rewards = local_rewards(state);
+    let index = match id.and_then(|id| rewards.iter().position(|r| r["id"] == json!(id))) {
+        Some(index) => index,
+        None if id.is_some() => return Err("Récompense introuvable.".into()),
+        None => {
+            rewards.push(json!({ "id": format!("dev-{:016x}", rand::random::<u64>()), "is_enabled": true }));
+            rewards.len() - 1
+        }
+    };
+    let reward = &mut rewards[index];
+    if let (Some(target), Value::Object(source)) = (reward.as_object_mut(), patch) {
+        target.extend(source);
+    }
+    let cooldown = reward["global_cooldown_seconds"].as_u64().unwrap_or(0);
+    reward["global_cooldown_setting"] = json!({ "is_enabled": reward["is_global_cooldown_enabled"] == json!(true), "global_cooldown_seconds": cooldown });
+    let saved = reward.clone();
+    state.store.set(LOCAL_KEY, json!(rewards)).map_err(err)?;
+    Ok(saved)
+}
+
 async fn fetch_rewards(state: &AppState) -> CmdResult<Vec<Reward>> {
     let helix = &state.bot.helix;
-    if !helix.is_ready() {
-        return Ok(Vec::new());
+    if local_mode(state).await {
+        return Ok(local_rewards(state).into_iter().filter_map(|raw| serde_json::from_value(raw).ok()).collect());
     }
     let all = match helix.rewards(false).await {
         Ok(all) => all,
@@ -58,7 +89,11 @@ fn state_of(state: &AppState, rewards: Vec<Reward>, notice: Option<String>) -> P
 
 #[tauri::command]
 pub async fn points_state(state: State<'_, AppState>) -> CmdResult<PointsState> {
-    let notice = (!state.bot.helix.is_ready()).then(|| "Connecte le bot à Twitch pour voir les récompenses.".to_string());
+    let notice = if local_mode(&state).await {
+        Some("Mode dev : récompenses locales, utilise Tester pour simuler un rachat.".to_string())
+    } else {
+        (!state.bot.helix.is_ready()).then(|| "Connecte le bot à Twitch pour voir les récompenses.".to_string())
+    };
     Ok(match fetch_rewards(&state).await {
         Ok(rewards) => state_of(&state, rewards, notice),
         Err(e) => state_of(&state, Vec::new(), Some(e)),
@@ -87,6 +122,7 @@ pub async fn reward_save(state: State<'_, AppState>, id: Option<String>, draft: 
     }
     let body = draft_body(&draft);
     let saved = match id {
+        _ if local_mode(&state).await => local_save(&state, id.as_deref(), body)?,
         Some(id) => state.bot.helix.update_reward(&id, body).await.map_err(err)?,
         None => state.bot.helix.create_reward(body).await.map_err(err)?,
     };
@@ -98,7 +134,12 @@ pub async fn reward_save(state: State<'_, AppState>, id: Option<String>, draft: 
 
 #[tauri::command]
 pub async fn reward_set_enabled(state: State<'_, AppState>, ids: Vec<String>, enabled: bool) -> CmdResult<PointsState> {
+    let local = local_mode(&state).await;
     for id in ids {
+        if local {
+            local_save(&state, Some(&id), json!({ "is_enabled": enabled }))?;
+            continue;
+        }
         state.bot.helix.update_reward(&id, json!({ "is_enabled": enabled })).await.map_err(err)?;
     }
     points_state(state).await
@@ -106,7 +147,12 @@ pub async fn reward_set_enabled(state: State<'_, AppState>, ids: Vec<String>, en
 
 #[tauri::command]
 pub async fn reward_delete(state: State<'_, AppState>, id: String) -> CmdResult<PointsState> {
-    state.bot.helix.delete_reward(&id).await.map_err(err)?;
+    if local_mode(&state).await {
+        let rewards: Vec<Value> = local_rewards(&state).into_iter().filter(|r| r["id"] != json!(id)).collect();
+        state.store.set(LOCAL_KEY, json!(rewards)).map_err(err)?;
+    } else {
+        state.bot.helix.delete_reward(&id).await.map_err(err)?;
+    }
     points_state(state).await
 }
 

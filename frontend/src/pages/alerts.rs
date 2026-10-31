@@ -15,6 +15,7 @@ pub fn display_path(value: &str) -> String {
 #[component]
 pub fn MediaPicker(label: &'static str, kind: &'static str, value: Signal<String>, on_change: Callback<String>) -> impl IntoView {
     let notices = notices();
+    let placeholder = match kind { "audio" => "Choisir un son", "image" => "Choisir une image", "video" => "Choisir une vidéo", _ => "Choisir un fichier" };
     let pick = move |_| {
         spawn_local(async move {
             match call::<Option<String>>("pick_media_file", json!({ "kind": kind })).await {
@@ -26,12 +27,14 @@ pub fn MediaPicker(label: &'static str, kind: &'static str, value: Signal<String
     };
     view! {
         <div class="field">
-            <span>{label}</span>
+            {(!label.is_empty()).then(|| view! { <span>{label}</span> })}
             <div class="picker">
-                <button class="picker-value" on:click=pick>
-                    {move || { let v = value.get(); if v.is_empty() { "Choisir un fichier".to_string() } else { display_path(&v) } }}
+                <button class="picker-value" class:placeholder=move || value.get().is_empty() on:click=pick>
+                    {move || { let v = value.get(); if v.is_empty() { placeholder.to_string() } else { display_path(&v) } }}
                 </button>
-                <button class="icon-button" title="Retirer" disabled=move || value.get().is_empty() on:click=move |_| on_change.run(String::new())><Icon name="close"/></button>
+                <Show when=move || !value.get().is_empty()>
+                    <button class="icon-button" title="Retirer" on:click=move |_| on_change.run(String::new())><Icon name="close"/></button>
+                </Show>
             </div>
         </div>
     }

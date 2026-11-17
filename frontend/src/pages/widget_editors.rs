@@ -159,9 +159,12 @@ fn new_goal_id() -> String {
 }
 
 #[component]
-pub fn GoalsEditor(on_back: Callback<()>) -> impl IntoView {
+pub fn GoalsPanel(on_themes: Callback<()>) -> impl IntoView {
     let notices = notices();
     let goals = RwSignal::new(Vec::<Goal>::new());
+    let preview_url = RwSignal::new(String::new());
+    let preview_version = RwSignal::new(0u32);
+    spawn_local(async move { preview_url.set(url_for(&widget_urls().await, "goals")) });
     spawn_local(async move {
         let config = load("goals").await;
         goals.set(config["goals"].as_array().cloned().unwrap_or_default().into_iter().map(goal_from).collect());
@@ -176,7 +179,10 @@ pub fn GoalsEditor(on_back: Callback<()>) -> impl IntoView {
             raw["sourceType"] = json!(g.source.get_untracked());
             raw
         }).collect();
-        spawn_local(async move { save("goals", json!({ "goals": list }), "Goals enregistrés").await });
+        spawn_local(async move {
+            save("goals", json!({ "goals": list }), "Goals enregistrés").await;
+            preview_version.update(|v| *v += 1);
+        });
     };
 
     let add = move |_| {
@@ -197,33 +203,30 @@ pub fn GoalsEditor(on_back: Callback<()>) -> impl IntoView {
     };
 
     view! {
-        <Toolbar on_back back_label="Widgets" title="Goals">
-            <button class="button" on:click=add><Icon name="plus"/>"Nouveau goal"</button>
-            <button class="button primary" on:click=persist><Icon name="check"/>"Enregistrer"</button>
-        </Toolbar>
-        <div class="page-body columns">
-            <section class="panel fill">
-                <h2>"Goals"</h2>
-                <p class="hint">"Pense à enregistrer avant de copier l'URL d'un nouveau goal."</p>
-                <div class="list">
-                    <Show when=move || !goals.get().is_empty() fallback=|| view! { <p class="empty">"Aucun goal."</p> }>
-                        <For each=move || goals.get() key=|g| g.id.clone() let:goal>
-                            <div class="row goal-row">
-                                <input type="text" class="grow" placeholder="Libellé" bind:value=goal.label/>
-                                <input type="number" class="narrow" min="1" prop:value=move || goal.target.get().to_string() on:input=move |e| goal.target.set(event_target_value(&e).parse().unwrap_or(1.0))/>
-                                <select on:change=move |e| goal.source.set(event_target_value(&e))>
-                                    <option value="subs" selected=move || goal.source.get() == "subs">"Subs"</option>
-                                    <option value="followers" selected=move || goal.source.get() == "followers">"Followers"</option>
-                                </select>
-                                <button class="icon-button" title="Copier l'URL OBS de ce goal" on:click={ let id = goal.id.clone(); move |_| copy_url(id.clone()) }><Icon name="copy"/></button>
-                                <ConfirmDelete on_confirm=Callback::new({ let id = goal.id.clone(); move |_| goals.update(|g| g.retain(|x| x.id != id)) })/>
-                            </div>
-                        </For>
-                    </Show>
-                </div>
-            </section>
-            <Preview key="goals"/>
+        <div class="panel-header">
+            <h2>"Goals"</h2>
+            <button class="button small" on:click=add><Icon name="plus"/>"Nouveau goal"</button>
+            <button class="button small" on:click=move |_| on_themes.run(())><Icon name="star"/>"Thèmes"</button>
+            <button class="button small primary" on:click=persist><Icon name="check"/>"Enregistrer"</button>
         </div>
+        <p class="hint">"Chaque goal a sa propre source OBS : copie son URL avec l'icône à droite, après avoir enregistré."</p>
+        <div class="list goal-list">
+            <Show when=move || !goals.get().is_empty() fallback=|| view! { <p class="empty">"Aucun goal."</p> }>
+                <For each=move || goals.get() key=|g| g.id.clone() let:goal>
+                    <div class="row goal-row">
+                        <input type="text" class="grow" placeholder="Libellé" bind:value=goal.label/>
+                        <input type="number" class="narrow" min="1" prop:value=move || goal.target.get().to_string() on:input=move |e| goal.target.set(event_target_value(&e).parse().unwrap_or(1.0))/>
+                        <select on:change=move |e| goal.source.set(event_target_value(&e))>
+                            <option value="subs" selected=move || goal.source.get() == "subs">"Subs"</option>
+                            <option value="followers" selected=move || goal.source.get() == "followers">"Followers"</option>
+                        </select>
+                        <button class="icon-button" title="Copier l'URL OBS de ce goal" on:click={ let id = goal.id.clone(); move |_| copy_url(id.clone()) }><Icon name="copy"/></button>
+                        <ConfirmDelete on_confirm=Callback::new({ let id = goal.id.clone(); move |_| goals.update(|g| g.retain(|x| x.id != id)) })/>
+                    </div>
+                </For>
+            </Show>
+        </div>
+        <iframe class="preview fill" src=move || { let u = preview_url.get(); if u.is_empty() { u } else { format!("{u}?mode=preview&v={}", preview_version.get()) } }></iframe>
     }
 }
 

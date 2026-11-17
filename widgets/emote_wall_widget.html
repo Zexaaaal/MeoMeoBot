@@ -305,6 +305,15 @@
         }
 
         connectWebSocket();
+
+        if (new URLSearchParams(window.location.search).get('mode') === 'preview') {
+            const PREVIEW_EMOTES = ['25', '425618', '305954156', '86', '64138', '30259', '41', '354', '33', '245'];
+            setInterval(() => {
+                if (document.hidden) return;
+                const id = PREVIEW_EMOTES[Math.floor(Math.random() * PREVIEW_EMOTES.length)];
+                spawnEmote(`https://static-cdn.jtvnw.net/emoticons/v2/${id}/default/dark/3.0`);
+            }, 450);
+        }
     </script>
 </body>
 

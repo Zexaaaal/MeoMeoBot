@@ -123,18 +123,19 @@ pub fn ModerationPage() -> impl IntoView {
                             <button class="button small primary" on:click=save_messages><Icon name="check"/>"Enregistrer"</button>
                         </div>
                     </div>
-                    <p class="hint">"Chaque message est envoyé après le nombre de messages du tchat indiqué."</p>
                     <div class="list">
                         <Show when=move || !drafts.get().is_empty() fallback=|| view! { <p class="empty">"Aucun message automatique."</p> }>
                             <For each=move || drafts.get() key=|d| d.id let:draft>
-                                <div class="row">
-                                    <textarea class="grow" rows="1" placeholder="Message à envoyer" bind:value=draft.message></textarea>
-                                    <label class="field inline"><span>"Tous les"</span>
-                                        <input type="number" min="1" class="narrow" prop:value=move || draft.interval.get().to_string()
+                                <div class="auto-message">
+                                    <textarea rows="1" placeholder="Message à envoyer" bind:value=draft.message></textarea>
+                                    <div class="auto-message-footer">
+                                        <span class="hint">"Envoyé tous les"</span>
+                                        <input type="number" min="1" prop:value=move || draft.interval.get().to_string()
                                             on:input=move |e| draft.interval.set(event_target_value(&e).parse().unwrap_or(40))/>
-                                        <span>"messages"</span>
-                                    </label>
-                                    <button class="icon-button" title="Retirer" on:click=move |_| drafts.update(|d| d.retain(|x| x.id != draft.id))><Icon name="trash"/></button>
+                                        <span class="hint">"messages du tchat"</span>
+                                        <span class="spacer"></span>
+                                        <button class="icon-button" title="Retirer" on:click=move |_| drafts.update(|d| d.retain(|x| x.id != draft.id))><Icon name="trash"/></button>
+                                    </div>
                                 </div>
                             </For>
                         </Show>

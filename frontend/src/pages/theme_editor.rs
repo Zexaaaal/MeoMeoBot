@@ -205,15 +205,35 @@ pub fn ThemeEditor(widget: &'static str, on_back: Callback<()>) -> impl IntoView
 
     let apply = move |theme: String, value: String, message: &'static str| {
         spawn_local(async move {
-            match call::<ThemeEditorState>("theme_apply", json!({ "widget": widget, "theme": theme, "css": value })).await {
+            match call::<ThemeEditorState>("theme_apply", json!({ "widget": widget, "theme": theme.clone(), "css": value.clone() })).await {
                 Ok(next) => {
                     state.set(next);
+                    if theme == selected.get_untracked() {
+                        base_values.set(theme_builder::parse(&value, widget));
+                        base_css.set(value);
+                    }
                     notices.success(message);
                 }
                 Err(e) => notices.error(e),
             }
         });
     };
+
+    let reset = move |_| {
+        let file = selected.get_untracked();
+        spawn_local(async move {
+            match call::<ThemeEditorState>("theme_reset", json!({ "widget": widget, "file": file.clone() })).await {
+                Ok(next) => {
+                    state.set(next);
+                    load_base(file, None);
+                    notices.success("Thème d'origine restauré");
+                }
+                Err(e) => notices.error(e),
+            }
+        });
+    };
+
+    let dirty = move || css.get() != base_css.get();
 
     let save_as = move |_| {
         let name = new_name.get_untracked();
@@ -252,11 +272,15 @@ pub fn ThemeEditor(widget: &'static str, on_back: Callback<()>) -> impl IntoView
 
     let selected_info = move || state.get().themes.into_iter().find(|t| t.id == selected.get());
     let is_user_theme = move || selected_info().map(|t| !t.builtin).unwrap_or(false);
+    let is_modified_builtin = move || selected_info().map(|t| t.builtin && t.modified).unwrap_or(false);
 
     view! {
         <Toolbar on_back back_label="Widgets" title=widget_label(widget)>
-            <button class="button" on:click=move |_| apply(String::new(), String::new(), "Thème par défaut rétabli")>"Remettre par défaut"</button>
-            <button class="button primary" on:click=move |_| apply(selected.get_untracked(), css.get_untracked(), "Thème appliqué au widget")><Icon name="check"/>"Appliquer au widget"</button>
+            <Show when=dirty>
+                <span class="hint">"Modifications non enregistrées"</span>
+            </Show>
+            <button class="button" on:click=move |_| apply(String::new(), String::new(), "Widget remis sans thème")>"Retirer le thème"</button>
+            <button class="button primary" on:click=move |_| apply(selected.get_untracked(), css.get_untracked(), "Thème enregistré et appliqué")><Icon name="check"/>"Enregistrer et appliquer"</button>
         </Toolbar>
         <div class="page-body theme-layout">
             <div class="stack">
@@ -267,12 +291,23 @@ pub fn ThemeEditor(widget: &'static str, on_back: Callback<()>) -> impl IntoView
                                 <option value="" selected=move || selected.get().is_empty()>"Aucun"</option>
                                 {move || state.get().themes.into_iter().map(|t: ThemeInfo| {
                                     let id = t.id.clone();
-                                    view! { <option value=t.id.clone() selected=move || selected.get() == id>{if t.builtin { t.name } else { format!("{} (perso)", t.name) }}</option> }
+                                    let label = match (t.builtin, t.modified) {
+                                        (true, true) => format!("{} (modifié)", t.name),
+                                        (true, false) => t.name,
+                                        (false, _) => format!("{} (perso)", t.name),
+                                    };
+                                    view! { <option value=t.id.clone() selected=move || selected.get() == id>{label}</option> }
                                 }).collect_view()}
                             </select>
                         </label>
                         <button class="button" on:click=import><Icon name="plus"/>"Importer"</button>
                     </div>
+                    <Show when=is_modified_builtin>
+                        <div class="form-inline">
+                            <span class="hint grow">"Tes modifications de ce thème intégré sont conservées, même en changeant de thème."</span>
+                            <button class="button small" on:click=reset><Icon name="refresh"/>"Restaurer l'original"</button>
+                        </div>
+                    </Show>
                     <Show when=is_user_theme>
                         <div class="form-inline">
                             <Show when=move || rename.get().is_some() fallback=move || view! {

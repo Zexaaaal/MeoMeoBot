@@ -684,27 +684,47 @@ input.color {
 .widget-grid {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    align-items: start;
+    align-items: stretch;
     gap: 16px;
+    padding-bottom: 52px;
 }
 
 .widget-card {
     display: flex;
     flex-direction: column;
-    gap: 12px;
-    padding: 16px;
+    gap: 14px;
+    padding: 14px 16px;
     background: var(--grey);
     border-radius: 8px;
 }
 
 .card-section {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    align-content: start;
+    gap: 10px 12px;
+}
+
+.card-section > * {
+    grid-column: 1 / -1;
+}
+
+.card-section > .card-title,
+.card-section > h2 {
+    grid-column: 1;
+    grid-row: 1;
+}
+
+.card-section > .card-actions {
+    grid-column: 2;
+    grid-row: 1;
+    justify-content: flex-end;
+    flex-wrap: wrap;
 }
 
 .card-section + .card-section {
-    padding-top: 12px;
+    padding-top: 14px;
     border-top: 1px solid var(--black);
 }
 

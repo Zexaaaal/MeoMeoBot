@@ -144,16 +144,49 @@ async fn cover_for(http: &reqwest::Client, cache: &Mutex<HashMap<String, (String
 
 #[cfg(windows)]
 fn spotify_window_title() -> String {
-    use std::os::windows::process::CommandExt;
-    let output = std::process::Command::new("tasklist.exe")
-        .args(["/v", "/fi", "imagename eq spotify.exe", "/fo", "csv", "/nh"])
-        .creation_flags(0x0800_0000)
-        .output();
-    let Ok(output) = output else { return String::new() };
-    let text = String::from_utf8_lossy(&output.stdout);
-    text.lines()
-        .filter_map(|line| line.rsplit("\",\"").next().map(|t| t.trim_matches('"').trim().to_string()))
-        .find(|title| !title.is_empty() && !IDLE_TITLES.contains(&title.to_lowercase().as_str()) && title != "N/A" && title.contains(" - "))
+    use windows_sys::Win32::Foundation::{CloseHandle, BOOL, HWND, LPARAM};
+    use windows_sys::Win32::System::Threading::{OpenProcess, QueryFullProcessImageNameW, PROCESS_QUERY_LIMITED_INFORMATION};
+    use windows_sys::Win32::UI::WindowsAndMessaging::{EnumWindows, GetWindowTextLengthW, GetWindowTextW, GetWindowThreadProcessId, IsWindowVisible};
+
+    unsafe extern "system" fn collect(hwnd: HWND, lparam: LPARAM) -> BOOL {
+        let windows = &mut *(lparam as *mut Vec<(u32, String)>);
+        if IsWindowVisible(hwnd) == 0 {
+            return 1;
+        }
+        let length = GetWindowTextLengthW(hwnd);
+        if length <= 0 {
+            return 1;
+        }
+        let mut buffer = vec![0u16; length as usize + 1];
+        let read = GetWindowTextW(hwnd, buffer.as_mut_ptr(), buffer.len() as i32).max(0) as usize;
+        let mut pid = 0u32;
+        GetWindowThreadProcessId(hwnd, &mut pid);
+        windows.push((pid, String::from_utf16_lossy(&buffer[..read])));
+        1
+    }
+
+    fn is_spotify(pid: u32) -> bool {
+        unsafe {
+            let handle = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, 0, pid);
+            if handle.is_null() {
+                return false;
+            }
+            let mut buffer = [0u16; 1024];
+            let mut size = buffer.len() as u32;
+            let ok = QueryFullProcessImageNameW(handle, 0, buffer.as_mut_ptr(), &mut size);
+            CloseHandle(handle);
+            ok != 0 && String::from_utf16_lossy(&buffer[..size as usize]).to_lowercase().ends_with("\\spotify.exe")
+        }
+    }
+
+    let mut windows: Vec<(u32, String)> = Vec::new();
+    unsafe {
+        EnumWindows(Some(collect), &mut windows as *mut Vec<(u32, String)> as LPARAM);
+    }
+    windows.into_iter()
+        .filter(|(_, title)| !IDLE_TITLES.contains(&title.to_lowercase().as_str()) && title.contains(" - "))
+        .find(|(pid, _)| is_spotify(*pid))
+        .map(|(_, title)| title.trim().to_string())
         .unwrap_or_default()
 }
 

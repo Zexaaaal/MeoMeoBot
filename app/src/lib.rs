@@ -191,6 +191,7 @@ pub fn run() {
             commands::themes::theme_content,
             commands::themes::theme_apply,
             commands::themes::theme_create,
+            commands::themes::theme_reset,
             commands::themes::theme_rename,
             commands::themes::theme_delete,
             commands::themes::theme_import,

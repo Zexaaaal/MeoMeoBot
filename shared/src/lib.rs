@@ -247,6 +247,8 @@ pub struct ThemeInfo {
     pub id: String,
     pub name: String,
     pub builtin: bool,
+    #[serde(default)]
+    pub modified: bool,
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]

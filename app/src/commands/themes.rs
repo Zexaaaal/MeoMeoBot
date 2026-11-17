@@ -38,6 +38,9 @@ pub fn theme_content(state: State<'_, AppState>, file: String) -> String {
 #[tauri::command]
 pub fn theme_apply(state: State<'_, AppState>, widget: String, theme: String, css: String) -> CmdResult<ThemeEditorState> {
     check(&widget)?;
+    if !theme.is_empty() {
+        state.themes.save(&theme, &css).map_err(err)?;
+    }
     state.themes.apply(&state.store, &state.hub, &widget, &theme, &css);
     theme_editor(state, widget)
 }
@@ -47,6 +50,17 @@ pub fn theme_create(state: State<'_, AppState>, widget: String, name: String, cs
     check(&widget)?;
     let file = state.themes.create(&widget, &name, &css).map_err(err)?;
     state.themes.apply(&state.store, &state.hub, &widget, &file, &css);
+    theme_editor(state, widget)
+}
+
+#[tauri::command]
+pub fn theme_reset(state: State<'_, AppState>, widget: String, file: String) -> CmdResult<ThemeEditorState> {
+    check(&widget)?;
+    state.themes.reset(&file).map_err(err)?;
+    if state.store.widget(&widget)["currentTheme"].as_str() == Some(file.as_str()) {
+        let css = state.themes.content(&file);
+        state.themes.apply(&state.store, &state.hub, &widget, &file, &css);
+    }
     theme_editor(state, widget)
 }
 

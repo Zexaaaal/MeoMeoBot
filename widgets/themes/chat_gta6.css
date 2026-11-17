@@ -1,0 +1,150 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700&display=swap');
+
+@font-face {
+    font-family: 'Pricedown GTA';
+    src: url('/widget/assets/fonts/pricedown.otf') format('opentype');
+    font-display: block;
+}
+
+body {
+    --gta-font: 'Pricedown GTA', sans-serif;
+    --gta-ink: #24093a;
+    --gta-sunset: linear-gradient(135deg, #3f5fd8 0%, #8a4fd0 32%, #ff5fa2 64%, #ffae57 100%);
+    --gta-palm: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 160'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%238c3f8f'/%3E%3Cstop offset='1' stop-color='%236a55b8'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cg fill='url(%23g)'%3E%3Cpath d='M47 160 C49 122 45 92 53 52 L58 52 C52 92 56 124 57 160 Z'/%3E%3Cpath d='M56 50 Q30 28 3 42 Q30 36 56 55 Z'/%3E%3Cpath d='M56 50 Q40 16 13 12 Q38 25 56 53 Z'/%3E%3Cpath d='M56 50 Q63 14 49 0 Q71 17 59 53 Z'/%3E%3Cpath d='M56 50 Q81 17 100 21 Q78 30 58 55 Z'/%3E%3Cpath d='M56 50 Q85 40 98 64 Q80 47 56 55 Z'/%3E%3Cpath d='M56 50 Q35 52 20 78 Q38 57 56 55 Z'/%3E%3C/g%3E%3C/svg%3E");
+}
+
+#chat-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    height: 100vh;
+    width: 100vw;
+    box-sizing: border-box;
+    position: relative;
+    z-index: 1;
+    padding: 60px 16px 18px;
+    mask-image: linear-gradient(to bottom, transparent 0%, black 16%, black 100%);
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 16%, black 100%);
+}
+
+.msg-group {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 14px;
+    border: none;
+    background: none;
+    box-shadow: none;
+    padding: 0;
+    overflow: visible;
+}
+
+.msg-group::after {
+    display: none;
+}
+
+.msg-header {
+    position: relative;
+    z-index: 5;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    width: fit-content;
+    margin: 0 0 -10px 14px;
+    padding: 1px 12px 2px;
+    border: 2px solid var(--gta-ink);
+    border-radius: 10px;
+    background: var(--gta-sunset);
+    box-shadow: 0 3px 0 var(--gta-ink), 0 0 14px rgba(255, 95, 162, 0.45);
+}
+
+.msg-username {
+    font-family: var(--gta-font) !important;
+    font-weight: 400;
+    font-size: 1.5em;
+    letter-spacing: 1px;
+    line-height: 1.1;
+    color: #ffffff !important;
+    -webkit-text-stroke: 5px #000000;
+    paint-order: stroke fill;
+    text-shadow: 0 2px 0 #000000;
+}
+
+.msg-badges {
+    display: inline-flex;
+    gap: 3px;
+    margin-left: 2px;
+}
+
+.msg-badges .badge-img {
+    height: 16px;
+    vertical-align: middle;
+    filter: drop-shadow(0 1px 0 var(--gta-ink));
+}
+
+.msg-messages {
+    position: relative;
+    z-index: 1;
+    padding: 15px 16px 11px;
+    color: #fff4ea;
+    border: none;
+    border-radius: 14px;
+    background: linear-gradient(160deg, rgba(38, 14, 64, 0.65), rgba(20, 8, 38, 0.7));
+    box-shadow: 0 0 12px rgba(255, 95, 162, 0.18);
+    overflow: hidden;
+}
+
+.msg-messages::before {
+    content: '';
+    position: absolute;
+    inset: auto -10px -26px auto;
+    width: 64px;
+    height: 102px;
+    background: var(--gta-palm) no-repeat center / contain;
+    opacity: 0.35;
+    pointer-events: none;
+}
+
+.msg-group.variant-2 .msg-messages::before {
+    inset: auto auto -30px -12px;
+    transform: scaleX(-1);
+}
+
+.msg-group.variant-3 .msg-messages::before {
+    display: none;
+}
+
+.msg-messages::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    padding: 2px;
+    border-radius: inherit;
+    background: var(--gta-sunset);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+}
+
+.msg-line {
+    position: relative;
+    z-index: 2;
+    font-size: 1.05em;
+    font-weight: 500;
+    line-height: 1.4;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.75);
+    animation: gta-line-in 0.35s ease-out;
+}
+
+@keyframes gta-line-in {
+    from {
+        opacity: 0;
+        transform: translateX(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}

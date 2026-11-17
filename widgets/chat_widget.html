@@ -49,6 +49,25 @@
     <style id="custom-css">
         /* __CUSTOM_CSS__ */
     </style>
+    <style id="wrap-guard">
+        .msg-group,
+        .msg-header,
+        .msg-messages {
+            max-width: 100% !important;
+            min-width: 0 !important;
+        }
+
+        .msg-username {
+            white-space: normal !important;
+            overflow-wrap: anywhere !important;
+            word-break: break-word !important;
+        }
+
+        .msg-line {
+            overflow-wrap: anywhere !important;
+            word-break: break-word !important;
+        }
+    </style>
     <script>
         const CLIENT_ID = '__TWITCH_CLIENT_ID__';
         const APP_TOKEN = '__TWITCH_APP_TOKEN__';

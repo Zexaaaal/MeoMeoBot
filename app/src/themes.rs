@@ -31,7 +31,17 @@ const DEFAULT_NAMES: &[(&str, &str)] = &[
     ("alerts_horror.css", "Horreur"),
     ("emote-wall_halloween.css", "Halloween"),
     ("emote-wall_horror.css", "Horreur"),
+    ("chat_gta6.css", "GTA VI"),
+    ("alerts_gta6.css", "GTA VI"),
+    ("goals_gta6.css", "GTA VI"),
+    ("subgoals_gta6.css", "GTA VI"),
+    ("subgoals-list_gta6.css", "GTA VI"),
+    ("roulette_gta6.css", "GTA VI"),
+    ("emote-wall_gta6.css", "GTA VI"),
+    ("spotify_gta6.css", "GTA VI"),
 ];
+
+const SPOTIFY_DEFAULT: &str = "spotify_soso_base.css";
 
 pub const SEASONAL_WIDGETS: &[&str] = &["chat", "subgoals", "subgoals-list", "goals", "roulette", "alerts", "emote-wall"];
 
@@ -40,6 +50,7 @@ fn cascade(key: &str) -> &'static [(&'static str, &'static str)] {
         "christmas" => &[("chat", "chat_christmas.css"), ("subgoals", "subgoals_candycane.css"), ("alerts", "alerts_christmas.css"), ("goals", "goals_christmas.css")],
         "halloween" => &[("chat", "chat_halloween.css"), ("subgoals", "subgoals_halloween.css"), ("subgoals-list", "subgoals-list_halloween.css"), ("goals", "goals_halloween.css"), ("roulette", "roulette_halloween.css"), ("alerts", "alerts_halloween.css"), ("emote-wall", "emote-wall_halloween.css")],
         "horror" => &[("chat", "chat_horror.css"), ("subgoals", "subgoals_horror.css"), ("subgoals-list", "subgoals-list_horror.css"), ("goals", "goals_horror.css"), ("roulette", "roulette_horror.css"), ("alerts", "alerts_horror.css"), ("emote-wall", "emote-wall_horror.css")],
+        "gta6" => &[("chat", "chat_gta6.css"), ("subgoals", "subgoals_gta6.css"), ("subgoals-list", "subgoals-list_gta6.css"), ("goals", "goals_gta6.css"), ("roulette", "roulette_gta6.css"), ("alerts", "alerts_gta6.css"), ("emote-wall", "emote-wall_gta6.css"), ("spotify", "spotify_gta6.css")],
         _ => &[],
     }
 }
@@ -49,7 +60,9 @@ pub fn season_of(theme: &str) -> Option<&'static str> {
     if !name.starts_with("chat_") {
         return None;
     }
-    if name.contains("halloween") {
+    if name.contains("gta") {
+        Some("gta6")
+    } else if name.contains("halloween") {
         Some("halloween")
     } else if name.contains("horror") || name.contains("horreur") {
         Some("horror")
@@ -112,14 +125,50 @@ impl Themes {
                 if !is_theme_file(&file) || !belongs_to(&file, widget) || themes.iter().any(|t| t.id == file) {
                     continue;
                 }
+                let modified = builtin && self.is_modified(&file);
                 let name = names[&file].as_str().map(str::to_string)
                     .or_else(|| DEFAULT_NAMES.iter().find(|(f, _)| *f == file).map(|(_, n)| n.to_string()))
                     .unwrap_or_else(|| file.trim_start_matches(&format!("{widget}_")).trim_end_matches(".css").replace('_', " "));
-                themes.push(ThemeInfo { id: file, name, builtin });
+                themes.push(ThemeInfo { id: file, name, builtin, modified });
             }
         }
         themes.sort_by(|a, b| b.builtin.cmp(&a.builtin).then(a.name.to_lowercase().cmp(&b.name.to_lowercase())));
         themes
+    }
+
+    fn is_modified(&self, file: &str) -> bool {
+        let user = self.user_dir.join(file);
+        if !user.is_file() {
+            return false;
+        }
+        std::fs::read_to_string(&user).ok() != std::fs::read_to_string(self.builtin_dir.join(file)).ok()
+    }
+
+    pub fn save(&self, file: &str, css: &str) -> anyhow::Result<()> {
+        if !is_theme_file(file) {
+            anyhow::bail!("Thème introuvable");
+        }
+        if self.find(file).is_none() {
+            anyhow::bail!("Thème introuvable");
+        }
+        std::fs::create_dir_all(&self.user_dir)?;
+        if self.builtin_dir.join(file).is_file() && std::fs::read_to_string(self.builtin_dir.join(file)).ok().as_deref() == Some(css) {
+            let _ = std::fs::remove_file(self.user_dir.join(file));
+            return Ok(());
+        }
+        std::fs::write(self.user_dir.join(file), css)?;
+        Ok(())
+    }
+
+    pub fn reset(&self, file: &str) -> anyhow::Result<()> {
+        if !is_theme_file(file) || !self.builtin_dir.join(file).is_file() {
+            anyhow::bail!("Seuls les thèmes intégrés peuvent être réinitialisés");
+        }
+        let user = self.user_dir.join(file);
+        if user.is_file() {
+            std::fs::remove_file(user)?;
+        }
+        Ok(())
     }
 
     pub fn create(&self, widget: &str, name: &str, css: &str) -> anyhow::Result<String> {
@@ -162,7 +211,7 @@ impl Themes {
             anyhow::bail!("Thème introuvable");
         }
         let path = self.user_dir.join(file);
-        if !path.is_file() {
+        if !path.is_file() || self.builtin_dir.join(file).is_file() {
             anyhow::bail!("Les thèmes intégrés ne peuvent pas être supprimés");
         }
         std::fs::remove_file(path)?;
@@ -198,6 +247,9 @@ impl Themes {
             None if previous_season.is_some() => {
                 for target in SEASONAL_WIDGETS.iter().filter(|w| **w != "chat") {
                     self.write_widget(store, hub, target, "", "");
+                }
+                if store.widget("spotify")["currentTheme"].as_str().is_some_and(|t| t.contains("gta")) {
+                    self.write_widget(store, hub, "spotify", SPOTIFY_DEFAULT, &self.content(SPOTIFY_DEFAULT));
                 }
             }
             None => {}
@@ -241,6 +293,7 @@ mod tests {
         assert_eq!(season_of("chat_halloween.css"), Some("halloween"));
         assert_eq!(season_of("chat_horror.css"), Some("horror"));
         assert_eq!(season_of("chat_christmas.css"), Some("christmas"));
+        assert_eq!(season_of("chat_gta6.css"), Some("gta6"));
         assert_eq!(season_of("chat_pro.css"), None);
         assert_eq!(season_of("alerts_halloween.css"), None);
     }

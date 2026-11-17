@@ -39,12 +39,18 @@ jobs:
         run: |
           $manifest = Get-Content Cargo.toml -Raw
           $current = [regex]::Match($manifest, '(?m)^version = "(\d+)\.(\d+)\.(\d+)"')
-          $patch = [int]$current.Groups[3].Value
+          $local = [version]"$($current.Groups[1].Value).$($current.Groups[2].Value).$($current.Groups[3].Value)"
 
-          if ($patch -eq 0) {
-            Write-Host "Patch is 0, skipping auto-increment."
+          try {
+            $released = [version](Invoke-RestMethod "https://github.com/${{ github.repository }}/releases/download/release/latest.json").version
+          } catch {
+            $released = $null
+          }
+
+          if ($null -eq $released -or $local -gt $released) {
+            Write-Host "Version $local not released yet, keeping it."
           } else {
-            $newVersion = "$($current.Groups[1].Value).$($current.Groups[2].Value).$($patch + 1)"
+            $newVersion = "$($released.Major).$($released.Minor).$($released.Build + 1)"
             $manifest = $manifest.Remove($current.Index, $current.Length).Insert($current.Index, "version = `"$newVersion`"")
             Set-Content Cargo.toml $manifest -NoNewline -Encoding UTF8
             cargo update --workspace

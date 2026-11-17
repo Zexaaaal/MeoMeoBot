@@ -127,6 +127,26 @@
     <style>
         /* __CUSTOM_CSS__ */
     </style>
+    <style id="wrap-guard">
+        #alert-text-wrapper,
+        .alert-text,
+        .alert-message {
+            max-width: 100% !important;
+            min-width: 0 !important;
+        }
+
+        .alert-text,
+        .alert-message,
+        .alert-username {
+            white-space: normal !important;
+            overflow-wrap: anywhere !important;
+            word-break: break-word !important;
+        }
+
+        .alert-username {
+            max-width: 100% !important;
+        }
+    </style>
 </head>
 
 <body>
@@ -162,6 +182,7 @@
         // 'vod-audio' (Slave): plays NO visuals, plays audio ONLY for isVod. NEVER sends 'alert-finished'.
         // null/default: Legacy. Plays everything and sends 'alert-finished'.
         const mode = urlParams.get('mode'); 
+        if (mode === 'preview') audio.muted = true;
 
         if (mode === 'vod-audio') {
             document.body.style.display = 'none'; // Ensure no visuals on slave source
@@ -267,10 +288,10 @@
                 textContainer.innerHTML = alert.text || '';
                 
                 if (alert.type === 'donation') {
-                    msgContainer.innerHTML = '';
+                    msgContainer.textContent = '';
                     msgContainer.style.display = 'none';
                 } else {
-                    msgContainer.innerHTML = alert.message || '';
+                    msgContainer.textContent = alert.message || '';
                     msgContainer.style.display = 'block';
                 }
 

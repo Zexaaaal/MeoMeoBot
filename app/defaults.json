@@ -1,0 +1,72 @@
+{
+  "config": {
+    "channel": "",
+    "token": "",
+    "giveawayCommand": "!giveaway",
+    "giveawayStartMessage": "Giveaway ouvert ! Utilise !giveaway pour participer !",
+    "giveawayStopMessage": "Giveaway fermé ! Merci à tous les participants !",
+    "giveawayWinMessage": "Félicitations @{winner}, tu as gagné le giveaway !",
+    "bannedWords": [],
+    "castFolderPath": "",
+    "clipCooldown": 60,
+    "chatWidgetPort": 8087,
+    "spotifyWidgetPort": 8090,
+    "subgoalsWidgetPort": 8091,
+    "rouletteWidgetPort": 8092,
+    "goalsWidgetPort": 8093,
+    "alertsWidgetPort": 8097,
+    "spotifyClientId": "",
+    "spotifyClientSecret": "",
+    "spotifyAccessToken": "",
+    "spotifyRefreshToken": "",
+    "spotifyTokenExpiry": 0,
+    "discordWebhookUrl": "",
+    "discordPlanningMessageId": ""
+  },
+  "widgets": {
+    "chat": {
+      "customCSS": "#chat-container {\n    max-height: 500px; \n    font-size: 16px;\n}\n\n.message {\n    padding: 10px;\n    border-radius: 8px;\n}\n\n.username {\n    font-weight: bold;\n    text-shadow: none;\n}",
+      "maxMessages": 10,
+      "badgePrefs": {
+        "moderator": true,
+        "vip": true,
+        "subscriber": true,
+        "founder": true,
+        "partner": true,
+        "staff": true,
+        "premium": true
+      }
+    },
+    "emote-wall": {
+      "minSize": 32,
+      "maxSize": 96,
+      "spawnInterval": 100,
+      "animationDuration": 5000
+    },
+    "spotify": {
+      "customCSS": "#spotify-wrapper {\n    display: flex;\n    justify-content: center;\n    align-items: center;\n    width: 100vw;\n    height: 100vh;\n    background: transparent;\n}\n\n.spotify-card {\n    display: grid;\n    grid-template-columns: 140px 1fr;\n    gap: 12px;\n    padding: 14px;\n    border-radius: 16px;\n    background: rgba(0,0,0,0.35);\n    border: 1px solid rgba(255,255,255,0.08);\n    box-shadow: 0 15px 40px rgba(0,0,0,0.45);\n    backdrop-filter: blur(8px);\n    color: #f5f7fb;\n    font-family: \"Inter\", \"Segoe UI\", sans-serif;\n    max-width: 520px;\n}\n\n.spotify-cover {\n    width: 140px;\n    height: 140px;\n    border-radius: 12px;\n    object-fit: cover;\n    box-shadow: 0 10px 25px rgba(0,0,0,0.4);\n    background: #111;\n}\n\n.spotify-infos {\n    display: flex;\n    flex-direction: column;\n    gap: 6px;\n}\n\n.spotify-title {\n    font-size: 20px;\n    font-weight: 700;\n    line-height: 1.2;\n}\n\n.spotify-artist {\n    font-size: 16px;\n    color: #9fb4d1;\n}\n\n.spotify-album {\n    font-size: 14px;\n    color: #6f7c92;\n}\n\n.pill {\n    align-self: flex-start;\n    padding: 4px 10px;\n    border-radius: 999px;\n    background: rgba(255,255,255,0.08);\n    font-size: 12px;\n    letter-spacing: 0.5px;\n    text-transform: uppercase;\n    color: #d3deef;\n}\n",
+      "trackTitle": "Mon titre",
+      "trackArtist": "Artiste",
+      "trackAlbum": "Album",
+      "coverUrl": ""
+    },
+    "roulette": {
+      "customCSS": "",
+      "choices": [
+        "Choix 1",
+        "Choix 2",
+        "Choix 3",
+        "Choix 4",
+        "Choix 5"
+      ]
+    }
+  },
+  "commands": {
+    "!discord": "Rejoins notre discord: https://discord.gg/example",
+    "!twitter": "Suis-nous sur Twitter: https://twitter.com/example"
+  },
+  "giveaway": {
+    "isActive": false,
+    "participants": []
+  }
+}

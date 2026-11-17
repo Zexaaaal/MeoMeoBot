@@ -1,0 +1,51 @@
+[package]
+name = "meomeobot"
+version.workspace = true
+edition.workspace = true
+
+[lib]
+name = "meomeobot_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-dialog = "2"
+tauri-plugin-opener = "2"
+tauri-plugin-single-instance = "2"
+env_logger = "0.11"
+tokio = { version = "1", features = ["full"] }
+axum = { version = "0.8", features = ["ws"] }
+reqwest = { version = "0.12", default-features = false, features = ["json", "multipart", "rustls-tls", "stream"] }
+tokio-tungstenite = { version = "0.26", features = ["rustls-tls-webpki-roots"] }
+futures-util = "0.3"
+tokio-util = { version = "0.7", features = ["io"] }
+mime_guess = "2"
+serde.workspace = true
+serde_json.workspace = true
+shared.workspace = true
+anyhow = "1"
+base64 = "0.22"
+sha2 = "0.10"
+md-5 = "0.10"
+rand = "0.8"
+url = "2"
+urlencoding = "2"
+regex = "1"
+chrono = { version = "0.4", features = ["serde"] }
+dotenvy = "0.15"
+dirs = "5"
+rust_socketio = { version = "0.6", features = ["async"] }
+mdns-sd = "0.13"
+rust_cast = "0.19"
+winreg = "0.52"
+log = "0.4"
+iana-time-zone = "0.1"
+rustls = { version = "0.23", default-features = false, features = ["ring"] }
+tauri-plugin-updater = "2"
+
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "0.59", features = ["Win32_Foundation", "Win32_UI_WindowsAndMessaging", "Win32_System_Threading"] }
+

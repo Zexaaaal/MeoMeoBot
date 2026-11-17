@@ -1,0 +1,63 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "MeoMeoBot",
+  "identifier": "com.meomeobot.app",
+  "build": {
+    "beforeDevCommand": {
+      "script": "trunk serve",
+      "cwd": "../frontend"
+    },
+    "devUrl": "http://localhost:1420",
+    "beforeBuildCommand": {
+      "script": "trunk build --release",
+      "cwd": "../frontend"
+    },
+    "frontendDist": "../frontend/dist"
+  },
+  "app": {
+    "withGlobalTauri": true,
+    "windows": [
+      {
+        "label": "main",
+        "title": "MeoMeoBot",
+        "url": "index.html",
+        "width": 1200,
+        "height": 800,
+        "minWidth": 1000,
+        "minHeight": 700,
+        "decorations": false,
+        "dragDropEnabled": false
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": [
+      "nsis"
+    ],
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/icon.ico"
+    ],
+    "resources": {
+      "../widgets/": "widgets/",
+      "bin/ffmpeg.exe": "ffmpeg.exe"
+    },
+    "createUpdaterArtifacts": true
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDQyRURFOTdEODlBNEY2NzYKUldSMjlxU0pmZW50UWozd0JySlJLYXMzV3B0NW1TdjdEd0JnZGRKeC91RUdFZUpVMmVDQmFzQ00K",
+      "endpoints": [
+        "https://github.com/Zexaaaal/MeoMeoBot/releases/download/release/latest.json"
+      ],
+      "windows": {
+        "installMode": "passive"
+      }
+    }
+  }
+}

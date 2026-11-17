@@ -16,129 +16,88 @@ jobs:
           token: ${{ secrets.GH_TOKEN }}
           fetch-depth: 0
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
         with:
-          node-version: 22
+          targets: wasm32-unknown-unknown
 
-      - name: Install dependencies
-        run: npm install
+      - name: Cache cargo
+        uses: Swatinem/rust-cache@v2
 
-      - name: Check
-        run: npm test
+      - name: Install Trunk and Tauri CLI
+        uses: taiki-e/install-action@v2
+        with:
+          tool: trunk,tauri-cli
+
+      - name: Test
+        run: |
+          cargo test -p meomeobot
+          cargo test -p frontend
 
       - name: Increment version
         shell: pwsh
         run: |
-          $pkg = Get-Content package.json | ConvertFrom-Json
-          $parts = $pkg.version.Split('.')
-          $patch = [int]$parts[2]
+          $manifest = Get-Content Cargo.toml -Raw
+          $current = [regex]::Match($manifest, '(?m)^version = "(\d+)\.(\d+)\.(\d+)"')
+          $local = [version]"$($current.Groups[1].Value).$($current.Groups[2].Value).$($current.Groups[3].Value)"
 
-          if ($patch -eq 0) {
-            Write-Host "Patch is 0, skipping auto-increment."
+          try {
+            $released = [version](Invoke-RestMethod "https://github.com/${{ github.repository }}/releases/download/release/latest.json").version
+          } catch {
+            $released = $null
+          }
+
+          if ($null -eq $released -or $local -gt $released) {
+            Write-Host "Version $local not released yet, keeping it."
           } else {
-            $parts[2] = ($patch + 1).ToString()
-            $newVersion = $parts -join '.'
-            $pkg.version = $newVersion
-            $pkg | ConvertTo-Json -Depth 10 | Set-Content package.json -Encoding UTF8
+            $newVersion = "$($released.Major).$($released.Minor).$($released.Build + 1)"
+            $manifest = $manifest.Remove($current.Index, $current.Length).Insert($current.Index, "version = `"$newVersion`"")
+            Set-Content Cargo.toml $manifest -NoNewline -Encoding UTF8
+            cargo update --workspace
             Write-Host "Version updated to $newVersion"
 
             git config user.name "github-actions[bot]"
             git config user.email "github-actions[bot]@users.noreply.github.com"
-            git add package.json
+            git add Cargo.toml Cargo.lock
             git commit -m "bump to: $newVersion [skip ci]"
             git push
           }
 
-      - name: Read version
-        id: version
+      - name: Download ffmpeg
         shell: pwsh
         run: |
-          $v = (Get-Content package.json | ConvertFrom-Json).version
-          echo "VERSION=$v" >> $env:GITHUB_OUTPUT
-          Write-Host "Building version $v"
+          $zip = "$env:RUNNER_TEMP\ffmpeg.zip"
+          Invoke-WebRequest "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl.zip" -OutFile $zip
+          Expand-Archive $zip "$env:RUNNER_TEMP\ffmpeg"
+          New-Item -ItemType Directory -Force app/bin | Out-Null
+          Copy-Item (Get-ChildItem "$env:RUNNER_TEMP\ffmpeg" -Recurse -Filter ffmpeg.exe | Select-Object -First 1).FullName app/bin/ffmpeg.exe
 
-      - name: Build nsis-web
-        run: npx electron-builder --win
-        env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
-
-      - name: Upload to GitHub Release
+      - name: Clear previous release assets
         shell: pwsh
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
-          VERSION: ${{ steps.version.outputs.VERSION }}
         run: |
-          $distDir = "dist/nsis-web"
-          $repo = "${{ github.repository }}"
-          $tag = "release"
-          $headers = @{
-            Authorization = "token $env:GH_TOKEN"
-            Accept = "application/vnd.github.v3+json"
+          $assets = gh release view release --json assets --jq '.assets[].name' 2>$null
+          foreach ($asset in $assets) {
+            gh release delete-asset release $asset --yes
           }
 
-          # Get or create the release
-          try {
-            $release = Invoke-RestMethod -Uri "https://api.github.com/repos/$repo/releases/tags/$tag" -Headers $headers
-            Write-Host "Found existing release (ID: $($release.id))"
-          } catch {
-            Write-Host "Release not found, creating..."
-            $body = @{
-              tag_name = $tag
-              name = "Latest"
-              body = "meow meow meow meow"
-              draft = $false
-              prerelease = $false
-            } | ConvertTo-Json
-            $release = Invoke-RestMethod -Uri "https://api.github.com/repos/$repo/releases" -Method Post -Headers $headers -Body $body -ContentType "application/json"
-            Write-Host "Created release (ID: $($release.id))"
-          }
+      - name: Build and publish
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ""
+        with:
+          projectPath: app
+          tauriScript: cargo tauri
+          tagName: release
+          releaseName: Latest
+          releaseBody: meow meow meow meow
+          releaseDraft: false
+          prerelease: false
 
-          # Delete old assets
-          foreach ($asset in $release.assets) {
-            Write-Host "Deleting $($asset.name)..."
-            Invoke-RestMethod -Uri "https://api.github.com/repos/$repo/releases/assets/$($asset.id)" -Method Delete -Headers $headers
-          }
-
-          # Upload new assets
-          $files = @(
-            "MeoMeoBot-WebSetup-$env:VERSION.exe",
-            "meomeobot-$env:VERSION-x64.nsis.7z",
-            "latest.yml"
-          )
-
-          $uploadBase = $release.upload_url -replace '\{\?name,label\}', ''
-
-          foreach ($fileName in $files) {
-            $filePath = Join-Path $distDir $fileName
-            if (Test-Path $filePath) {
-              $size = (Get-Item $filePath).Length
-              $sizeMB = [math]::Round($size / 1MB, 1)
-              Write-Host "Uploading $fileName ($sizeMB MB)..."
-
-              $uploadUrl = "${uploadBase}?name=$([uri]::EscapeDataString($fileName))"
-              $bytes = [System.IO.File]::ReadAllBytes((Resolve-Path $filePath))
-
-              Invoke-RestMethod -Uri $uploadUrl -Method Post -Headers @{
-                Authorization = "token $env:GH_TOKEN"
-                Accept = "application/vnd.github.v3+json"
-                "Content-Type" = "application/octet-stream"
-              } -Body $bytes | Out-Null
-
-              Write-Host "Uploaded $fileName"
-            } else {
-              Write-Warning "File not found: $filePath"
-            }
-          }
-
-          # Update git tag
-          try {
-            git tag -d $tag 2>$null
-            git tag $tag
-            git push origin $tag --force
-            Write-Host "Git tag '$tag' updated"
-          } catch {
-            Write-Warning "Failed to update git tag: $_"
-          }
-
-          Write-Host "Publish completed!"
+      - name: Move release tag
+        run: |
+          git tag -f release
+          git push origin release --force

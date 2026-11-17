@@ -1,0 +1,37 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@600;700&display=swap');
+
+@font-face {
+    font-family: 'Pricedown GTA';
+    src: url('/widget/assets/fonts/pricedown.otf') format('opentype');
+    font-display: block;
+}
+
+.subgoals-list {
+    gap: 12px !important;
+}
+
+.subgoal-item {
+    position: relative !important;
+    font-family: 'Inter', sans-serif !important;
+    border: none !important;
+    border-radius: 12px !important;
+    padding: 8px 16px !important;
+    background: linear-gradient(160deg, rgba(38, 14, 64, 0.45), rgba(20, 8, 38, 0.5)) !important;
+    box-shadow: -8px 0 18px -6px rgba(63, 95, 216, 0.75), 8px 0 18px -6px rgba(255, 174, 87, 0.75), 0 0 18px rgba(255, 95, 162, 0.4) !important;
+}
+
+.subgoal-count {
+    font-family: 'Pricedown GTA', sans-serif !important;
+    font-size: 1.4rem !important;
+    letter-spacing: 1px !important;
+    color: #ffffff !important;
+    -webkit-text-stroke: 6px #000000 !important;
+    paint-order: stroke fill !important;
+    text-shadow: 0 2px 0 #000000 !important;
+}
+
+.subgoal-label {
+    color: #ffd9ec !important;
+    font-weight: 600 !important;
+    overflow-wrap: anywhere !important;
+}

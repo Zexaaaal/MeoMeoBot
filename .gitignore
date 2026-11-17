@@ -1,36 +1,15 @@
-# Dépendances
-/node_modules
+/target
+/frontend/dist
+/app/gen
+/app/bin
 
-# Fichiers de build
-/dist
-
-# Fichiers de log et de cache
 *.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# Fichiers de cache des miniatures
 /thumbnail_cache/
-
-# Fichiers système
+/portable_data/
 .DS_Store
 Thumbs.db
 
-# Fichiers de configuration locaux
 .env
-DOCUMENTATION.md
 config.json
-release-notes.temp.md
+DOCUMENTATION.md
 Backlog.md
-package-lock.json
-/portable_data/
-
-# Cmd
-publish.bat
-publish.ps1
-
-# Scripts & Tooling
-increment-version.js
-dev_options.js
-publish.js

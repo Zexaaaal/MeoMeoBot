@@ -43,7 +43,7 @@ body {
     gap: 6px;
     width: fit-content;
     margin: 0 0 -7px 16px;
-    padding: 3px 14px;
+    padding: 2px 12px;
     border: 2px solid #2a0f00;
     border-radius: 999px;
     background: linear-gradient(135deg, #ffa134, #e8590c);
@@ -53,9 +53,8 @@ body {
 .msg-username {
     font-family: 'Creepster', 'Inter', cursive !important;
     font-weight: 400;
-    font-size: 1.2em;
+    font-size: 1em;
     letter-spacing: 1px;
-    white-space: nowrap;
     color: #1a0b00 !important;
     text-shadow: 0 1px 0 rgba(255, 255, 255, 0.35);
 }
@@ -85,7 +84,7 @@ body {
 .msg-messages {
     position: relative;
     z-index: 1;
-    padding: 16px 16px 12px;
+    padding: 14px 14px 10px;
     color: #fff1de;
     border: 2px solid #ff7518;
     border-radius: 16px;
@@ -113,7 +112,7 @@ body {
 .msg-line {
     position: relative;
     z-index: 2;
-    font-size: 1.1em;
+    font-size: 0.95em;
     line-height: 1.4;
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
     animation: hw-line-in 0.4s ease-out;

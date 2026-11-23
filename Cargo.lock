@@ -1540,7 +1540,7 @@ dependencies = [
 
 [[package]]
 name = "frontend"
-version = "5.0.0"
+version = "5.0.1"
 dependencies = [
  "chrono",
  "console_error_panic_hook",
@@ -2997,7 +2997,7 @@ dependencies = [
 
 [[package]]
 name = "meomeobot"
-version = "5.0.0"
+version = "5.0.1"
 dependencies = [
  "anyhow",
  "axum",
@@ -5092,7 +5092,7 @@ dependencies = [
 
 [[package]]
 name = "shared"
-version = "5.0.0"
+version = "5.0.1"
 dependencies = [
  "serde",
  "serde_json",

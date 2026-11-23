@@ -286,7 +286,7 @@ pub struct PlanningState {
     pub title: String,
     pub role_id: String,
     pub webhook_message: String,
-    pub compact: bool,
+    pub align_hours: bool,
     pub start_sunday: bool,
     pub background: String,
     pub events: std::collections::BTreeMap<String, Vec<PlanningEvent>>,

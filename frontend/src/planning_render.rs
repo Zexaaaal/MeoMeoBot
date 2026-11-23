@@ -125,7 +125,7 @@ struct Grid {
 }
 
 fn grid(state: &PlanningState) -> Grid {
-    let x = if state.compact { 20.0 } else { 20.0 + 60.0 + 10.0 + 15.0 };
+    let x = if !state.align_hours { 20.0 } else { 20.0 + 60.0 + 10.0 + 15.0 };
     let y = 170.0;
     let gap = 8.0;
     let col_w = (WIDTH - 20.0 - x - gap * 6.0) / 7.0;
@@ -248,7 +248,7 @@ pub fn render(canvas: &HtmlCanvasElement, state: &PlanningState, monday: NaiveDa
     ctx.fill_text(&range, pill_x + 25.0, 80.0).ok();
 
     let g = grid(state);
-    if !state.compact {
+    if state.align_hours {
         ctx.set_fill_style_str("rgba(255, 255, 255, 0.2)");
         ctx.fill_rect(80.0, g.body_y, 1.0, g.body_h);
         ctx.set_font(&format!("600 14px {FONT}"));
@@ -282,7 +282,7 @@ pub fn render(canvas: &HtmlCanvasElement, state: &PlanningState, monday: NaiveDa
         let events = state.events.get(&date).cloned().unwrap_or_default();
         let placed = spans(&events);
         let (ex, ew) = (x + 2.0, g.col_w - 4.0);
-        if state.compact && !placed.is_empty() {
+        if !state.align_hours && !placed.is_empty() {
             let gap = 4.0;
             let available = g.body_h - 8.0;
             let natural = ew * 4.0 / 3.0;

@@ -273,7 +273,7 @@ fn PlanningSettings() -> impl IntoView {
                 let mut state = call0::<PlanningState>("planning_state").await.unwrap_or_else(|_| edited.clone());
                 state.title = edited.title;
                 state.background = edited.background;
-                state.compact = edited.compact;
+                state.align_hours = edited.align_hours;
                 state.start_sunday = edited.start_sunday;
                 state.role_id = edited.role_id;
                 state.webhook_message = edited.webhook_message;
@@ -302,7 +302,7 @@ fn PlanningSettings() -> impl IntoView {
                 </label>
             </div>
             <div class="form-inline">
-                <label class="check"><input type="checkbox" prop:checked=move || planning.get().compact on:change=move |e| { let v = event_target_checked(&e); c5(Box::new(move |p| p.compact = v)) }/><span>"Affichage compact"</span></label>
+                <label class="check"><input type="checkbox" prop:checked=move || planning.get().align_hours on:change=move |e| { let v = event_target_checked(&e); c5(Box::new(move |p| p.align_hours = v)) }/><span>"Aligner sur les heures"</span></label>
                 <label class="check"><input type="checkbox" prop:checked=move || planning.get().start_sunday on:change=move |e| { let v = event_target_checked(&e); c6(Box::new(move |p| p.start_sunday = v)) }/><span>"Commencer la semaine le dimanche"</span></label>
             </div>
         </section>

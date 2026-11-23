@@ -333,7 +333,7 @@ pub fn PlanningPage() -> impl IntoView {
         let key = (monday.get_untracked() + Duration::days(d as i64)).to_string();
         let events = state.events.get(&key).cloned().unwrap_or_default();
         let occupied = planning_render::spans(&events).iter().any(|(_, start, end)| minutes >= *start && minutes < *end);
-        if !occupied && !state.compact {
+        if !occupied && state.align_hours {
             add_at(key, format!("{:02}:{:02}", minutes / 60, minutes % 60));
         }
     };
